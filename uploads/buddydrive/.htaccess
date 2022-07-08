@@ -1,0 +1,8 @@
+
+# BEGIN Buddydrive
+# The directives (lines) between `BEGIN Buddydrive` and `END Buddydrive` are
+# dynamically generated, and should only be modified via WordPress filters.
+# Any changes to the directives between these markers will be overwritten.
+Order Allow,Deny
+Deny from all
+# END Buddydrive
