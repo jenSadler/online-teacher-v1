@@ -652,7 +652,7 @@
 		}
 
 .ticket_list tr td {
-			padding: 10px;
+			padding: var(--tec-spacer-2);
 			vertical-align: middle;
 		}
 
@@ -1191,6 +1191,14 @@ p.description {
 .tribe_events_page_tickets-attendees .search-box .button {
 	text-transform: capitalize;
 }
+
+.tec-admin__upsell-tec-tickets-capacity-arf {
+	margin-bottom: var(--tec-spacer-5);
+}
+
+.tec-admin__upsell-tec-tickets-capacity-arf .tec-admin__upsell-content {
+		padding: var(--tec-spacer-1) 0;
+	}
 
 @media (min-width: 768px) {
 

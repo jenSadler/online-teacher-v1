@@ -59,14 +59,14 @@ class Education {
 
 		printf(
 			'<div id="wp-mail-smtp-notice-bar">
-				<div class="wp-amil-smtp-notice-bar-container">
+				<div class="wp-mail-smtp-notice-bar-container">
 				<span class="wp-mail-smtp-notice-bar-message">%s</span>
 				<button type="button" class="dismiss" title="%s" />
 				</div>
 			</div>',
 			wp_kses(
 				sprintf( /* translators: %s - WPMailSMTP.com Upgrade page URL. */
-					__( 'You’re using WP Mail SMTP Lite. To unlock more features consider <a href="%s" target="_blank" rel="noopener noreferrer">upgrading to Pro</a>.', 'wp-mail-smtp' ),
+					__( 'You’re using WP Mail SMTP Lite. To unlock more features, consider <a href="%s" target="_blank" rel="noopener noreferrer">upgrading to Pro</a>.', 'wp-mail-smtp' ),
 					wp_mail_smtp()->get_upgrade_link( [ 'medium' => 'notice-bar' ] )
 				),
 				[

@@ -19,12 +19,12 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 		$this->mail_sender = new Forminator_CForm_Front_Mail();
 
 		if ( forminator_is_main_site() ) {
-			add_action( 'forminator_cform_user_registration_validation', array( $this, 'multisite_validation' ), 10, 4 );
-			add_action( 'forminator_cform_user_registered', array( $this, 'create_site' ), 10, 5 );
+			add_action( 'forminator_cform_user_registration_validation', array( $this, 'multisite_validation' ), 10, 3 );
+			add_action( 'forminator_cform_user_registered', array( $this, 'create_site' ), 10, 4 );
 		}
 		add_filter( 'forminator_custom_registration_form_errors', array( $this, 'submit_errors' ), 11, 3 );
 		// Change text of thankyou-message for other activation methods: 'email' && 'manual'.
-		add_filter( 'forminator_custom_form_thankyou_message', array( $this, 'change_thankyou_message' ), 11, 3 );
+		add_filter( 'forminator_custom_form_thankyou_message', array( $this, 'change_thankyou_message' ), 11, 2 );
 		// Change value of a field that is not saved in DB.
 		add_filter( 'forminator_custom_form_after_render_value', array( $this, 'change_field_value' ), 11, 4 );
 	}
@@ -72,7 +72,7 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 	 * @return bool|string
 	 */
 	public function submit_errors( $submit_errors, $form_id, $field_data_array ) {
-		$custom_form = Forminator_Form_Model::model()->load( $form_id );
+		$custom_form = Forminator_Base_Form_Model::get_model( $form_id );
 		$settings    = $custom_form->settings;
 
 		$username   = '';
@@ -118,19 +118,16 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 	/**
 	 * Change submitted data
 	 *
-	 * @param array  $submitted_data
 	 * @param string $new_value
 	 *
 	 * @return array
 	 */
-	public function change_submitted_data( $submitted_data, $new_value ) {
-		foreach ( $submitted_data as $field_key => $field_value ) {
+	public function change_submitted_data( $new_value ) {
+		foreach ( Forminator_CForm_Front_Action::$prepared_data as $field_key => $field_value ) {
 			if ( false !== stripos( $field_key, 'password-' ) ) {
-				$submitted_data[ $field_key ] = $new_value;
+				Forminator_CForm_Front_Action::$prepared_data[ $field_key ] = $new_value;
 			}
 		}
-
-		return $submitted_data;
 	}
 
 	/**
@@ -139,11 +136,10 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 	 * @param array $user_data
 	 * @param array $custom_form
 	 * @param Forminator_Form_Entry_Model $entry
-	 * @param array $submitted_data
 	 *
 	 * @return bool|void
 	 */
-	public function handle_user_activation( $user_data, $custom_form, $entry, $submitted_data ) {
+	public function handle_user_activation( $user_data, $custom_form, $entry ) {
 		global $wpdb;
 
 		require_once __DIR__ . '/../user/class-forminator-cform-user-signups.php';
@@ -155,12 +151,12 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 		$prepare_user_data              = $user_data;
 		$encrypted_password             = self::openssl_encrypt( $user_data['user_pass'] );
 		$prepare_user_data['user_pass'] = $encrypted_password;
-		$prepare_submitted_data         = $this->change_submitted_data( $submitted_data, $encrypted_password );
+		$this->change_submitted_data( $encrypted_password );
 
 		$meta = array(
 			'form_id'        => $entry->form_id,
 			'entry_id'       => $entry->entry_id,
-			'submitted_data' => $prepare_submitted_data,
+			'prepared_data' => Forminator_CForm_Front_Action::$prepared_data,
 			'user_data'      => $prepare_user_data,
 		);
 
@@ -170,14 +166,14 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 		}
 		// Sending notifications before saving activation_key.
 		if ( 'email' === $settings['activation-method'] ) {
-			$this->mail_sender->process_mail( $custom_form, $submitted_data, $entry );
+			$this->mail_sender->process_mail( $custom_form, $entry );
 		}
 
 		$option_create_site = forminator_get_property( $settings, 'site-registration' );
 		if ( is_multisite()
 			&& isset( $option_create_site )
 			&& 'enable' === $option_create_site
-			&& $site_data = $this->get_site_data( $settings, 0, $submitted_data, $user_data )
+			&& $site_data = $this->get_site_data( $settings, 0, $user_data )
 		) {
 			if ( ! has_action( 'after_signup_site', 'wpmu_signup_blog_notification' ) ) {
 				add_action( 'after_signup_site', 'wpmu_signup_blog_notification', 10, 7 );
@@ -202,7 +198,7 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 
 		// Sending notifications with {account_approval_link} after saving activation_key.
 		if ( 'manual' === $settings['activation-method'] ) {
-			$this->mail_sender->process_mail( $custom_form, $submitted_data, $entry );
+			$this->mail_sender->process_mail( $custom_form, $entry );
 		}
 
 		return true;
@@ -214,12 +210,11 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 	 * @param array                       $new_user_data
 	 * @param array                       $custom_form
 	 * @param Forminator_Form_Entry_Model $entry
-	 * @param array                       $submitted_data
 	 * @param bool                        $is_user_signon
 	 *
 	 * @return int|string|void|WP_Error
 	 */
-	public function create_user( $new_user_data, $custom_form, $entry, $submitted_data, $is_user_signon = false ) {
+	public function create_user( $new_user_data, $custom_form, $entry, $is_user_signon = false ) {
 		$new_user_data = apply_filters( 'forminator_custom_form_user_registration_before_insert', $new_user_data, $custom_form, $entry );
 
 		$user_id = wp_insert_user( $new_user_data );
@@ -229,11 +224,11 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 		}
 
 		$settings = $custom_form->settings;
-		$this->add_user_meta( $user_id, $settings, $submitted_data );
+		$this->add_user_meta( $user_id, $settings, $custom_form, $entry );
 
 		if ( ! $this->check_activation_method( $settings['activation-method'] ) ) {
 			// Sending notification.
-			$this->mail_sender->process_mail( $custom_form, $submitted_data, $entry );
+			$this->mail_sender->process_mail( $custom_form, $entry );
 		}
 
 		if ( isset( $settings['activation-email'] ) && 'default' === $settings['activation-email'] ) {
@@ -248,7 +243,7 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 			$this->forminator_new_user_notification( $user_id, '', 'admin' );
 		}
 
-		do_action( 'forminator_cform_user_registered', $user_id, $custom_form, $entry, $new_user_data['user_pass'], $submitted_data );
+		do_action( 'forminator_cform_user_registered', $user_id, $custom_form, $entry, $new_user_data['user_pass'] );
 
 		if ( ! $is_user_signon && isset( $settings['automatic-login'] ) && ! empty( $settings['automatic-login'] ) ) {
 			$this->automatic_login( $user_id );
@@ -296,14 +291,12 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 	 * Validate registration mapping data
 	 *
 	 * @param $custom_form
-	 * @param $submitted_data
 	 * @param $field_data_array
 	 * @param bool             $is_approve
-	 * @param array            $pseudo_submitted_data
 	 *
 	 * @return array
 	 */
-	public function validate( $custom_form, $submitted_data, $field_data_array, $is_approve = false, $pseudo_submitted_data = array() ) {
+	public function validate( $custom_form, $field_data_array, $is_approve = false ) {
 		$settings = $custom_form->settings;
 		// Field username.
 		$username = '';
@@ -338,7 +331,7 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 		}
 
 		// Multisite validation.
-		$validate = apply_filters( 'forminator_cform_user_registration_validation', $validate, $custom_form, $submitted_data, $is_approve );
+		$validate = apply_filters( 'forminator_cform_user_registration_validation', $validate, $custom_form, Forminator_CForm_Front_Action::$prepared_data, $is_approve );
 		if ( ! $validate['result'] ) {
 
 			return $validate['message'];
@@ -384,7 +377,7 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 		// Field user role.
 		$registration_user_role = isset( $settings['registration-user-role'] ) ? $settings['registration-user-role'] : 'fixed';
 		if ( 'conditionally' === $registration_user_role ) {
-			$new_user_data['role'] = $this->conditional_user_role( $settings, $submitted_data, $pseudo_submitted_data );
+			$new_user_data['role'] = $this->conditional_user_role( $settings );
 		} else {
 			$new_user_data['role'] = $settings['registration-role-field'];
 		}
@@ -396,14 +389,12 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 	 * Process validation
 	 *
 	 * @param Forminator_Form_Model $custom_form
-	 * @param array                 $submitted_data
 	 * @param array                 $field_data_array
-	 * @param array                 $pseudo_submitted_data
 	 *
 	 * @return array|mixed
 	 */
-	public function process_validation( $custom_form, $submitted_data, $field_data_array, $pseudo_submitted_data = array() ) {
-		$user_data = $this->validate( $custom_form, $submitted_data, $field_data_array, false, $pseudo_submitted_data );
+	public function process_validation( $custom_form, $field_data_array ) {
+		$user_data = $this->validate( $custom_form, $field_data_array );
 		if ( ! is_array( $user_data ) ) {
 
 			return $user_data;
@@ -418,23 +409,22 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 	 * Process registration
 	 *
 	 * @param Forminator_Form_Model       $custom_form
-	 * @param array                       $submitted_data
 	 * @param Forminator_Form_Entry_Model $entry
 	 *
 	 * @return array|mixed
 	 */
-	public function process_registration( $custom_form, $submitted_data, Forminator_Form_Entry_Model $entry ) {
+	public function process_registration( $custom_form, Forminator_Form_Entry_Model $entry ) {
 		$settings      = $custom_form->settings;
 		$new_user_data = $this->user_data;
 
 		if ( isset( $settings['activation-method'] ) && ! empty( $settings['activation-method'] ) ) {
 			if ( $this->check_activation_method( $settings['activation-method'] ) ) {
-				$activation = $this->handle_user_activation( $new_user_data, $custom_form, $entry, $submitted_data );
+				$activation = $this->handle_user_activation( $new_user_data, $custom_form, $entry );
 				if ( true !== $activation ) {
 					return $activation;
 				}
 			} else {
-				$user_id = $this->create_user( $new_user_data, $custom_form, $entry, $submitted_data );
+				$user_id = $this->create_user( $new_user_data, $custom_form, $entry );
 				if ( is_int( $user_id ) ) {
 					$new_user_data['user_id'] = $user_id;
 				} else {
@@ -533,12 +523,11 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 	 *
 	 * @param array                 $validate
 	 * @param Forminator_Form_Model $custom_form
-	 * @param array                 $submitted_data
 	 * @param bool                  $is_approve
 	 *
 	 * @return array
 	 */
-	public function multisite_validation( $validate, $custom_form, $submitted_data, $is_approve ) {
+	public function multisite_validation( $validate, $custom_form, $is_approve ) {
 		$data    = array(
 			'result'  => true,
 			'message' => '',
@@ -552,7 +541,7 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 			return $data;
 		}
 
-		$blog_data    = $this->replace_site_data( $setting, $submitted_data );
+		$blog_data    = $this->replace_site_data( $setting );
 		$blog_address = $blog_data['address'];
 		$blog_title   = $blog_data['title'];
 
@@ -592,11 +581,10 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 	 * @param Forminator_Form_Model       $custom_form
 	 * @param Forminator_Form_Entry_Model $entry
 	 * @param string                      $password
-	 * @param array                       $submitted_data
 	 *
 	 * @return bool|int
 	 */
-	public function create_site( $user_id, $custom_form, $entry, $password, $submitted_data ) {
+	public function create_site( $user_id, $custom_form, $entry, $password ) {
 		global $current_site;
 
 		$setting = $custom_form->settings;
@@ -608,7 +596,7 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 			return false;
 		}
 
-		$site_data = $this->get_site_data( $setting, $user_id, $submitted_data );
+		$site_data = $this->get_site_data( $setting, $user_id );
 		if ( ! $site_data ) {
 
 			return false;
@@ -642,9 +630,7 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 
 		$registration_user_role = forminator_get_property( $setting, 'registration-user-role' );
 		if ( 'conditionally' === $registration_user_role ) {
-			$instance              = Forminator_CForm_Front_Action::get_instance();
-			$pseudo_submitted_data = $instance::build_pseudo_submitted_data( $custom_form, $submitted_data );
-			$root_role             = $this->conditional_user_role( $setting, $submitted_data, $pseudo_submitted_data );
+			$root_role = $this->conditional_user_role( $setting );
 		} else {
 			$root_role = forminator_get_property( $setting, 'registration-role-field' );
 		}
@@ -670,7 +656,9 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 		}
 
 		// Send a notification if a new site was added.
-		wpmu_welcome_notification( $blog_id, $user_id, $password, $site_data['title'], array( 'public' => 1 ) );
+		if ( isset( $setting['activation-email'] ) && 'none' !== $setting['activation-email'] ) {
+			wpmu_welcome_notification( $blog_id, $user_id, $password, $site_data['title'], array( 'public' => 1 ) );
+		}
 
 		do_action( 'forminator_cform_site_created', $blog_id, $user_id, $entry, $custom_form, $password );
 
@@ -714,11 +702,11 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 	 * Replace site data
 	 *
 	 * @param array $setting
-	 * @param array $submitted_data
-	 *
 	 * @return array
 	 */
-	private function replace_site_data( $setting, $submitted_data ) {
+	private function replace_site_data( $setting ) {
+		$submitted_data = Forminator_CForm_Front_Action::$prepared_data;
+
 		$blog_address = '';
 		$address      = forminator_get_property( $setting, 'site-registration-name-field' );
 		if ( isset( $submitted_data[ $address ] ) && ! empty( $submitted_data[ $address ] ) ) {
@@ -748,16 +736,15 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 	 *
 	 * @param array $setting
 	 * @param int   $user_id
-	 * @param array $submitted_data
 	 * @param array $prepare_user_data
 	 *
 	 * @return array
 	 */
-	public function get_site_data( $setting, $user_id, $submitted_data, $prepare_user_data = array() ) {
+	public function get_site_data( $setting, $user_id, $prepare_user_data = array() ) {
 		global $current_site;
 
 		$user_data = $this->get_user_data( $user_id, $prepare_user_data );
-		$blog_data = $this->replace_site_data( $setting, $submitted_data );
+		$blog_data = $this->replace_site_data( $setting );
 
 		if ( empty( $blog_data['address'] ) || empty( $user_data['user_email'] ) || ! is_email( $user_data['user_email'] ) ) {
 			return array();
@@ -806,13 +793,14 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 	/**
 	 * Add user meta
 	 *
-	 * @param int   $user_id
-	 * @param array $setting
-	 * @param array $submitted_data
+	 * @param $user_id
+	 * @param $setting
+	 * @param $custom_form
+	 * @param $entry
 	 *
 	 * @return void
 	 */
-	public function add_user_meta( $user_id, $setting, $submitted_data ) {
+	public function add_user_meta( $user_id, $setting, $custom_form, $entry ) {
 		$custom_meta = $this->get_custom_user_meta( $setting );
 
 		if ( ! is_array( $custom_meta ) || empty( $custom_meta ) ) {
@@ -825,7 +813,7 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 				continue;
 			}
 			if ( strpos( $meta_value, '{' ) !== false ) {
-				$meta_value = forminator_replace_form_data( $meta_value, $submitted_data );
+				$meta_value = forminator_replace_form_data( $meta_value, $custom_form, $entry );
 				$meta_value = forminator_replace_variables( $meta_value, $setting['form_id'] );
 			}
 
@@ -858,12 +846,11 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 	 * Change 'Thank you' message
 	 *
 	 * @param string                $message
-	 * @param array                 $submitted_data
 	 * @param Forminator_Form_Model $custom_form
 	 *
 	 * @return string
 	 */
-	public function change_thankyou_message( $message, $submitted_data, $custom_form ) {
+	public function change_thankyou_message( $message, $custom_form ) {
 		$settings = $custom_form->settings;
 		if ( ! empty( $settings['activation-method'] )
 			&& $this->check_activation_method( $settings['activation-method'] )
@@ -960,17 +947,15 @@ class Forminator_CForm_Front_User_Registration extends Forminator_User {
 	 * Get conditional user role
 	 *
 	 * @param $settings
-	 * @param $submitted_data
-	 * @param $pseudo_submitted_data
 	 *
 	 * @return string
 	 */
-	public function conditional_user_role( $settings, $submitted_data, $pseudo_submitted_data ) {
+	public function conditional_user_role( $settings ) {
 		$user_role  = 'subscriber';
 		$conditions = isset( $settings['user_role'] ) ? $settings['user_role'] : array();
 		if ( ! empty( $conditions ) ) {
 			foreach ( $conditions as $condition ) {
-				if ( Forminator_Field::is_condition_matched( $condition, $submitted_data, $pseudo_submitted_data ) ) {
+				if ( Forminator_Field::is_condition_matched( $condition ) ) {
 					return $condition['role'];
 				}
 			}

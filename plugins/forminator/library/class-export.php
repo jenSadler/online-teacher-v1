@@ -306,13 +306,12 @@ class Forminator_Export {
 					$next_sent = date( 'Y-m-d', $next_sent ) . ' ' . $row['hour'];
 					break;
 				case 'weekly':
-					$next_sent = strtotime( '+7 days', $last_sent );
+					$day = isset( $row['day'] ) ? $row['day'] : 'mon';
+					$next_sent = strtotime( 'next ' . $day, $last_sent );
 					$next_sent = date( 'Y-m-d', $next_sent ) . ' ' . $row['hour'];
 					break;
 				case 'monthly':
-					$month_date = isset( $row['month_day'] ) ? $row['month_day'] : 1;
-					$next_sent  = $this->get_monthly_export_date( $last_sent, $month_date );
-					$next_sent  = date( 'Y-m-d', $next_sent ) . ' ' . $row['hour'];
+					$next_sent = $this->get_monthly_export_date( $last_sent, $row );
 					break;
 				default:
 					break;
@@ -425,7 +424,7 @@ class Forminator_Export {
 
 		switch ( $type ) {
 			case 'quiz':
-				$model = Forminator_Quiz_Model::model()->load( $form_id );
+				$model = Forminator_Base_Form_Model::get_model( $form_id );
 				if ( ! is_object( $model ) ) {
 					return null;
 				}
@@ -453,7 +452,7 @@ class Forminator_Export {
 				$leads_id  = isset( $model->settings['leadsId'] ) ? $model->settings['leadsId'] : 0;
 
 				if ( $has_leads && $leads_id ) {
-					$form_model = Forminator_Form_Model::model()->load( $leads_id );
+					$form_model = Forminator_Base_Form_Model::get_model( $leads_id );
 					if ( is_object( $model ) ) {
 						$mappers = $this->get_custom_form_export_mappers( $form_model );
 						foreach ( $mappers as $mapper ) {
@@ -571,7 +570,7 @@ class Forminator_Export {
 				$export_result->data = $data;
 				break;
 			case 'poll':
-				$model = Forminator_Poll_Model::model()->load( $form_id );
+				$model = Forminator_Base_Form_Model::get_model( $form_id );
 				if ( ! is_object( $model ) ) {
 					return null;
 				}
@@ -623,7 +622,7 @@ class Forminator_Export {
 				$export_result->data = $data;
 				break;
 			case 'cform':
-				$model = Forminator_Form_Model::model()->load( $form_id );
+				$model = Forminator_Base_Form_Model::get_model( $form_id );
 				if ( ! is_object( $model ) ) {
 					return null;
 				}
@@ -803,36 +802,23 @@ class Forminator_Export {
 		return chr( 239 ) . chr( 187 ) . chr( 191 ) . implode( PHP_EOL, $output );
 	}
 
-	private function get_monthly_export_date( $last_sent, $month_day ) {
-		// Array [0] = year. [1] = month. [2] = day.
-		$old_date  = gmdate( 'Y-m-d', intval( $last_sent ) );
-		$month_day = (int) $month_day;
-		if ( $old_date ) {
-			list( $old_year, $old_month, $old_day ) = explode( '-', $old_date );
+	private function get_monthly_export_date( $last_sent, $settings ) {
 
-			$year  = ( '12' === $old_month ) ? $old_year + 1 : $old_year;
-			$month = ( '12' === $old_month ) ? 1 : $old_month + 1;
-			$day   = ( 0 < $month_day ) && ( 32 > $month_day ) ? $month_day : 1;
+		$month_date = isset( $settings['month_day'] ) ? $settings['month_day'] : 1;
+		$hour       = isset( $settings['hour'] ) ? $settings['hour'] : '00:00';
+		// Maybe $month_date will be in the future this month.
+		$next_sent = strtotime( date( "Y-m-{$month_date} {$hour}", $last_sent ) );
 
-			$is_valid_date = checkdate( $month, $day, $year );
-
-			while ( ! $is_valid_date && $day > 0 ) {
-				$day--;
-				$is_valid_date = checkdate( $month, $day, $year );
+		if ( $last_sent >= $next_sent ) {
+			// If not - next month.
+			$next_sent = strtotime( '+1 month', $next_sent );
+			while ( date( 'm', $next_sent ) > date( 'm', $last_sent ) + 1 ) {
+				// remove 1 day if 31, 30, 29 day doesn't exist in this month.
+				$next_sent = strtotime( '-1 day', $next_sent );
 			}
 		}
 
-		if ( ! empty( $is_valid_date ) ) {
-			$next_sent = strtotime( "$year-$month-$day" );
-		} else {
-			$year  = gmdate( 'Y' );
-			$month = gmdate( 'm' );
-			$day   = gmdate( 'd' );
-
-			$next_sent = strtotime( '-1 day', strtotime( "$year-$month-$day" ) );
-		}
-
-		return $next_sent;
+		return date( 'Y-m-d H:i:s', $next_sent );
 	}
 
 
@@ -861,9 +847,8 @@ class Forminator_Export {
 	 */
 	private function get_custom_form_export_mappers( $model ) {
 		/** @var  Forminator_Form_Model $model */
-		$fields              = $model->get_fields();
-		$ignored_field_types = Forminator_Form_Entry_Model::ignored_fields();
-		$visible_fields      = filter_input( INPUT_GET, 'field', FILTER_DEFAULT, FILTER_REQUIRE_ARRAY );
+		$fields         = $model->get_real_fields();
+		$visible_fields = filter_input( INPUT_GET, 'field', FILTER_DEFAULT, FILTER_REQUIRE_ARRAY );
 
 		/** @var  Forminator_Form_Field_Model $fields */
 		$mappers = array(
@@ -877,10 +862,6 @@ class Forminator_Export {
 
 		foreach ( $fields as $field ) {
 			$field_type = $field->__get( 'type' );
-
-			if ( in_array( $field_type, $ignored_field_types, true ) ) {
-				continue;
-			}
 
 			if ( ! empty( $visible_fields ) ) {
 				if ( ! in_array( $field->slug, $visible_fields, true ) ) {

@@ -8621,7 +8621,7 @@ const getRSVP = function (postId) {
             dispatch(actions["setRSVPNotGoingCount"](parseInt(meta[utils["j" /* KEY_TICKET_NOT_GOING_COUNT */]], 10) || 0));
             dispatch(actions["setRSVPHasAttendeeInfoFields"](meta[utils["h" /* KEY_TICKET_HAS_ATTENDEE_INFO_FIELDS */]]));
             dispatch(actions["setRSVPDetails"]({
-              title: rsvp.title.rendered,
+              title: rsvp.title.raw,
               description: rsvp.excerpt.raw,
               capacity,
               notGoingResponses,
@@ -8637,7 +8637,7 @@ const getRSVP = function (postId) {
               endTimeInput: external_tribe_common_utils_["moment"].toTime(endMoment)
             }));
             dispatch(actions["setRSVPTempDetails"]({
-              tempTitle: rsvp.title.rendered,
+              tempTitle: rsvp.title.raw,
               tempDescription: rsvp.excerpt.raw,
               tempCapacity: capacity,
               tempNotGoingResponses: notGoingResponses,

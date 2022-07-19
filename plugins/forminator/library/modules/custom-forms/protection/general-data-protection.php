@@ -80,7 +80,7 @@ class Forminator_CForm_General_Data_Protection extends Forminator_General_Data_P
 
 				// avoid overhead.
 				if ( ! isset( self::$custom_form_model_instances[ $entry_model->form_id ] ) ) {
-					$model = Forminator_Form_Model::model()->load( $entry_model->form_id );
+					$model = Forminator_Base_Form_Model::get_model( $entry_model->form_id );
 					self::$custom_form_model_instances[ $entry_model->form_id ] = $model;
 				} else {
 					$model = self::$custom_form_model_instances[ $entry_model->form_id ];
@@ -173,7 +173,7 @@ class Forminator_CForm_General_Data_Protection extends Forminator_General_Data_P
 
 						$data [] = array(
 							'name'  => $key,
-							'value' => Forminator_Form_Entry_Model::meta_value_to_string( '', $meta_datum_encoded, false ),
+							'value' => Forminator_Form_Entry_Model::meta_value_to_string( '', $meta_datum_encoded ),
 						);
 
 					}
@@ -230,8 +230,7 @@ class Forminator_CForm_General_Data_Protection extends Forminator_General_Data_P
 	 */
 	public static function get_custom_form_export_mappers( $model ) {
 		/** @var  Forminator_Form_Model $model */
-		$fields              = $model->get_fields();
-		$ignored_field_types = Forminator_Form_Entry_Model::ignored_fields();
+		$fields = $model->get_real_fields();
 
 		/** @var  Forminator_Form_Field_Model $fields */
 		$mappers = array(
@@ -257,10 +256,6 @@ class Forminator_CForm_General_Data_Protection extends Forminator_General_Data_P
 
 		foreach ( $fields as $field ) {
 			$field_type = $field->__get( 'type' );
-
-			if ( in_array( $field_type, $ignored_field_types, true ) ) {
-				continue;
-			}
 
 			// base mapper for every field.
 			$mapper             = array();
@@ -416,7 +411,7 @@ class Forminator_CForm_General_Data_Protection extends Forminator_General_Data_P
 			$entry_model = new Forminator_Form_Entry_Model( $entry_id );
 
 			if ( ! empty( $entry_model->form_id ) ) {
-				$custom_form = Forminator_Form_Model::model()->load( $entry_model->form_id );
+				$custom_form = Forminator_Base_Form_Model::get_model( $entry_model->form_id );
 				if ( $custom_form instanceof Forminator_Form_Model ) {
 					$settings = $custom_form->settings;
 					if ( isset( $settings['enable-submissions-erasure'] ) ) {
@@ -459,21 +454,11 @@ class Forminator_CForm_General_Data_Protection extends Forminator_General_Data_P
 	public function personal_data_cleanup() {
 		$overridden_forms_privacy = get_option( 'forminator_form_privacy_settings', array() );
 
-		// process overridden.
-		foreach ( $overridden_forms_privacy as $form_id => $retentions ) {
-			$retain_number = (int) $retentions['submissions_retention_number'];
-			$retain_unit   = $retentions['submissions_retention_unit'];
-
-			$retain_time = $this->get_retain_time( $retain_number, $retain_unit );
-			if ( ! $retain_time ) {
-				continue;
-			}
-
-			$this->delete_older_entries( $form_id, $retain_time );
-		}
-
+		// Cleanup per each form setting
+		$this->cleanup_expired_entries( $overridden_forms_privacy );
 		$this->cleanup_ip_address();
 
+		// Global retention settings
 		$retain_number = get_option( 'forminator_retain_submissions_interval_number', 0 );
 		$retain_unit   = get_option( 'forminator_retain_submissions_interval_unit', 'days' );
 
@@ -494,6 +479,38 @@ class Forminator_CForm_General_Data_Protection extends Forminator_General_Data_P
 		}
 
 		return true;
+	}
+
+	/**
+	 * Delete entries that have exceeded the retention period
+	 * Overrides global setting
+	 *
+	 * @param array $overridden_forms_privacy
+	 *
+	 * @since 1.17.0
+	 */
+	public function cleanup_expired_entries( $overridden_forms_privacy ) {
+		foreach ( $overridden_forms_privacy as $form_id => $retentions ) {
+
+			if ( ! strpos( $form_id, '-draft' ) ) {
+				$is_draft 	   = false;
+				$retain_number = (int) $retentions['submissions_retention_number'];
+				$retain_unit   = $retentions['submissions_retention_unit'];
+			} else {
+				$is_draft 	   = true;
+				$form_id 	   = (int) str_replace( '-draft', '', $form_id );
+				$retain_number = (int) $retentions['draft_retention_number'];
+				$retain_unit   = $retentions['draft_retention_unit'];
+			}
+
+			$retain_time = $this->get_retain_time( $retain_number, $retain_unit );
+			if ( ! $retain_time ) {
+				continue;
+			}
+
+			// this function takes the retention time and compares it to date created
+			$this->delete_older_entries( $form_id, $retain_time, $is_draft );
+		}
 	}
 
 	/**

@@ -67,18 +67,18 @@ class Forminator_Admin_AJAX {
 		add_action( 'wp_ajax_forminator_load_privacy_settings_popup', array( $this, 'load_privacy_settings' ) );
 		add_action( 'wp_ajax_forminator_save_privacy_settings_popup', array( $this, 'save_privacy_settings' ) );
 
-		add_action( 'wp_ajax_forminator_load_export_custom_form_popup', array( $this, 'load_export' ) );
-		add_action( 'wp_ajax_forminator_load_import_custom_form_popup', array( $this, 'load_import' ) );
-		add_action( 'wp_ajax_forminator_save_import_custom_form_popup', array( $this, 'save_import' ) );
+		add_action( 'wp_ajax_forminator_load_export_form_popup', array( $this, 'load_export' ) );
+		add_action( 'wp_ajax_forminator_load_import_form_popup', array( $this, 'load_import' ) );
+		add_action( 'wp_ajax_forminator_save_import_form_popup', array( $this, 'save_import' ) );
 
-		add_action( 'wp_ajax_forminator_load_import_custom_form_cf7_popup', array( $this, 'load_import_custom_form_cf7' ) );
-		add_action( 'wp_ajax_forminator_save_import_custom_form_cf7_popup', array( $this, 'save_import_custom_form_cf7' ) );
+		add_action( 'wp_ajax_forminator_load_import_form_cf7_popup', array( $this, 'load_import_form_cf7' ) );
+		add_action( 'wp_ajax_forminator_save_import_form_cf7_popup', array( $this, 'save_import_form_cf7' ) );
 
-		add_action( 'wp_ajax_forminator_load_import_custom_form_ninja_popup', array( $this, 'load_import_custom_form_ninja' ) );
-		add_action( 'wp_ajax_forminator_save_import_custom_form_ninja_popup', array( $this, 'save_import_custom_form_ninja' ) );
+		add_action( 'wp_ajax_forminator_load_import_form_ninja_popup', array( $this, 'load_import_form_ninja' ) );
+		add_action( 'wp_ajax_forminator_save_import_form_ninja_popup', array( $this, 'save_import_form_ninja' ) );
 
-		add_action( 'wp_ajax_forminator_load_import_custom_form_gravity_popup', array( $this, 'load_import_custom_form_gravity' ) );
-		add_action( 'wp_ajax_forminator_save_import_custom_form_gravity_popup', array( $this, 'save_import_custom_form_gravity' ) );
+		add_action( 'wp_ajax_forminator_load_import_form_gravity_popup', array( $this, 'load_import_form_gravity' ) );
+		add_action( 'wp_ajax_forminator_save_import_form_gravity_popup', array( $this, 'save_import_form_gravity' ) );
 
 		add_action( 'wp_ajax_forminator_load_export_poll_popup', array( $this, 'load_export' ) );
 		add_action( 'wp_ajax_forminator_load_import_poll_popup', array( $this, 'load_import' ) );
@@ -92,7 +92,6 @@ class Forminator_Admin_AJAX {
 
 		add_action( 'wp_ajax_forminator_save_accessibility_settings_popup', array( $this, 'save_accessibility_settings' ) );
 
-		add_action( 'wp_ajax_forminator_validate_calculation_formula', array( $this, 'validate_calculation_formula' ) );
 		add_action( 'wp_ajax_forminator_save_dashboard_settings_popup', array( $this, 'save_dashboard_settings' ) );
 
 		add_action( 'wp_ajax_forminator_stripe_settings_modal', array( $this, 'stripe_settings_modal' ) );
@@ -265,7 +264,7 @@ class Forminator_Admin_AJAX {
 				$status = Forminator_Form_Model::STATUS_PUBLISH;
 			}
 		} else {
-			$form_model = Forminator_Form_Model::model()->load( $id );
+			$form_model = Forminator_Base_Form_Model::get_model( $id );
 			$action     = 'update';
 
 			if ( ! is_object( $form_model ) ) {
@@ -339,7 +338,7 @@ class Forminator_Admin_AJAX {
 			}
 
 		} else {
-			$form_model = Forminator_Form_Model::model()->load( $id );
+			$form_model = Forminator_Base_Form_Model::get_model( $id );
 
 			if ( ! is_object( $form_model ) ) {
 				wp_send_json_error( __( "Form model doesn't exist", 'forminator' ) );
@@ -399,7 +398,7 @@ class Forminator_Admin_AJAX {
 		$new_settings = Forminator_Settings_Page::get_preset( $preset_id );
 		if ( $ids ) {
 			foreach ( $ids as $form_id ) {
-				$form_model = Forminator_Form_Model::model()->load( $form_id );
+				$form_model = Forminator_Base_Form_Model::get_model( $form_id );
 				if ( ! $form_model ) {
 					continue;
 				}
@@ -417,6 +416,9 @@ class Forminator_Admin_AJAX {
 
 				// Save data.
 				$form_model->save();
+
+				// Regenerare module css file.
+				Forminator_Render_Form::regenerate_css_file( $form_id );
 
 				$count++;
 			}
@@ -466,7 +468,7 @@ class Forminator_Admin_AJAX {
 		}
 
 		if ( ! empty( $form_id ) ) {
-			$form     = Forminator_Form_Model::model()->load( $form_id );
+			$form     = Forminator_Base_Form_Model::get_model( $form_id );
 			$settings = $form->settings;
 		}
 
@@ -1186,9 +1188,6 @@ class Forminator_Admin_AJAX {
 		}
 		$current_action = current_action();
 		$slug           = str_replace( array( 'wp_ajax_forminator_save_import_', '_popup' ), '', $current_action );
-		if ( 'custom_form' === $slug ) {
-			$slug = 'form';
-		}
 		// Validate nonce
 		forminator_validate_ajax( 'forminator_save_import_' . $slug );
 
@@ -1276,12 +1275,12 @@ class Forminator_Admin_AJAX {
 	 *
 	 * @since 1.5
 	 */
-	public function load_import_custom_form_cf7() {
+	public function load_import_form_cf7() {
 		if ( ! Forminator::is_import_export_feature_enabled() || ! forminator_is_import_plugin_enabled( 'cf7' ) ) {
 			wp_send_json_success( '' );
 		}
 		// Validate nonce.
-		forminator_validate_ajax( 'forminator_popup_import_cform_cf7' );
+		forminator_validate_ajax( 'forminator_popup_import_form_cf7' );
 
 		$html = forminator_template( 'custom-form/popup/import-cf7' );
 
@@ -1294,14 +1293,14 @@ class Forminator_Admin_AJAX {
 	 *
 	 * @since 1.5
 	 */
-	public function save_import_custom_form_cf7() {
+	public function save_import_form_cf7() {
 		global $wpdb, $wpcf7_shortcode_manager;
 
 		if ( ! Forminator::is_import_export_feature_enabled() || ! forminator_is_import_plugin_enabled( 'cf7' ) ) {
 			wp_send_json_error( __( 'Import Export Feature disabled.', 'forminator' ) );
 		}
 		// Validate nonce.
-		forminator_validate_ajax( 'forminator_save_import_custom_form_cf7' );
+		forminator_validate_ajax( 'forminator_save_import_form_cf7' );
 
 		$post_data  = $this->get_post_data();
 		$importable = ( isset( $post_data['cf7_forms'] ) ? $post_data['cf7_forms'] : '' );
@@ -1344,12 +1343,12 @@ class Forminator_Admin_AJAX {
 	 *
 	 * @since 1.5
 	 */
-	public function load_import_custom_form_ninja() {
+	public function load_import_form_ninja() {
 		if ( ! Forminator::is_import_export_feature_enabled() || ! forminator_is_import_plugin_enabled( 'ninjaforms' ) ) {
 			wp_send_json_success( '' );
 		}
 		// Validate nonce.
-		forminator_validate_ajax( 'forminator_popup_import_cform_ninjaforms' );
+		forminator_validate_ajax( 'forminator_popup_import_form_ninjaforms' );
 
 		$html = forminator_template( 'custom-form/popup/import-ninjaforms' );
 
@@ -1361,13 +1360,13 @@ class Forminator_Admin_AJAX {
 	 *
 	 * @since 1.5
 	 */
-	public function save_import_custom_form_ninja() {
+	public function save_import_form_ninja() {
 
 		if ( ! Forminator::is_import_export_feature_enabled() || ! forminator_is_import_plugin_enabled( 'ninjaforms' ) ) {
 			wp_send_json_error( __( 'Import Export Feature disabled.', 'forminator' ) );
 		}
 		// Validate nonce.
-		forminator_validate_ajax( 'forminator_save_import_custom_form_ninja' );
+		forminator_validate_ajax( 'forminator_save_import_form_ninja' );
 
 		$importable = Forminator_Core::sanitize_text_field( 'ninjaforms' );
 		$importer   = ( ! empty( $this->importers( 'ninja' ) ) ? $this->importers( 'ninja' ) : '' );
@@ -1411,12 +1410,12 @@ class Forminator_Admin_AJAX {
 	 *
 	 * @since 1.5
 	 */
-	public function load_import_custom_form_gravity() {
+	public function load_import_form_gravity() {
 		if ( ! Forminator::is_import_export_feature_enabled() || ! forminator_is_import_plugin_enabled( 'gravityforms' ) ) {
 			wp_send_json_success( '' );
 		}
 		// Validate nonce.
-		forminator_validate_ajax( 'forminator_popup_import_cform_gravityforms' );
+		forminator_validate_ajax( 'forminator_popup_import_form_gravityforms' );
 
 		$html = forminator_template( 'custom-form/popup/import-gravityforms' );
 
@@ -1428,13 +1427,13 @@ class Forminator_Admin_AJAX {
 	 *
 	 * @since 1.5
 	 */
-	public function save_import_custom_form_gravity() {
+	public function save_import_form_gravity() {
 
 		if ( ! Forminator::is_import_export_feature_enabled() || ! forminator_is_import_plugin_enabled( 'gravityforms' ) ) {
 			wp_send_json_error( __( 'Import Export Feature disabled.', 'forminator' ) );
 		}
 		// Validate nonce.
-		forminator_validate_ajax( 'forminator_save_import_custom_form_gravity' );
+		forminator_validate_ajax( 'forminator_save_import_form_gravity' );
 
 		$importable = Forminator_Core::sanitize_text_field( 'gravityforms' );
 		$importer   = ( ! empty( $this->importers( 'gravity' ) ) ? $this->importers( 'gravity' ) : '' );
@@ -1483,9 +1482,6 @@ class Forminator_Admin_AJAX {
 		}
 		$current_action = current_action();
 		$slug           = str_replace( array( 'wp_ajax_forminator_load_export_', '_popup' ), '', $current_action );
-		if ( 'custom_form' === $slug ) {
-			$slug = 'form';
-		}
 		// Validate nonce
 		forminator_validate_ajax( 'forminator_popup_export_' . $slug );
 
@@ -1506,11 +1502,8 @@ class Forminator_Admin_AJAX {
 
 		$current_action = current_action();
 		$slug           = str_replace( array( 'wp_ajax_forminator_load_import_', '_popup' ), '', $current_action );
-		if ( 'custom_form' === $slug ) {
-			$slug = 'form';
-		}
 		// Validate nonce
-		forminator_validate_ajax( 'forminator_popup_import_' . forminator_get_prefix( $slug, 'c' ) );
+		forminator_validate_ajax( 'forminator_popup_import_' . $slug );
 
 		$html = forminator_template( 'common/popup/import', array( 'slug' => $slug ) );
 
@@ -1623,31 +1616,6 @@ class Forminator_Admin_AJAX {
 		update_option( 'forminator_editor_settings', $editor_settings );
 
 		wp_send_json_success();
-	}
-
-	/**
-	 * Validate Calculation Formula
-	 *
-	 * @since 1.7
-	 */
-	public function validate_calculation_formula() {
-
-		// Validate nonce
-		forminator_validate_ajax( 'forminator_validate_calculation_formula' );
-
-		try {
-			$formula    = Forminator_Core::sanitize_text_field( 'formula' );
-			$formula    = forminator_calculator_maybe_dummify_fields_on_formula( $formula );
-			$calculator = new Forminator_Calculator( $formula );
-			// handle throw.
-			$calculator->set_is_throwable( true );
-			$calculator->parse();
-
-			wp_send_json_success( __( 'Calculation formula validated successfully.', 'forminator' ) );
-
-		} catch ( Forminator_Calculator_Exception $e ) {
-			wp_send_json_error( __( 'Invalid calculation formula. Please check again.', 'forminator' ) );
-		}
 	}
 
 	/**

@@ -250,9 +250,8 @@ class Forminator_Custom extends Forminator_Field {
 	 * @since 1.0
 	 * @param array        $field
 	 * @param array|string $data
-	 * @param array        $post_data
 	 */
-	public function validate( $field, $data, $post_data = array() ) {
+	public function validate( $field, $data ) {
 		if ( $this->is_required( $field ) ) {
 			$id   = self::get_property( 'element_id', $field );
 			$name = self::get_property( 'custom_field_name', $field, __( 'field name', 'forminator' ) );

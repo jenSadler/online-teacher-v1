@@ -19,21 +19,20 @@ class Forminator_Quiz_Front_Mail extends Forminator_Mail {
 	 * @param array  $settings Settings.
 	 * @param string $option_name Current option name.
 	 * @param object $module Module.
-	 * @param array  $data Submitted data.
 	 * @param object $entry Saved entry.
 	 * @param object $lead_model Lead module.
 	 * @return string
 	 */
-	private function replace_placeholders( $settings, $option_name, $module, $data, $entry, $lead_model ) {
+	private function replace_placeholders( $settings, $option_name, $module, $entry, $lead_model ) {
 		if ( ! isset( $settings[ $option_name ] ) ) {
 			return '';
 		}
 
-		$text = forminator_replace_variables( $settings[ $option_name ], $module->id, $data['current_url'] );
-		$text = forminator_replace_quiz_form_data( $text, $module, $data, $entry );
+		$text = forminator_replace_variables( $settings[ $option_name ], $module->id );
+		$text = forminator_replace_quiz_form_data( $text, $module, $entry );
 		if ( $lead_model ) {
-			$text = forminator_replace_form_data( $text, $data, $lead_model, $entry );
-			$text = forminator_replace_custom_form_data( $text, $lead_model, $data, $entry );
+			$text = forminator_replace_form_data( $text, $lead_model, $entry );
+			$text = forminator_replace_custom_form_data( $text, $lead_model, $entry );
 		}
 
 		return $text;
@@ -45,35 +44,30 @@ class Forminator_Quiz_Front_Mail extends Forminator_Mail {
 	 * @since 1.6.2
 	 *
 	 * @param Forminator_Quiz_Model       $quiz
-	 * @param array                       $data
 	 * @param Forminator_Form_Entry_Model $entry
 	 */
-	public function process_mail( $quiz, $data, Forminator_Form_Entry_Model $entry, $final_res = array() ) {
+	public function process_mail( $quiz, Forminator_Form_Entry_Model $entry, $final_res = array() ) {
 		forminator_maybe_log( __METHOD__ );
 
 		$setting       = $quiz->settings;
 		$notifications = $quiz->notifications;
 		$lead_model    = null;
 		$result_slug   = isset( $final_res['slug'] ) ? $final_res['slug'] : '';
-
-		if ( empty( $data['current_url'] ) ) {
-			$data['current_url'] = forminator_get_current_url();
-		}
-
-		$has_lead = isset( $setting['hasLeads'] ) ? $setting['hasLeads'] : false;
+		$has_lead      = isset( $setting['hasLeads'] ) ? $setting['hasLeads'] : false;
 		if ( $has_lead ) {
 			$lead_id     = isset( $setting['leadsId'] ) ? $setting['leadsId'] : 0;
-			$lead_model  = Forminator_Form_Model::model()->load( $lead_id );
+			$lead_model  = Forminator_Base_Form_Model::get_model( $lead_id );
 			$form_fields = forminator_addon_format_form_fields( $lead_model );
 			$lead_data   = forminator_addons_lead_submitted_data( $form_fields, $entry );
-			$data        = array_merge( $data, $lead_data );
-			$files       = $this->get_lead_file_attachment( $lead_model, $data, $entry );
-			foreach ( $data as $element => $element_value ) {
+			$files       = $this->get_lead_file_attachment( $lead_model, $entry );
+
+			Forminator_Front_Action::$prepared_data = array_merge( Forminator_Front_Action::$prepared_data, $lead_data );
+			foreach ( Forminator_Front_Action::$prepared_data as $element => $element_value ) {
 				if ( ! empty( $element_value ) && is_array( $element_value ) &&
 					 ( stripos( $element, 'time-' ) !== false || stripos( $element, 'date-' ) !== false ) ) {
 					foreach ( $element_value as $key => $value ) {
-						$key_value          = $element . '-' . $key;
-						$data[ $key_value ] = $value;
+						$key_value = $element . '-' . $key;
+						Forminator_Front_Action::$prepared_data[ $key_value ] = $value;
 					}
 				}
 			}
@@ -90,7 +84,7 @@ class Forminator_Quiz_Front_Mail extends Forminator_Mail {
 		 *
 		 * @return array $data
 		 */
-		$data = apply_filters( 'forminator_quiz_mail_data', $data, $quiz, $entry );
+		$data = apply_filters( 'forminator_quiz_mail_data', Forminator_Front_Action::$prepared_data, $quiz, $entry );
 
 		/**
 		 * Action called before mail is sent
@@ -111,10 +105,10 @@ class Forminator_Quiz_Front_Mail extends Forminator_Mail {
 					continue;
 				}
 
-				$recipients = $this->get_admin_email_recipients( $notification, $data, $quiz, $entry, array(), $lead_model );
+				$recipients = $this->get_admin_email_recipients( $notification, $quiz, $entry, $lead_model );
 
 				if ( ! empty( $recipients ) ) {
-					$subject = $this->replace_placeholders( $notification, 'email-subject', $quiz, $data, $entry, $lead_model );
+					$subject = $this->replace_placeholders( $notification, 'email-subject', $quiz, $entry, $lead_model );
 					/**
 					 * Quiz admin mail subject filter
 					 *
@@ -127,7 +121,7 @@ class Forminator_Quiz_Front_Mail extends Forminator_Mail {
 					 */
 					$subject = apply_filters( 'forminator_quiz_mail_admin_subject', $subject, $quiz, $data, $entry, $this );
 
-					$message = $this->replace_placeholders( $notification, 'email-editor', $quiz, $data, $entry, $lead_model );
+					$message = $this->replace_placeholders( $notification, 'email-editor', $quiz, $entry, $lead_model );
 					/**
 					 * Quiz admin mail message filter
 					 *
@@ -190,7 +184,7 @@ class Forminator_Quiz_Front_Mail extends Forminator_Mail {
 	 * @return array
 	 */
 	private function prepare_headers( $notification, $quiz, $data, $entry, $lead_model ) {
-		$from_name = $this->replace_placeholders( $notification, 'from-name', $quiz, $data, $entry, $lead_model );
+		$from_name = $this->replace_placeholders( $notification, 'from-name', $quiz, $entry, $lead_model );
 		if ( empty( $from_name ) ) {
 			$from_name = $this->sender_name;
 		}
@@ -207,7 +201,7 @@ class Forminator_Quiz_Front_Mail extends Forminator_Mail {
 		 */
 		$from_name = apply_filters( 'forminator_quiz_mail_admin_from_name', $from_name, $quiz, $data, $entry, $this );
 
-		$from_email = $this->replace_placeholders( $notification, 'form-email', $quiz, $data, $entry, $lead_model );
+		$from_email = $this->replace_placeholders( $notification, 'form-email', $quiz, $entry, $lead_model );
 		if ( ! is_email( $from_email ) ) {
 			$from_email = $this->sender_email;
 		}
@@ -224,7 +218,7 @@ class Forminator_Quiz_Front_Mail extends Forminator_Mail {
 		 */
 		$from_email = apply_filters( 'forminator_quiz_mail_admin_from_email', $from_email, $quiz, $data, $entry, $this );
 
-		$reply_to_address = trim( $this->replace_placeholders( $notification, 'replyto-email', $quiz, $data, $entry, $lead_model ) );
+		$reply_to_address = trim( $this->replace_placeholders( $notification, 'replyto-email', $quiz, $entry, $lead_model ) );
 		if ( ! is_email( $reply_to_address ) ) {
 			$reply_to_address = '';
 		}
@@ -242,7 +236,7 @@ class Forminator_Quiz_Front_Mail extends Forminator_Mail {
 		$reply_to_address = apply_filters( 'forminator_quiz_mail_admin_reply_to', $reply_to_address, $quiz, $data, $entry, $this );
 
 		$cc_addresses              = array();
-		$notification_cc_addresses = $this->replace_placeholders( $notification, 'cc-email', $quiz, $data, $entry, $lead_model );
+		$notification_cc_addresses = $this->replace_placeholders( $notification, 'cc-email', $quiz, $entry, $lead_model );
 		$notification_cc_addresses = array_map( 'trim', explode( ',', $notification_cc_addresses ) );
 		foreach ( $notification_cc_addresses as $key => $notification_cc_address ) {
 			if ( is_email( $notification_cc_address ) ) {
@@ -263,7 +257,7 @@ class Forminator_Quiz_Front_Mail extends Forminator_Mail {
 		$cc_addresses = apply_filters( 'forminator_quiz_mail_admin_cc_addresses', $cc_addresses, $quiz, $data, $entry, $this );
 
 		$bcc_addresses              = array();
-		$notification_bcc_addresses = $this->replace_placeholders( $notification, 'bcc-email', $quiz, $data, $entry, $lead_model );
+		$notification_bcc_addresses = $this->replace_placeholders( $notification, 'bcc-email', $quiz, $entry, $lead_model );
 		$notification_bcc_addresses = array_map( 'trim', explode( ',', $notification_bcc_addresses ) );
 		foreach ( $notification_bcc_addresses as $key => $notification_bcc_address ) {
 			if ( is_email( $notification_bcc_address ) ) {
@@ -341,12 +335,12 @@ class Forminator_Quiz_Front_Mail extends Forminator_Mail {
 	 *
 	 * @return string
 	 */
-	public function get_recipient( $recipient, $quiz, $data, $entry, $lead_model ) {
-		$recipient = forminator_replace_variables( $recipient, $quiz->id, $data['current_url'] );
-		$recipient = forminator_replace_quiz_form_data( $recipient, $quiz, $data, $entry );
+	public function get_recipient( $recipient, $quiz, $entry, $lead_model ) {
+		$recipient = forminator_replace_variables( $recipient, $quiz->id );
+		$recipient = forminator_replace_quiz_form_data( $recipient, $quiz, $entry );
 		if ( isset( $quiz->settings['hasLeads'] ) && $quiz->settings['hasLeads'] ) {
-			$recipient = forminator_replace_form_data( $recipient, $data, $lead_model, $entry );
-			$recipient = forminator_replace_custom_form_data( $recipient, $lead_model, $data, $entry );
+			$recipient = forminator_replace_form_data( $recipient, $lead_model, $entry );
+			$recipient = forminator_replace_custom_form_data( $recipient, $lead_model, $entry );
 		}
 
 		return $recipient;
@@ -356,22 +350,19 @@ class Forminator_Quiz_Front_Mail extends Forminator_Mail {
 	 * Lead file attachment
 	 *
 	 * @param $lead_model
-	 * @param $data
 	 * @param $entry
 	 *
 	 * @return array|mixed
 	 */
-	public function get_lead_file_attachment( $lead_model, $data, $entry ) {
+	public function get_lead_file_attachment( $lead_model, $entry ) {
 		$files                 = array();
 		$form_fields           = $lead_model->get_fields();
-		$instance              = Forminator_CForm_Front_Action::get_instance();
-		$pseudo_submitted_data = $instance::build_pseudo_submitted_data( $lead_model, $data );
 		foreach ( $form_fields as $form_field ) {
 			$field_array    = $form_field->to_formatted_array();
-			$field_forms    = forminator_fields_to_array();
 			$field_type     = $field_array['type'];
-			$form_field_obj = $field_forms[ $field_type ];
-			if ( 'upload' === $field_type && ! $form_field_obj->is_hidden( $field_array, $data, $pseudo_submitted_data ) ) {
+			$field_id       = Forminator_Field::get_property( 'element_id', $field_array );
+			if ( 'upload' === $field_type &&
+					! in_array( $field_id, Forminator_CForm_Front_Action::$hidden_fields, true ) ) {
 				$field_slug = isset( $entry->meta_data[ $form_field->slug ] ) ? $entry->meta_data[ $form_field->slug ] : '';
 				if ( ! empty( $field_slug ) && ! empty( $field_slug['value']['file'] ) ) {
 					$email_files = isset( $field_slug['value']['file'] ) ? $field_slug['value']['file']['file_path'] : array();
@@ -392,16 +383,17 @@ class Forminator_Quiz_Front_Mail extends Forminator_Mail {
 	 * @since 1.0
 	 *
 	 * @param $routing
-	 * @param $form_data
 	 * @param $quiz_model
 	 *
 	 * @return bool
 	 */
-	public function is_routing( $routing, $form_data, $quiz_model, $pseudo_submitted_data = array() ) {
+	public function is_routing( $routing, $quiz_model ) {
 		// empty conditions.
 		if ( empty( $routing ) ) {
 			return false;
 		}
+
+		$form_data = Forminator_CForm_Front_Action::$prepared_data;
 
 		$element_id = $routing['element_id'];
 		if ( stripos( $element_id, 'signature-' ) !== false ) {
@@ -438,7 +430,6 @@ class Forminator_Quiz_Front_Mail extends Forminator_Mail {
 	 * Check if Field is hidden based on conditions property and POST-ed data
 	 *
 	 * @since 1.0
-	 * @since 1.7 add $pseudo_submitted_data to get value of calculation and stripe etc
 	 *
 	 * @param $notification
 	 * @param $form_data

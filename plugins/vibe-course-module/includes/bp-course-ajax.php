@@ -2653,8 +2653,10 @@ class BP_Course_Ajax{
               echo '<span class="unit_duration" data-duration="'. $unit_duration_parameter*$duration.'"><i class="icon-clock"></i> '.(($duration<9999)?tofriendlytime(($unit_duration_parameter*$duration)):__('Unlimited','vibe')).'</span>';
             }
 
-          echo '<br /><h1>'.get_the_title($unit_id).'</h1>';
+          echo '<br/><h1>'.get_the_title($unit_id).'</h1>';
               the_sub_title($unit_id);
+		  	  
+	
           echo '<div class="clear"></div>';
           echo '</div>';
             

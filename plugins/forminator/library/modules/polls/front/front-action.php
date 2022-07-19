@@ -22,39 +22,64 @@ class Forminator_Poll_Front_Action extends Forminator_Front_Action {
 	 *
 	 * @var string
 	 */
-	public $entry_type = 'poll';
+	public static $entry_type = 'poll';
 
 	/**
 	 * Handle form action
 	 *
 	 * @since 1.0
 	 *
-	 * @param int  $form_id
 	 * @param bool $preview
 	 *
 	 * @return bool|array
 	 */
-	protected function handle_form( $form_id, $preview = false ) {
-		self::$module_id = $form_id;
-
-		$poll = Forminator_Poll_Model::model()->load( $form_id );
-		if ( ! is_object( $poll ) ) {
+	protected function handle_form( $preview = false ) {
+		if ( ! self::$module_object ) {
 			return false;
 		}
 
+		try {
+			self::can_submit();
+
+			$entry = self::get_entry();
+
+			// If preview, skip integrations.
+			if ( ! $preview ) {
+				self::attach_addons_on_poll_submit( self::$module_object );
+
+				if ( ! self::prevent_store() ) {
+					$entry->save();
+				}
+			}
+
+			self::save_entry_fields( $entry );
+			self::attach_addons_after_entry_saved( $entry );
+			self::send_email( $entry );
+
+			$response = self::get_response();
+		} catch ( Exception $e ) {
+			return self::return_error( $e->getMessage() );
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Check if submission is possible.
+	 */
+	private static function can_submit() {
 		// disable submissions if not published.
-		if ( Forminator_Poll_Model::STATUS_PUBLISH !== $poll->status ) {
-			return self::return_error( __( 'Poll submissions disabled.', 'forminator' ) );
+		if ( Forminator_Poll_Model::STATUS_PUBLISH !== self::$module_object->status ) {
+			throw new Exception( __( 'Poll submissions disabled.', 'forminator' ) );
 		}
 
 		// Check poll opening status.
-		$status_info = $poll->opening_status();
+		$status_info = self::$module_object->opening_status();
 		if ( 'open' !== $status_info['status'] ) {
-			self::$response_attrs['notice'] = 'error';
-			return self::return_error( $status_info['msg'] );
+			throw new Exception( $status_info['msg'] );
 		}
 
-		$user_can_vote = $poll->current_user_can_vote();
+		$user_can_vote = self::$module_object->current_user_can_vote();
 		/**
 		 * Filter to check if current user can vote
 		 *
@@ -65,36 +90,47 @@ class Forminator_Poll_Front_Action extends Forminator_Front_Action {
 		 *
 		 * @return bool $user_can_vote - true|false
 		 */
-		$user_can_vote = apply_filters( 'forminator_poll_handle_form_user_can_vote', $user_can_vote, $form_id );
+		$user_can_vote = apply_filters( 'forminator_poll_handle_form_user_can_vote', $user_can_vote, self::$module_id );
 
 		if ( ! $user_can_vote ) {
-			self::$response_attrs['form_id'] = $form_id;
 			self::$response_attrs['notice']  = 'notice';
-			return self::return_error( __( 'You have already submitted a vote to this poll', 'forminator' ) );
+			throw new Exception( __( 'You have already submitted a vote to this poll', 'forminator' ) );
 		}
+	}
 
-		$post_data   = $this->get_post_data();
-		$field_data  = isset( $post_data[ $form_id ] ) ? $post_data[ $form_id ] : false;
-		$extra_field = isset( $post_data[ $form_id . '-extra' ] ) ? $post_data[ $form_id . '-extra' ] : false;
+	/**
+	 * Get field data
+	 *
+	 * @return string
+	 * @throws Exception
+	 */
+	private static function get_field_data() {
+		$field_data = isset( self::$prepared_data[ self::$module_id ] ) ? self::$prepared_data[ self::$module_id ] : false;
 		if ( empty( $field_data ) ) {
-			self::$response_attrs['form_id'] = $form_id;
-			self::$response_attrs['notice']  = 'error';
-			return self::return_error( __( 'You need to select a poll option', 'forminator' ) );
+			throw new Exception( __( 'You need to select a poll option', 'forminator' ) );
 		}
 
-		$entry             = new Forminator_Form_Entry_Model();
-		$entry->entry_type = $this->entry_type;
-		$entry->form_id    = $form_id;
+		return $field_data;
+	}
+
+	/**
+	 * Get field data array
+	 *
+	 * @param object $entry Entry object.
+	 * @return array
+	 */
+	private static function get_field_data_array( $entry ) {
+		$field_data = self::get_field_data();
 		// get fields labels.
-		$fields_labels    = $poll->pluck_fields_array( 'title', 'element_id', '1' );
+		$fields_labels    = self::$module_object->pluck_fields_array( 'title', 'element_id', '1' );
 		$field_data_array = array(
 			array(
 				'name'  => $field_data,
 				'value' => isset( $fields_labels[ $field_data ] ) ? $fields_labels[ $field_data ] : '1',
 			),
 		);
-		if ( $poll->is_method_browser_cookie() ) {
-			$this->set_vote_browser_cookie( $form_id );
+		if ( self::$module_object->is_method_browser_cookie() ) {
+			self::set_vote_browser_cookie( self::$module_id );
 		} else {
 			$field_data_array[] = array(
 				'name'  => '_forminator_user_ip',
@@ -102,53 +138,28 @@ class Forminator_Poll_Front_Action extends Forminator_Front_Action {
 			);
 		}
 
-		$setting = $poll->settings;
+		$extra_field = isset( self::$prepared_data[ self::$module_id . '-extra' ] ) ? self::$prepared_data[ self::$module_id . '-extra' ] : false;
 		if ( ! empty( $extra_field ) ) {
 			$field_data_array[] = array(
 				'name'  => 'extra',
 				'value' => $extra_field,
 			);
 
-			/**
-			 * Handle spam protection
-			 * Add-ons use this filter to check if content has spam data
-			 *
-			 * @since 1.0.2
-			 *
-			 * @param bool false - defauls to false
-			 * @param array $field_data_array - the entry data.
-			 * @param int $form_id - the form id.
-			 * @param string $form_type - the form type. In this case defaults to 'poll'.
-			 *
-			 * @return bool true|false
-			 */
-			$is_spam = apply_filters( 'forminator_spam_protection', false, $field_data_array, $form_id, 'poll' );
-
-			if ( $is_spam ) {
-				$fail_message = self::get_akismet_fail_message( $setting );
-				if ( false !== $fail_message ) {
-					return self::return_error( $fail_message );
-				} else {
-					$entry->is_spam = $is_spam;
-				}
+			if ( self::is_spam() ) {
+				$entry->is_spam = 1;
 			}
 		}
 
-		// If preview, skip integrations.
-		if ( ! $preview ) {
-			// ADDON on_form_submit.
-			$addon_error = $this->attach_addons_on_poll_submit( $form_id, $poll );
+		return $field_data_array;
+	}
 
-			if ( true !== $addon_error ) {
-				self::$response_attrs['notice'] = 'error';
-				return self::return_error( $addon_error );
-			}
-		}
-
-		$prevent_store = $preview || $poll->is_prevent_store();
-		if ( ! $prevent_store ) {
-			$entry->save();
-		}
+	/**
+	 * Save entry fields
+	 *
+	 * @param object $entry Entry object.
+	 */
+	private static function save_entry_fields( $entry ) {
+		$field_data_array = self::get_field_data_array( $entry );
 
 		/**
 		 * Filter saved data before persisted into the database
@@ -160,7 +171,7 @@ class Forminator_Poll_Front_Action extends Forminator_Front_Action {
 		 *
 		 * @return array $field_data_array
 		 */
-		$field_data_array = apply_filters( 'forminator_polls_submit_field_data', $field_data_array, $form_id );
+		$field_data_array = apply_filters( 'forminator_polls_submit_field_data', $field_data_array, self::$module_id );
 
 		/**
 		 * Action called before setting fields to database
@@ -171,30 +182,40 @@ class Forminator_Poll_Front_Action extends Forminator_Front_Action {
 		 * @param int $form_id - the form id.
 		 * @param array $field_data_array - the entry data.
 		 */
-		do_action( 'forminator_polls_submit_before_set_fields', $entry, $form_id, $field_data_array );
+		do_action( 'forminator_polls_submit_before_set_fields', $entry, self::$module_id, $field_data_array );
 
 		// ADDON add_entry_fields.
-		$added_data_array = $this->attach_addons_add_entry_fields( $form_id, $poll, $field_data_array );
-		$added_data_array = array_merge( $field_data_array, $added_data_array );
+		$added_data_array = self::attach_addons_add_entry_fields( $field_data_array );
 
 		$entry->set_fields( $added_data_array );
+	}
 
-		// ADDON after_entry_saved.
-		$this->attach_addons_after_entry_saved( $entry, $poll );
-
-		// Email.
+	/**
+	 * Send email
+	 *
+	 * @param object $entry Entry.
+	 */
+	private static function send_email( $entry ) {
 		$forminator_mail_sender = new Forminator_Poll_Front_Mail();
-		$forminator_mail_sender->process_mail( $poll, $post_data, $entry );
+		$forminator_mail_sender->process_mail( self::$module_object, $entry );
 
-		self::$response_attrs['notice']  = 'success';
-		self::$response_attrs['form_id'] = $form_id;
+	}
+
+	/**
+	 * Get submission response
+	 *
+	 * @param object $entry Form entry object.
+	 * @return type
+	 */
+	private static function get_response() {
+		self::$response_attrs['notice'] = 'success';
 
 		$response = self::return_success( __( 'Your vote has been saved', 'forminator' ) );
-		if ( ! isset( $setting['results-behav'] ) || ! in_array( $setting['results-behav'], array( 'show_after', 'link_on' ), true ) ) {
+		if ( ! isset( self::$module_settings['results-behav'] ) || ! in_array( self::$module_settings['results-behav'], array( 'show_after', 'link_on' ), true ) ) {
 			return $response;
 		}
 
-		$response = self::prepare_response( $response, $form_id, $poll, $setting, $post_data );
+		$response = self::prepare_response( $response, self::$module_object, self::$module_settings, self::$prepared_data );
 
 		return $response;
 	}
@@ -203,22 +224,21 @@ class Forminator_Poll_Front_Action extends Forminator_Front_Action {
 	 * Prepare response array
 	 *
 	 * @param array  $response response array.
-	 * @param int    $form_id Module id.
 	 * @param object $poll Module.
 	 * @param array  $setting Settings.
 	 * @param array  $post_data Post data.
 	 * @return array
 	 */
-	private static function prepare_response( $response, $form_id, $poll, $setting, $post_data ) {
+	private static function prepare_response( $response, $poll, $setting, $post_data ) {
 		$url = add_query_arg(
 			array(
 				'saved'     => 'true',
-				'form_id'   => $form_id,
+				'form_id'   => self::$module_id,
 				'render_id' => $post_data['render_id'],
 			),
 			$post_data['_wp_http_referer']
 		);
-		$url = apply_filters( 'forminator_poll_submit_url', $url, $form_id );
+		$url = apply_filters( 'forminator_poll_submit_url', $url, self::$module_id );
 
 		if ( ! isset( $setting['enable-ajax'] ) || empty( $setting['enable-ajax'] ) ) {
 			$is_ajax_enabled = false;
@@ -359,27 +379,25 @@ class Forminator_Poll_Front_Action extends Forminator_Front_Action {
 	 * @see   Forminator_Addon_Poll_Hooks_Abstract::on_poll_submit()
 	 * @since 1.6.1
 	 *
-	 * @param                              $poll_id
-	 * @param Forminator_Poll_Model $poll_model
-	 *
 	 * @return bool true on success|string error message from addon otherwise
 	 */
-	private function attach_addons_on_poll_submit( $poll_id, Forminator_Poll_Model $poll_model ) {
-		$submitted_data = forminator_addon_format_poll_submitted_data();
+	private static function attach_addons_on_poll_submit() {
+		$submitted_data = static::get_submitted_data();
 		// find is_form_connected.
-		$connected_addons = forminator_get_addons_instance_connected_with_module( $poll_id, 'poll' );
+		$connected_addons = forminator_get_addons_instance_connected_with_module( self::$module_id, 'poll' );
 
 		foreach ( $connected_addons as $connected_addon ) {
 			try {
-				$poll_hooks = $connected_addon->get_addon_poll_hooks( $poll_id );
-				if ( $poll_hooks instanceof Forminator_Addon_Poll_Hooks_Abstract ) {
-					$addon_return = $poll_hooks->on_poll_submit( $submitted_data );
-					if ( true !== $addon_return ) {
-						return $poll_hooks->get_submit_poll_error_message();
-					}
+				$poll_hooks = $connected_addon->get_addon_poll_hooks( self::$module_id );
+				if ( ! $poll_hooks instanceof Forminator_Addon_Poll_Hooks_Abstract ) {
+					continue;
 				}
+				$addon_return = $poll_hooks->on_poll_submit( $submitted_data );
 			} catch ( Exception $e ) {
 				forminator_addon_maybe_log( $connected_addon->get_slug(), 'failed to attach_addons_on_poll_submit', $e->getMessage() );
+			}
+			if ( true !== $addon_return ) {
+				throw new Exception( $poll_hooks->get_submit_poll_error_message() );
 			}
 		}
 
@@ -387,25 +405,12 @@ class Forminator_Poll_Front_Action extends Forminator_Front_Action {
 	}
 
 	/**
-	 * Get submitted data
-	 *
-	 * @param type $module_model Model.
-	 * @param type $current_entry_fields Fields.
-	 * @return array
-	 */
-	protected static function get_submitted_data( $module_model, $current_entry_fields ) {
-		$submitted_data = forminator_addon_format_poll_submitted_data();
-
-		return $submitted_data;
-	}
-
-	/**
 	 * Set Browser Cookie when poll submit
 	 *
 	 * @param $form_id
 	 */
-	public function set_vote_browser_cookie( $form_id ) {
-		$poll        = Forminator_Poll_Model::model()->load( $form_id );
+	public static function set_vote_browser_cookie( $form_id ) {
+		$poll        = Forminator_Base_Form_Model::get_model( $form_id );
 		$settings    = $poll->settings;
 		$duration    = 1;
 		$expire      = time() + YEAR_IN_SECONDS * $duration;

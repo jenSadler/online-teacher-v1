@@ -6,6 +6,10 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'TEC\\Tickets\\Admin\\Hooks' => $baseDir . '/src/Tickets/Admin/Hooks.php',
+    'TEC\\Tickets\\Admin\\Plugin_Action_Links' => $baseDir . '/src/Tickets/Admin/Plugin_Action_Links.php',
+    'TEC\\Tickets\\Admin\\Provider' => $baseDir . '/src/Tickets/Admin/Provider.php',
+    'TEC\\Tickets\\Admin\\Upsell' => $baseDir . '/src/Tickets/Admin/Upsell.php',
     'TEC\\Tickets\\Assets' => $baseDir . '/src/Tickets/Assets.php',
     'TEC\\Tickets\\Commerce' => $baseDir . '/src/Tickets/Commerce.php',
     'TEC\\Tickets\\Commerce\\Abstract_Order' => $baseDir . '/src/Tickets/Commerce/Abstract_Order.php',
@@ -109,6 +113,7 @@ return array(
     'TEC\\Tickets\\Commerce\\Notice_Handler' => $baseDir . '/src/Tickets/Commerce/Notice_Handler.php',
     'TEC\\Tickets\\Commerce\\Order' => $baseDir . '/src/Tickets/Commerce/Order.php',
     'TEC\\Tickets\\Commerce\\Payments_Tab' => $baseDir . '/src/Tickets/Commerce/Payments_Tab.php',
+    'TEC\\Tickets\\Commerce\\Promoter_Observer' => $baseDir . '/src/Tickets/Commerce/Promoter_Observer.php',
     'TEC\\Tickets\\Commerce\\Provider' => $baseDir . '/src/Tickets/Commerce/Provider.php',
     'TEC\\Tickets\\Commerce\\Reports\\Attendance_Totals' => $baseDir . '/src/Tickets/Commerce/Reports/Attendance_Totals.php',
     'TEC\\Tickets\\Commerce\\Reports\\Attendees' => $baseDir . '/src/Tickets/Commerce/Reports/Attendees.php',
@@ -145,7 +150,10 @@ return array(
     'TEC\\Tickets\\Hooks' => $baseDir . '/src/Tickets/Hooks.php',
     'TEC\\Tickets\\Provider' => $baseDir . '/src/Tickets/Provider.php',
     'TEC\\Tickets\\Settings' => $baseDir . '/src/Tickets/Settings.php',
+    'Tribe\\Tickets\\Admin\\Home\\Service_Provider' => $baseDir . '/src/Tribe/Admin/Home/Service_Provider.php',
     'Tribe\\Tickets\\Admin\\Manager\\Service_Provider' => $baseDir . '/src/Tribe/Admin/Manager/Service_Provider.php',
+    'Tribe\\Tickets\\Admin\\Provider' => $baseDir . '/src/Tribe/Admin/Provider.php',
+    'Tribe\\Tickets\\Admin\\Settings' => $baseDir . '/src/Tribe/Admin/Settings.php',
     'Tribe\\Tickets\\Admin\\Settings\\Service_Provider' => $baseDir . '/src/Tribe/Admin/Settings/Service_Provider.php',
     'Tribe\\Tickets\\Editor\\Warnings' => $baseDir . '/src/Tribe/Editor/Warnings.php',
     'Tribe\\Tickets\\Events\\Attendees_List' => $baseDir . '/src/Tribe/Events/Attendees_List.php',

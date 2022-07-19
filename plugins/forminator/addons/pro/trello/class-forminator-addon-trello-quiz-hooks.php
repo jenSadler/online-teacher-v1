@@ -258,7 +258,7 @@ class Forminator_Addon_Trello_Quiz_Hooks extends Forminator_Addon_Quiz_Hooks_Abs
 				);
 				$args['desc']     = $card_description;
 			}
-			if ( isset( $connection_settings['due_date'] ) && ! empty( $connection_settings['due_date'] ) ) {
+			if ( ! empty( $quiz_settings['hasLeads'] ) && ! empty( $connection_settings['due_date'] ) ) {
 				$due_date    = forminator_addon_replace_custom_vars( $connection_settings['due_date'], $lead_submitted_data, $this->lead_model, $form_entry_fields, false );
 				$args['due'] = $due_date;
 			}

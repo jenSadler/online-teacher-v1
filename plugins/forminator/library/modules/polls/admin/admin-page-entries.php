@@ -159,7 +159,7 @@ class Forminator_Poll_View_Page extends Forminator_Admin_View_Page {
 
 				'use strict';
 
-				$( 'document' ).ready( function() {
+				$(function() {
 
 					var randomScalingFactor = function() {
 						return Math.round( Math.random() * 100 );

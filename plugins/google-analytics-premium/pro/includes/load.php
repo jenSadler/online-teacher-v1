@@ -1,6 +1,6 @@
 <?php
 
-if ( is_admin() || ( defined( 'DOING_CRON' ) && DOING_CRON ) ) {
+if (is_admin() || (defined('DOING_CRON') && DOING_CRON)) {
 	require_once MONSTERINSIGHTS_PLUGIN_DIR . 'pro/includes/admin/reports.php';
 	new MonsterInsights_Admin_Pro_Reports();
 
@@ -16,7 +16,7 @@ if ( is_admin() || ( defined( 'DOING_CRON' ) && DOING_CRON ) ) {
 	require_once MONSTERINSIGHTS_PLUGIN_DIR . 'pro/includes/admin/notifications/notification-events.php';
 }
 
-if ( is_admin() ) {
+if (is_admin()) {
 
 	require_once MONSTERINSIGHTS_PLUGIN_DIR . 'pro/includes/admin/dashboard-widget.php';
 	new MonsterInsights_Dashboard_Widget_Pro();
@@ -24,13 +24,32 @@ if ( is_admin() ) {
 	// Load the Welcome class.
 	require_once MONSTERINSIGHTS_PLUGIN_DIR . 'pro/includes/admin/welcome.php';
 
-	if ( isset( $_GET['page'] ) && 'monsterinsights-onboarding' === $_GET['page'] ) { // WPCS: CSRF ok, input var ok.
+	if (isset($_GET['page']) && 'monsterinsights-onboarding' === $_GET['page']) { // WPCS: CSRF ok, input var ok.
 		// Only load the Onboarding wizard if the required parameter is present.
 		require_once MONSTERINSIGHTS_PLUGIN_DIR . 'pro/includes/admin/onboarding-wizard.php';
 	}
 
-	// Site Health logic
+	//  Common Site Health logic
+	require_once MONSTERINSIGHTS_PLUGIN_DIR . 'includes/admin/wp-site-health.php';
+
+	//  Pro-only Site Health logic
 	require_once MONSTERINSIGHTS_PLUGIN_DIR . 'pro/includes/admin/wp-site-health.php';
+
+	/**
+	 * User Journey Addon Files for Lite
+	 */
+	// Admin Assets
+	require_once MONSTERINSIGHTS_PLUGIN_DIR . 'pro/includes/admin/user-journey/init.php';
+	//WooCommerce
+	if (
+		class_exists( 'WooCommerce' ) &&
+		class_exists( 'MonsterInsights_eCommerce' ) &&
+		file_exists( WP_PLUGIN_DIR . '/monsterinsights-user-journey/monsterinsights-user-journey.php' ) &&
+		! class_exists( 'MonsterInsights_User_Journey' )
+	) {
+		require_once MONSTERINSIGHTS_PLUGIN_DIR . 'pro/includes/admin/user-journey/providers/woocommerce.php';
+		new MonsterInsights_Pro_User_Journey_WooCommerce_Metabox();
+	}
 }
 
 require_once MONSTERINSIGHTS_PLUGIN_DIR . 'pro/includes/frontend/class-frontend.php';
@@ -49,4 +68,3 @@ require_once MONSTERINSIGHTS_PLUGIN_DIR . 'pro/includes/popular-posts/class-popu
 require_once MONSTERINSIGHTS_PLUGIN_DIR . 'pro/includes/popular-posts/class-popular-posts-products-sidebar.php';
 // Pro Gutenberg blocks.
 require_once MONSTERINSIGHTS_PLUGIN_DIR . 'pro/includes/gutenberg/frontend.php';
-

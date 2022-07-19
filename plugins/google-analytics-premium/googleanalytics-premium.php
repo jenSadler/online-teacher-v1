@@ -6,7 +6,7 @@
  * Author:              MonsterInsights
  * Author URI:          https://www.monsterinsights.com/?utm_source=proplugin&utm_medium=pluginheader&utm_campaign=authoruri&utm_content=7%2E0%2E0
  *
- * Version:             8.4.0
+ * Version:             8.7.0
  * Requires at least:   4.8.0
  * Requires PHP:        5.5
  *
@@ -69,7 +69,7 @@ final class MonsterInsights {
 	 * @access public
 	 * @var string $version Plugin version.
 	 */
-	public $version = '8.4.0';
+	public $version = '8.7.0';
 
 	/**
 	 * The name of the plugin.
@@ -704,10 +704,14 @@ function monsterinsights_activation_hook( $network_wide ) {
 	}
 
 	if ( class_exists( 'MonsterInsights_Lite' ) ) {
-		deactivate_plugins( plugin_basename( __FILE__ ) );
 		$lite_file      = plugin_basename( MonsterInsights_Lite::get_instance()->file );
-		$deactivate_url = wp_nonce_url( admin_url( 'plugins.php?action=deactivate&plugin=' . urlencode( $lite_file ) ), 'deactivate-plugin_' . $lite_file );
-		wp_die( sprintf( esc_html__( 'Please uninstall and remove Google Analytics for WordPress by MonsterInsights before activating MonsterInsights Pro. The Pro version has not been activated.%5$s%5$s %3$sDeactivate the Lite plugin%4$s %1$sReturn to the Plugins list%2$s', 'ga-premium' ), '<a href="' . $url . '" class="button">', '</a>', '<a href="' . $deactivate_url . '" class="button" style="background: #007cba; border-color: #007cba;color: #fff;text-decoration: none;	text-shadow: none;">', '</a>', '</br>' ) );
+		if ( is_network_admin() ) {
+			if ( false !== $network_wide && is_plugin_active_for_network( $lite_file ) ) {
+				deactivate_plugins( plugin_basename( $lite_file ), true, true );
+			}
+		} else {
+			deactivate_plugins( plugin_basename( $lite_file ) );
+		}
 	}
 
 	require_once plugin_dir_path( __FILE__ ) . 'includes/compatibility-check.php';

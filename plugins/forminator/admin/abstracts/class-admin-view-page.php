@@ -329,15 +329,15 @@ abstract class Forminator_Admin_View_Page extends Forminator_Admin_Page {
 			$per_page = $this->per_page;
 			$offset   = ( $paged - 1 ) * $per_page;
 
-			$this->total_entries = Forminator_Form_Entry_Model::count_entries( $this->model->id );
+			$this->total_entries = Forminator_Form_Entry_Model::count_entries( $this->model->id, false, true );
 
 			$args = array(
-				'form_id'  => $this->model->id,
-				'is_spam'  => 0,
-				'per_page' => $per_page,
-				'offset'   => $offset,
-				'order_by' => 'entries.date_created',
-				'order'    => 'DESC',
+				'form_id'  		=> $this->model->id,
+				'is_spam'  		=> 0,
+				'per_page' 		=> $per_page,
+				'offset'   		=> $offset,
+				'order_by' 		=> 'entries.date_created',
+				'order'    		=> 'DESC',
 			);
 
 			$args = wp_parse_args( $this->filters, $args );
@@ -383,11 +383,12 @@ abstract class Forminator_Admin_View_Page extends Forminator_Admin_Page {
 	 * @since 1.5.4
 	 */
 	protected function parse_filters() {
-		$data_range  = Forminator_Core::sanitize_text_field( 'date_range' );
-		$user_status = Forminator_Core::sanitize_text_field( 'user_status' );
-		$search      = Forminator_Core::sanitize_text_field( 'search' );
-		$min_id      = Forminator_Core::sanitize_text_field( 'min_id' );
-		$max_id      = Forminator_Core::sanitize_text_field( 'max_id' );
+		$data_range   = Forminator_Core::sanitize_text_field( 'date_range' );
+		$user_status  = Forminator_Core::sanitize_text_field( 'user_status' );
+		$search       = Forminator_Core::sanitize_text_field( 'search' );
+		$min_id       = Forminator_Core::sanitize_text_field( 'min_id' );
+		$max_id       = Forminator_Core::sanitize_text_field( 'max_id' );
+		$entry_status = Forminator_Core::sanitize_text_field( 'entry_status' );
 
 		$filters = array();
 		if ( ! empty( $data_range ) ) {
@@ -403,6 +404,7 @@ abstract class Forminator_Admin_View_Page extends Forminator_Admin_Page {
 		if ( ! empty( $search ) ) {
 			$filters['search'] = $search;
 		}
+
 		if ( $user_status ) {
 			$filters['user_status'] = $user_status;
 		}
@@ -419,6 +421,10 @@ abstract class Forminator_Admin_View_Page extends Forminator_Admin_Page {
 			if ( $max_id > 0 ) {
 				$filters['max_id'] = $max_id;
 			}
+		}
+
+		if ( $entry_status ) {
+			$filters['entry_status'] = $entry_status;
 		}
 
 		$this->filters = $filters;

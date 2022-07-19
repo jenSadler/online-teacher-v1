@@ -88,9 +88,11 @@ final class MonsterInsights_Report_Dimensions extends MonsterInsights_Report {
 		$custom_dimension_option   = monsterinsights_get_option( 'custom_dimensions', array() );
 
 		foreach ( $custom_dimension_option as $dimension ) {
+			$type = $dimension['type'] === 'user_id' ? 'wp_user_id' : $dimension['type'];
+
 			$dimensions[ $dimension['id'] ] = array(
 				'id'      => $dimension['id'],
-				'key'     => $dimension['type'],
+				'key'     => $type,
 				'name'    => $default_custom_dimensions[ $dimension['type'] ]['title'],
 				'label'   => $default_custom_dimensions[ $dimension['type'] ]['label'],
 				'enabled' => $default_custom_dimensions[ $dimension['type'] ]['enabled'],

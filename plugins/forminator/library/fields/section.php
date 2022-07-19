@@ -101,12 +101,9 @@ class Forminator_Section extends Forminator_Field {
 
 		$html         = '';
 		$id           = self::get_property( 'element_id', $field );
-		$name         = $id;
 		$id           = $id . '-field';
-		$required     = self::get_property( 'required', $field, false );
 		$title        = esc_html( self::get_property( 'section_title', $field ) );
 		$subtitle     = esc_html( self::get_property( 'section_subtitle', $field ) );
-		$type         = self::get_property( 'section_type', $field );
 		$border       = self::get_property( 'section_border', $field, 'none' );
 		$border_width = self::get_property( 'cform-section-border-width', $field, 1 );
 		$border_color = self::get_property( 'cform-section-border-color', $field, 1 );

@@ -112,7 +112,7 @@ abstract class Forminator_Addon_Poll_Settings_Abstract extends Forminator_Addon_
 	public function __construct( Forminator_Addon_Abstract $addon, $poll_id ) {
 		$this->addon   = $addon;
 		$this->poll_id = $poll_id;
-		$this->poll    = Forminator_Poll_Model::model()->load( $this->poll_id );
+		$this->poll    = Forminator_Base_Form_Model::get_model( $this->poll_id );
 		if ( ! $this->poll ) {
 			/* translators: ... */
 			throw new Forminator_Addon_Exception( sprintf( __( 'Poll with id %d could not be found', 'forminator' ), $this->poll_id ) );

@@ -104,13 +104,15 @@ function forminator_ajax_url() {
 
 /**
  * Checks if the AJAX call is valid
+ * For logged-in usage only.
  *
  * @since 1.0
+ * @since 1.17 Added $query_arg
  *
  * @param $action
  */
-function forminator_validate_ajax( $action ) {
-	if ( ! check_ajax_referer( $action, false, false ) || ! forminator_is_user_allowed() ) {
+function forminator_validate_ajax( $action, $query_arg = false ) {
+	if ( ! check_ajax_referer( $action, $query_arg, false ) || ! forminator_is_user_allowed() ) {
 		wp_send_json_error( __( 'Invalid request, you are not allowed to do that action.', 'forminator' ) );
 	}
 }
@@ -149,7 +151,7 @@ function forminator_admin_enqueue_fonts() {
  * @since 1.1 Remove forminator-admin css after migrate to shared-ui
  */
 function forminator_admin_enqueue_styles() {
-	wp_enqueue_style( 'shared-ui', forminator_plugin_url() . 'assets/css/shared-ui.min.css', array(), FORMINATOR_VERSION, false );
+	wp_enqueue_style( 'shared-ui', forminator_plugin_url() . 'build/css/shared-ui.min.css', array(), FORMINATOR_VERSION, false );
 }
 
 /**
@@ -194,7 +196,7 @@ function forminator_sui_scripts() {
 
 	wp_enqueue_script(
 		'shared-ui',
-		forminator_plugin_url() . 'assets/js/shared-ui.min.js',
+		forminator_plugin_url() . 'build/js/shared-ui.min.js',
 		array( 'jquery', 'clipboard' ),
 		$sui_body_class,
 		true
@@ -239,7 +241,7 @@ function forminator_common_admin_enqueue_scripts( $is_new_page = false ) {
 		wp_enqueue_media();
 	}
 
-	wp_enqueue_script( 'forminator-admin-layout', forminator_plugin_url() . 'build/admin/layout.js', array( 'jquery' ), FORMINATOR_VERSION, false );
+	wp_enqueue_script( 'forminator-admin-layout', forminator_plugin_url() . 'requirejs/admin/layout.js', array( 'jquery' ), FORMINATOR_VERSION, false );
 
 	$forminator_data = new Forminator_Admin_Data();
 	$forminator_l10n = new Forminator_Admin_L10n();
@@ -808,13 +810,10 @@ function forminator_get_export_logs( $form_id ) {
  * @return mixed
  */
 function forminator_get_current_url() {
-	global $wp;
+	$url     = wp_get_referer();
+	$post_id = url_to_postid( $url );
 
-	return esc_url( add_query_arg(
-							isset( $_SERVER['QUERY_STRING'] ) ? $_SERVER['QUERY_STRING'] : '',
-							'',
-							trailingslashit( home_url( $wp->request ) )
-						) );
+	return esc_url( get_permalink( $post_id ) );
 }
 
 /**
@@ -995,8 +994,6 @@ function forminator_get_poll_chart_colors( $poll_id = null ) {
 		'rgba(0, 0, 0, 0.2)', // Black.
 		'rgba(136, 136, 136, 0.2)', // Black Alt.
 	);
-
-	$chart_colors = apply_filters_deprecated( 'forminator_poll_chart_color', array( $chart_colors ), '1.5.3', 'forminator_poll_chart_colors' );
 
 	/**
 	 * Filter chart colors to be used for polls
@@ -1286,11 +1283,13 @@ function forminator_form_types() {
 }
 
 /**
+ * DON'T USE IT!!! It's only for backward compatibility
  * Get prefix based on module slug.
  *
  * @param string $module_slug Module slug.
  * @param string $form_prefix Optional. Prefix before Custom Form type or `post_type` value.
  * @param bool   $ucfirst Optional. With capital the first letter.
+ * @param bool   $plural Optional. Plural or singular.
  * @return string
  */
 function forminator_get_prefix( $module_slug, $form_prefix = '', $ucfirst = false, $plural = false ) {

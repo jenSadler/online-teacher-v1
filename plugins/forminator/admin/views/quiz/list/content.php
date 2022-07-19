@@ -19,7 +19,7 @@ $entry_type  = 'quizzes';
 $most_entry  = Forminator_Form_Entry_Model::get_most_entry( $entry_type );
 $wizard_page = null;
 if ( $most_entry ) {
-	$most_entry_model = Forminator_Quiz_Model::model()->load( $most_entry->form_id );
+	$most_entry_model = Forminator_Base_Form_Model::get_model( $most_entry->form_id );
 	$wizard_page      = 'forminator-' . ( 'nowrong' === $most_entry_model->quiz_type ? $most_entry_model->quiz_type : 'knowledge' ) . '-wizard';
 }
 $empty_title   = esc_html__( 'Create fun or challenging quizzes for your visitors to take and share on social media.', 'forminator' );

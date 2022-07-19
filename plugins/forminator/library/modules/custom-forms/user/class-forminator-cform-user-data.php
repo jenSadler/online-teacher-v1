@@ -19,6 +19,8 @@ class Forminator_CForm_User_Data {
 			add_filter( 'forminator_custom_form_entries_iterator', array( $this, 'change_entries_iterator' ), 11, 2 );
 			// Resend activation link.
 			add_action( 'wp_ajax_forminator_resend_activation_link', array( $this, 'resend_activation_link' ) );
+			// Resend Notification Email.
+			add_action( 'wp_ajax_forminator_resend_notification_email', array( $this, 'resend_notification_email' ) );
 			// Delete user signup.
 			if ( ! is_multisite() ) {
 				add_action( 'delete_user', array( $this, 'delete_signup_user' ) );
@@ -141,7 +143,7 @@ class Forminator_CForm_User_Data {
 			global $wpdb;
 			$url = add_query_arg(
 				array(
-					'page' => 'forminator_activation',
+					'page' => 'account_activation',
 					'key'  => $key,
 				),
 				home_url( '/' )
@@ -178,12 +180,97 @@ class Forminator_CForm_User_Data {
 	}
 
 	/**
+	 * Resend Notification Email
+	 */
+	public function resend_notification_email() {
+		forminator_validate_ajax( 'forminatorResendNotificationEmail' );
+		$entry_id = Forminator_Core::sanitize_text_field( 'entry_id' );
+
+		if ( isset( $entry_id ) ) {
+			$forminator_mail_sender = new Forminator_CForm_Front_Mail();
+			$entry                  = new Forminator_Form_Entry_Model( $entry_id );
+			if ( empty( $entry->form_id ) || ! empty( $entry->draft_id ) ) {
+				wp_send_json_error( esc_html__( 'Entry ID was not found.', 'forminator' ) );
+			}
+			$module_id = $entry->form_id;
+
+			Forminator_Front_Action::$module_id     = $module_id;
+			Forminator_Front_Action::$module_object = Forminator_Base_Form_Model::get_model( $module_id );
+			// Emulate Forminator_Front_Action::$prepared_data.
+			Forminator_Front_Action::$prepared_data = self::recreate_prepared_data( $entry );
+			// Emulate Forminator_Front_Action::$hidden_fields.
+			if ( ! Forminator_Front_Action::$module_object ) {
+				wp_send_json_error( esc_html__( 'Error: Module object is corrupted!', 'forminator' ) );
+			}
+			Forminator_Front_Action::$module_settings = method_exists( Forminator_Front_Action::$module_object, 'get_form_settings' )
+					? Forminator_Front_Action::$module_object->get_form_settings() : Forminator_Front_Action::$module_object->settings;
+			Forminator_CForm_Front_Action::check_fields_visibility();
+
+			$module_object = Forminator_Base_Form_Model::get_model( $module_id );
+			$forminator_mail_sender->process_mail( $module_object, $entry );
+
+			wp_send_json_success( esc_html__( 'Notification Emails have been sent successfully.', 'forminator' ) );
+		} else {
+			wp_send_json_error( esc_html__( 'Entry ID is not set.', 'forminator' ) );
+		}
+	}
+
+	/**
+	 * Emulate prepared_data
+	 *
+	 * @param object $entry Entry data.
+	 * @return array
+	 */
+	private static function recreate_prepared_data( $entry ) {
+		$prepared_data = wp_list_pluck( $entry->meta_data, 'value' );
+		$fields        = Forminator_Front_Action::$module_object->get_real_fields();
+
+		foreach ( $prepared_data as $key => $value ) {
+			if ( isset( $value['result'] ) ) {
+				$prepared_data[ $key ] = $value['result'];
+			} elseif ( is_array( $value ) ) {
+				foreach ( $value as $subkey => $subvalue ) {
+					$prepared_data[ $key . '-' . $subkey ] = $subvalue;
+				}
+			} elseif ( 0 === strpos( $key, 'select-' )
+					|| 0 === strpos( $key, 'radio-' )
+					|| 0 === strpos( $key, 'checkbox-' ) ) {
+				foreach ( $fields as $field ) {
+					if ( empty( $field->raw['element_id'] ) || $key !== $field->raw['element_id'] ) {
+						continue;
+					}
+					if ( empty( $field->raw['options'] ) || ! is_array( $field->raw['options'] ) ) {
+						break;
+					}
+					$field_labels    = wp_list_pluck( $field->raw['options'], 'label' );
+					$field_values    = wp_list_pluck( $field->raw['options'], 'value' );
+					$multiple_values = explode( ', ', $value );
+
+					$prepared_data[ $key ] = $multiple_values;
+					foreach ( $multiple_values as $multiple_key => $multiple_value ) {
+						$field_value_key = array_search( $multiple_value, $field_labels, true );
+						if ( false !== $field_value_key ) {
+							// Replace saved field Labels to the relevant field values.
+							$prepared_data[ $key ][ $multiple_key ] = $field_values[ $field_value_key ];
+						}
+					}
+					break;
+				}
+			}
+		}
+
+		$prepared_data['form_id'] = $entry->form_id;
+
+		return $prepared_data;
+	}
+
+	/**
 	 * Approve user by link
 	 */
 	public function admin_approve_user_by_link() {
 		$activation_key = Forminator_Core::sanitize_text_field( 'key' );
 		$page           = Forminator_Core::sanitize_text_field( 'page' );
-		if ( 'forminator_activation' === $page && $activation_key ) {
+		if ( ( 'account_activation' === $page || 'forminator_activation' === $page ) && $activation_key ) {
 			require_once __DIR__ . '/class-forminator-cform-user-signups.php';
 
 			$userdata = Forminator_CForm_User_Signups::activate_signup( $activation_key, false );

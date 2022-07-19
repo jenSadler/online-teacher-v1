@@ -46,6 +46,10 @@ final class MonsterInsights_Notification_Pro_EU_Traffic extends MonsterInsights_
             }
         }
 
+        if ( empty( $sessions ) ) {
+            return false;
+        }
+
         $eu_sessions_percentage = $eu_sessions / $sessions * 100;
 
         if ( $eu_sessions_percentage < 1 ) {

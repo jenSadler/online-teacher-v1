@@ -229,25 +229,9 @@ class Forminator_Addon_Googlesheet_Form_Hooks extends Forminator_Addon_Form_Hook
 			}
 			$form_entry_fields = $keyed_form_entry_fields;
 
-			// all avail fields on library.
-			$fields      = forminator_fields_to_array();
-			$field_types = array_keys( $fields );
-
-			// sort by length, so stripos will work by traverse from longest field type first.
-			$field_types_strlen = array_map( 'strlen', $field_types );
-			array_multisort( $field_types_strlen, $field_types );
-			$field_types = array_reverse( $field_types );
-
 			$values = array();
 			foreach ( $header_fields as $element_id => $header_field ) {
-				$field_type = '';
-
-				foreach ( $field_types as $type ) {
-					if ( false !== stripos( $element_id, $type . '-' ) ) {
-						$field_type = $type;
-						break;
-					}
-				}
+				$field_type = Forminator_Core::get_field_type( $element_id );
 
 				$meta_value = array();
 				// take from entry fields (to be saved).

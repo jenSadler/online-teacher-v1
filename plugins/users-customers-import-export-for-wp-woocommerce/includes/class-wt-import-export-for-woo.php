@@ -80,7 +80,7 @@ class Wt_Import_Export_For_Woo_Basic {
 		if ( defined( 'WT_U_IEW_VERSION' ) ) {
 			$this->version = WT_U_IEW_VERSION;
 		} else {
-			$this->version = '2.2.8';
+			$this->version = '2.3.2';
 		}
 		$this->plugin_name = 'wt-import-export-for-woo-basic';
 
@@ -207,6 +207,8 @@ class Wt_Import_Export_For_Woo_Basic {
 		/* Enqueue CSS and JS */
 		$this->loader->add_action( 'admin_enqueue_scripts', $this->plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $this->plugin_admin, 'enqueue_scripts' );
+		
+		$this->loader->add_action( 'export_filters', $this->plugin_admin, 'tools_wtexport_text' );
 
 	}
 

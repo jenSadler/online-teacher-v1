@@ -115,7 +115,7 @@ class Forminator_MultiValue extends Forminator_Field {
 	 *
 	 * @return mixed
 	 */
-	public function markup( $field, $settings = array() ) {
+	public function markup( $field, $settings = array(), $draft_value = null ) {
 
 		$this->field = $field;
 		$i           = 1;
@@ -139,6 +139,7 @@ class Forminator_MultiValue extends Forminator_Field {
 		$images_enabled   = filter_var( $images_enabled, FILTER_VALIDATE_BOOLEAN );
 		$input_visibility = self::get_property( 'input_visibility', $field, 'true' );
 		$input_visibility = filter_var( $input_visibility, FILTER_VALIDATE_BOOLEAN );
+		$draft_value 	  = isset( $draft_value['value'] ) && ! empty( $draft_value['value'] ) ? array_map( 'trim', $draft_value['value'] ) : '';
 
 		$html .= sprintf(
 			'<div role="group" class="forminator-field" aria-labelledby="%s">',
@@ -188,11 +189,18 @@ class Forminator_MultiValue extends Forminator_Field {
 
 			$selected = false;
 
-			// Check if Pre-fill parameter used.
-			if ( $this->has_prefill( $field ) ) {
+			if ( ! empty( $draft_value ) ) {
+
+				if ( in_array( trim( $value ), $draft_value ) ) { // phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict
+					$option_default = true;
+				}
+
+			} elseif ( $this->has_prefill( $field ) ) {
+
 				// We have pre-fill parameter, use its value or $value.
 				$prefill        = $this->get_prefill( $field, false );
 				$prefill_values = explode( ',', $prefill );
+				$prefill_values	= array_map( 'trim', $prefill_values );
 
 				if ( in_array( $value, $prefill_values ) ) { // phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict
 					$option_default = true;
@@ -319,11 +327,22 @@ class Forminator_MultiValue extends Forminator_Field {
 	 *
 	 * @param array        $field
 	 * @param array|string $data
-	 * @param array        $post_data
 	 */
-	public function validate( $field, $data, $post_data = array() ) {
+	public function validate( $field, $data ) {
+		$id = self::get_property( 'element_id', $field );
+
+		foreach ( $data as $value ) {
+			if ( false === array_search( $value, array_column( $field['options'], 'value' ) ) ) {
+				$this->validation_message[ $id ] = apply_filters(
+					'forminator_checkbox_field_nonexistent_validation_message',
+					__( 'Selected value does not exist.', 'forminator' ),
+					$id,
+					$field
+				);
+				break;
+			}
+		}
 		if ( $this->is_required( $field ) ) {
-			$id               = self::get_property( 'element_id', $field );
 			$required_message = self::get_property( 'required_message', $field, __( 'This field is required. Please select a value', 'forminator' ) );
 			if ( empty( $data ) ) {
 				$this->validation_message[ $id ] = apply_filters(
@@ -363,12 +382,12 @@ class Forminator_MultiValue extends Forminator_Field {
 	 *
 	 * @since 1.7
 	 *
-	 * @param $submitted_data
+	 * @param $submitted_field
 	 * @param $field_settings
 	 *
 	 * @return float|string
 	 */
-	private function calculable_value( $submitted_data, $field_settings ) {
+	private static function calculable_value( $submitted_field, $field_settings ) {
 		$enabled = self::get_property( 'calculations', $field_settings, false, 'bool' );
 		if ( ! $enabled ) {
 			return self::FIELD_NOT_CALCULABLE;
@@ -378,7 +397,7 @@ class Forminator_MultiValue extends Forminator_Field {
 
 		$options = self::get_property( 'options', $field_settings, array() );
 
-		if ( ! is_array( $submitted_data ) ) {
+		if ( ! is_array( $submitted_field ) ) {
 			return $sums;
 		}
 
@@ -386,10 +405,10 @@ class Forminator_MultiValue extends Forminator_Field {
 			$option_value      = ( isset( $option['value'] ) && ! empty( $option['value'] ) ) ? $option['value'] : ( isset( $option['label'] ) ? $option['label'] : '' );
 			$calculation_value = isset( $option['calculation'] ) ? $option['calculation'] : 0.0;
 
-			forminator_maybe_log( __METHOD__, $option_value, $submitted_data );
+			forminator_maybe_log( __METHOD__, $option_value, $submitted_field );
 
 			// strict array compare disabled to allow non-coercion type compare.
-			if ( in_array( $option_value, $submitted_data ) ) {
+			if ( in_array( $option_value, $submitted_field ) ) {
 				// this one is selected.
 				$sums += floatval( $calculation_value );
 			}
@@ -402,20 +421,20 @@ class Forminator_MultiValue extends Forminator_Field {
 	 * @since 1.7
 	 * @inheritdoc
 	 */
-	public function get_calculable_value( $submitted_data, $field_settings ) {
-		$calculable_value = $this->calculable_value( $submitted_data, $field_settings );
+	public static function get_calculable_value( $submitted_field_data, $field_settings ) {
+		$calculable_value = self::calculable_value( $submitted_field_data, $field_settings );
 		/**
 		 * Filter formula being used on calculable value on multi-value / checkbox field
 		 *
 		 * @since 1.7
 		 *
 		 * @param float $calculable_value
-		 * @param array $submitted_data
+		 * @param array $submitted_field_data
 		 * @param array $field_settings
 		 *
 		 * @return string|int|float
 		 */
-		$calculable_value = apply_filters( 'forminator_field_multi_calculable_value', $calculable_value, $submitted_data, $field_settings );
+		$calculable_value = apply_filters( 'forminator_field_multi_calculable_value', $calculable_value, $submitted_field_data, $field_settings );
 
 		return $calculable_value;
 	}

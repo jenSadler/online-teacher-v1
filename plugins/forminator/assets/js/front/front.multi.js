@@ -26,7 +26,6 @@
 		    chart_design: 'bar',
 		    chart_options: {},
 		    forminator_fields: [],
-		    max_nested_formula: 5,
 		    general_messages: {
 			    calculation_error: 'Failed to calculate field.',
 			    payment_require_ssl_error: 'SSL required to submit this form, please check your URL.',
@@ -152,7 +151,11 @@
 		},
 		init_custom_form: function ( form_selector ) {
 
-			var self = this;
+			var self 			= this,
+				$saveDraft 		= this.$el.find( '.forminator-save-draft-link' ),
+				saveDraftExists = 0 !== $saveDraft.length ? true : false,
+				draftTimer
+				;
 
 			//initiate validator
 			this.init_intlTelInput_validation( form_selector );
@@ -168,7 +171,6 @@
 			// initiate calculator
 			$( form_selector ).forminatorFrontCalculate({
 				forminatorFields: self.settings.forminator_fields,
-				maxExpand: self.settings.max_nested_formula,
 				generalMessages: self.settings.general_messages,
 				memoizeTime: self.settings.calcs_memoize_time || 300,
 			});
@@ -228,6 +230,8 @@
 
 			this.upload_field( form_selector );
 
+			this.init_login_2FA();
+
 			self.maybeRemoveDuplicateFields( form_selector );
 
 			// Handle function on resize
@@ -239,6 +243,19 @@
 			$( window ).on( 'load', function () {
 				// Repeat the function here, just in case our scripts gets loaded late
 				self.maybeRemoveDuplicateFields( form_selector );
+			});
+
+			// We have to declate initialData here, after everything has been set initially, to prevent triggering change event.
+			var initialData	= saveDraftExists ? this.$el.serializeArray() : '';
+			this.$el.find( ".forminator-field input, .forminator-row input[type=hidden], .forminator-field select, .forminator-field textarea, .forminator-field-signature").on( 'change input', function (e) {
+				if ( saveDraftExists && $saveDraft.hasClass( 'disabled' ) ) {
+					clearTimeout( draftTimer );
+					draftTimer = setTimeout( function() {
+							self.maybe_enable_save_draft( $saveDraft, initialData );
+						},
+						500
+					);
+				}
 			});
 
 			if( 'undefined' !== typeof self.settings.hasLeads ) {
@@ -578,7 +595,9 @@
 				});
 			}
 
-			FUI.select2( select2.length );
+			if ( 'function' === typeof FUI.select2 ) {
+				FUI.select2( select2.length );
+			}
 
 			if ( multiselect.length ) {
 				FUI.multiSelectStates( multiselect );
@@ -647,7 +666,8 @@
 					totalSteps: num_pages,
 					hashStep: hashStep,
 					step: step,
-					inline_validation: self.settings.inline_validation
+					inline_validation: self.settings.inline_validation,
+					submitButtonClass: self.settings.submit_button_class
 				});
 			}
 		},
@@ -863,7 +883,7 @@
 					if ($limit.length) {
 						if ($limit.data('limit')) {
 							if ($limit.data('type') !== "words") {
-								count = $(this).val().length;
+								count = $( '<div>' + $(this).val() + '</div>' ).text().length;
 							} else {
 								count = $(this).val().trim().split(/\s+/).length;
 
@@ -918,15 +938,17 @@
 					});
 				}
 				/*
-				* We changed the autoUnmask to false so we can use the formatted (masked) values on HTML field
-				* Every time the unmasked value is needed, $(selector).inputmask('unmaskedvalue'); must be used
+				* If you need to retrieve the formatted (masked) value, you can use something like this:
+				* $element.inputmask({'autoUnmask' : false});
+				* var value = $element.val();
+				* $element.inputmask({'autoUnmask' : true});
 				*/
 				$( this ).inputmask({
 					'alias': 'decimal',
 					'rightAlign': false,
 					'digitsOptional': false,
 					'showMaskOnHover': false,
-					'autoUnmask' : false,
+					'autoUnmask' : true, // Automatically unmask the value when retrieved - this prevents the "Maximum call stack size exceeded" console error that happens in some forms that contain number/calculation fields with localized masks.
 					'removeMaskOnSubmit': true,
 				});
 			});
@@ -943,6 +965,66 @@
 					$this.val(value.substr(0, 2));
 				}
 			});
+		},
+
+		init_login_2FA: function () {
+			var self = this;
+			this.two_factor_providers( 'totp' );
+			$('body').on('click', '.forminator-2fa-link', function () {
+				self.$el.find('#login_error').remove();
+				self.$el.find('.notification').empty();
+				var slug = $(this).data('slug');
+				self.two_factor_providers( slug );
+				if ('fallback-email' === slug) {
+					self.resend_code();
+				}
+			});
+			this.$el.find('.wpdef-2fa-email-resend input').on('click', function () {
+				self.resend_code();
+			});
+		},
+		two_factor_providers: function ( slug ) {
+			var self = this;
+			self.$el.find('.forminator-authentication-box').hide();
+			self.$el.find('.forminator-authentication-box input').attr( 'disabled', true );
+			self.$el.find( '#forminator-2fa-' + slug ).show();
+			self.$el.find( '#forminator-2fa-' + slug + ' input' ).attr( 'disabled', false );
+			if ( self.$el.find('.forminator-2fa-link').length > 0 ) {
+				self.$el.find('.forminator-2fa-link').hide();
+				self.$el.find('.forminator-2fa-link:not(#forminator-2fa-link-'+ slug +')').each(function() {
+					self.$el.find('.forminator-auth-method').val( slug );
+					$( this ).find('input').attr( 'disabled', false );
+					$( this ).show();
+				});
+			}
+		},
+
+		// Logic for FallbackEmail method.
+		resend_code: function () {
+			// Work with the button 'Resen Code'.
+			var self  = this;
+			var that  = $('input[name="button_resend_code"]');
+			var token = $('.forminator-auth-token');
+			let data = {
+				action: 'forminator_2fa_fallback_email',
+				data: JSON.stringify({
+					'token': token
+				})
+			};
+			$.ajax({
+				type: 'POST',
+				url: window.ForminatorFront.ajaxUrl,
+				data: data,
+				beforeSend: function () {
+					that.attr('disabled', 'disabled');
+					$('.def-ajaxloader').show();
+				},
+				success: function (data) {
+					that.removeAttr('disabled');
+					$('.def-ajaxloader').hide();
+					$('.notification').text(data.data.message);
+				}
+			})
 		},
 
 		material_field: function () {
@@ -1245,7 +1327,49 @@
 					console.error( 'Failed to load Stripe.' );
 				}
 			}, 100 );
-		}
+		},
+
+        // Enable save draft button once a change is made
+		maybe_enable_save_draft: function ( $saveDraft, initialData ) {
+			var changedData = this.$el.serializeArray(),
+				hasChanged	= false,
+				hasSig		= this.$el.find( '.forminator-field-signature' ).length ? true : false
+				;
+
+			// Remove signature field from changedData, will process later
+			changedData = changedData.filter( function( val ) {
+				return val.name.indexOf( 'ctlSignature' ) === -1 ;
+			});
+
+			initialData = JSON.stringify( initialData );
+			changedData = JSON.stringify( changedData );
+
+			// Check for field changes
+			if ( initialData !== changedData ) {
+				hasChanged = true;
+			}
+
+			// Check for signature change
+			if ( hasSig && false === hasChanged ) {
+				this.$el.find( '.forminator-field-signature' ).each( function(e) {
+					var sigPrefix = $( this ).find( '.signature-prefix' ).val();
+
+					if (
+						0 !== $( this ).find( '#ctlSignature' + sigPrefix + '_data' ).length &&
+						'' !== $( this ).find( '#ctlSignature' + sigPrefix + '_data' ).val()
+					) {
+						hasChanged = true;
+						return false;
+					}
+				});
+			}
+
+			if ( hasChanged ) {
+				$saveDraft.removeClass( 'disabled' );
+			} else {
+				$saveDraft.addClass( 'disabled' );
+			}
+		},
 
 	});
 
@@ -1265,14 +1389,17 @@
 		// default wp tinymce textarea update only triggered when submit
 		var count  = 0;
 		editor.on('change', function () {
-			// only forminator
-			if (editor.id.indexOf('forminator-wp-editor-') === 0) {
-				editor.save();
-			}
 			var editor_id = editor.id,
 				$field = $('#' + editor_id ).closest('.forminator-col'),
 				$limit = $field.find('.forminator-description span')
 			;
+
+			// only forminator
+			if ( -1 !== editor_id.indexOf( 'forminator-field-textarea-' ) ) {
+				editor.save();
+				$field.find( '#' + editor_id ).trigger( 'change' );
+			}
+
 			if ($limit.length) {
 				if ($limit.data('limit')) {
 					if ($limit.data('type') !== "words") {
@@ -1283,13 +1410,59 @@
 					$limit.html(count + ' / ' + $limit.data('limit'));
 				}
 			}
-
-
 		});
 
 		// Make the visual editor and html editor the same height
-		$( '#' + editor.id + '_ifr' ).height( $( '#' + editor.id ).height() );
+		if ( $( '#' + editor.id + '_ifr' ).is( ':visible' ) ) {
+			$( '#' + editor.id + '_ifr' ).height( $( '#' + editor.id ).height() );
+		}
 	});
+
+	$( document ).on( 'click', '.forminator-copy-btn', function( e ) {
+		forminatorCopyTextToClipboard( $( this ).prev( '.forminator-draft-link' ).val() );
+		if ( ! $( this ).hasClass( 'copied' ) ) {
+			$( this ).addClass( 'copied' )
+			$( this ).prepend( '&check;  ' );
+		}
+	} );
+
+	// Copy: Async + Fallback
+	// https://stackoverflow.com/a/30810322
+	function forminatorFallbackCopyTextToClipboard( text ) {
+		var textArea = document.createElement("textarea");
+		textArea.value = text;
+
+		// Avoid scrolling to bottom
+		textArea.style.top = "0";
+		textArea.style.left = "0";
+		textArea.style.position = "fixed";
+
+		document.body.appendChild(textArea);
+		textArea.focus();
+		textArea.select();
+
+		try {
+			var successful = document.execCommand('copy');
+			var msg = successful ? 'successful' : 'unsuccessful';
+			// console.log('Fallback: Copying text command was ' + msg);
+		} catch (err) {
+			// console.error('Fallback: Oops, unable to copy', err);
+		}
+
+		document.body.removeChild(textArea);
+	}
+
+	function forminatorCopyTextToClipboard (text ) {
+		if (!navigator.clipboard) {
+			forminatorFallbackCopyTextToClipboard(text);
+			return;
+		}
+		navigator.clipboard.writeText(text).then(function() {
+			// console.log('Async: Copying to clipboard was successful!');
+		}, function(err) {
+			// console.error('Async: Could not copy text: ', err);
+		});
+	}
 
 	// Focus to nearest input when label is clicked
 	function focus_to_nearest_input() {
@@ -1301,8 +1474,14 @@
 		});
 	}
 
-	$( document ).ready( focus_to_nearest_input );
+	focus_to_nearest_input();
 	$( document ).on( 'after.load.forminator', focus_to_nearest_input );
+
+	// Elementor Popup show event
+	jQuery( document ).on( 'elementor/popup/show', () => {
+		forminator_render_captcha();
+		forminator_render_hcaptcha();
+	} );
 
 })(jQuery, window, document);
 

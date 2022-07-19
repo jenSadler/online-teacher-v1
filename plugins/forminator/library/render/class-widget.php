@@ -209,7 +209,7 @@ class Forminator_Widget extends WP_Widget {
 		</p>
 
 		<script type="text/javascript">
-			jQuery(document).ready(function () {
+			jQuery(function () {
 				jQuery(".forminator-form-type").on('change', function () {
 					var value   = jQuery(this).val(),
 						$widget = jQuery(this).closest('.widget-content')

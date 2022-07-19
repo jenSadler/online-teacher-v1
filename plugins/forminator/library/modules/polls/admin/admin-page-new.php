@@ -36,7 +36,7 @@ class Forminator_Poll_New_Page extends Forminator_Admin_Page {
 		// Load admin scripts.
 		wp_register_script(
 			'forminator-admin',
-			forminator_plugin_url() . 'assets/js/poll-scripts.js',
+			forminator_plugin_url() . 'build/poll-scripts.js',
 			array(
 				'jquery',
 				'wp-color-picker',

@@ -36,6 +36,13 @@ abstract class Forminator_Base_Form_Model {
 	public $fields = array();
 
 	/**
+	 * Contain real fields of this form excluding 'html', 'page-break', 'section' and so on.
+	 *
+	 * @var Forminator_Form_Field_Model[]
+	 */
+	private $real_fields;
+
+	/**
 	 * Form settings
 	 * array
 	 */
@@ -133,6 +140,31 @@ abstract class Forminator_Base_Form_Model {
 	 */
 	public function get_fields() {
 		return $this->fields;
+	}
+
+	/**
+	 * Get real fields - all fields except ignored ones
+	 *
+	 * @return Forminator_Form_Field_Model[]
+	 */
+	public function get_real_fields() {
+		if ( is_null( $this->real_fields ) ) {
+			$fields              = $this->fields;
+			$ignored_field_types = Forminator_Form_Entry_Model::ignored_fields();
+			foreach ( $fields as $field_index => $field ) {
+				$field_array = $field->to_formatted_array();
+				if ( empty( $field_array['type'] ) ) {
+					continue;
+				}
+				if ( in_array( $field_array['type'], $ignored_field_types, true ) ) {
+					unset( $fields[ $field_index ] );
+				}
+			}
+
+			$this->real_fields = $fields;
+		}
+
+		return $this->real_fields;
 	}
 
 	/**
@@ -281,11 +313,8 @@ abstract class Forminator_Base_Form_Model {
 	 * @return boolean|string
 	 */
 	public static function get_model_class( $id ) {
-		$post = get_post( $id );
-		if ( empty( $post->post_type ) ) {
-			return false;
-		}
-		switch ( $post->post_type ) {
+		$post_type = get_post_type( $id );
+		switch ( $post_type ) {
 			case 'forminator_forms':
 				$class = 'Forminator_Form_Model';
 				break;

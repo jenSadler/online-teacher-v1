@@ -6,7 +6,7 @@
 /**
  * Class MonsterInsights_WP_Site_Health
  */
-class MonsterInsights_WP_Site_Health {
+class MonsterInsights_WP_Site_Health_Pro {
 
 	/**
 	 * Is the site licensed?
@@ -738,5 +738,5 @@ class MonsterInsights_WP_Site_Health {
 	}
 }
 
-new MonsterInsights_WP_Site_Health();
+new MonsterInsights_WP_Site_Health_Pro();
 

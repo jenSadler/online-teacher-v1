@@ -35,7 +35,7 @@ class Forminator_CForm_New_Page extends Forminator_Admin_Page {
 		// Load admin scripts.
 		wp_register_script(
 			'forminator-admin',
-			forminator_plugin_url() . 'assets/js/form-scripts.js',
+			forminator_plugin_url() . 'build/form-scripts.js',
 			array(
 				'jquery',
 				'wp-color-picker',

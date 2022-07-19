@@ -168,7 +168,7 @@ abstract class Forminator_Admin_Page {
 		// Load admin scripts.
 		wp_register_script(
 			'forminator-admin',
-			forminator_plugin_url() . 'build/main.js',
+			forminator_plugin_url() . 'requirejs/main.js',
 			array(
 				'backbone',
 				'underscore',

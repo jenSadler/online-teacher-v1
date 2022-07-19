@@ -18,7 +18,6 @@
 	var pluginName = "forminatorFrontCalculate",
 	    defaults   = {
 		    forminatorFields: [],
-		    maxExpand: 5,
 		    generalMessages: {},
 	    };
 
@@ -35,7 +34,6 @@
 		this._defaults         = defaults;
 		this._name             = pluginName;
 		this.calculationFields = [];
-		this.currentExpand     = 0;
 		this.triggerInputs     = [];
 		this.isError           = false;
 		this.init();
@@ -133,8 +131,6 @@
 				var calcField = this.calculationFields[i];
 				var formula   = calcField.formula;
 
-				this.currentExpand = 0;
-
 				// Disable formula expand to allow formula calculation based on conditions
 				//formula          = this.maybeExpandCalculationFieldOnFormula(formula);
 
@@ -145,10 +141,6 @@
 		},
 
 		maybeExpandCalculationFieldOnFormula: function (formula) {
-
-			if (this.currentExpand > this.settings.maxExpand) {
-				return formula;
-			}
 
 			var joinedFieldTypes      = this.settings.forminatorFields.join('|');
 			var incrementFieldPattern = "(" + joinedFieldTypes + ")-\\d+";
@@ -180,7 +172,6 @@
 			}
 
 			if (needExpand) {
-				this.currentExpand++;
 				parsedFormula = this.maybeExpandCalculationFieldOnFormula(parsedFormula);
 			}
 

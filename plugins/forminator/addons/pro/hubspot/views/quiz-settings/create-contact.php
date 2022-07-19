@@ -291,7 +291,7 @@ $custom_field_map = isset( $vars['custom_fields_map'] ) ? array_filter( $vars['c
 
 <script type="text/javascript">
     (function ($) {
-        $(document).ready(function (e) {
+        $( function (e) {
             $(".add-hubspot-field").unbind().on('click', function(e) {
                 e.preventDefault();
                 if( $('.custom-field:visible').length < 1 ) {

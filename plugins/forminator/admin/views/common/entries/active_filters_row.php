@@ -77,6 +77,35 @@
 			</div>
 		<?php endif; ?>
 
+		<?php if ( isset( $this->filters['entry_status'] ) ) : ?>
+			<div class="sui-active-filter">
+				<?php
+
+				switch ( $this->filters['entry_status'] ) {
+					case 'completed':
+						$entry_status = 'Completed';
+						break;
+
+					case 'draft':
+						$entry_status = 'Draft';
+						break;
+
+					default:
+						$entry_status = 'All';
+						break;
+				}
+
+				printf(/* translators: ... */
+					esc_html__( 'Entry status: %s', 'forminator' ),
+					$entry_status
+				);
+				?>
+				<button class="sui-active-filter-remove" type="submit" name="entry_status" value="">
+					<span class="sui-screen-reader-text"><?php esc_html_e( 'Remove this filter', 'forminator' ); ?></span>
+				</button>
+			</div>
+		<?php endif; ?>
+
 		<div class="sui-active-filter">
 			<?php
 			esc_html_e( 'Sort Order', 'forminator' );

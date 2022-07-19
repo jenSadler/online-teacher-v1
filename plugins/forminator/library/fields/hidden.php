@@ -196,22 +196,22 @@ class Forminator_Hidden extends Forminator_Field {
 	/**
 	 * Get calculable value
 	 *
-	 * @param string $submitted_data Submitted data.
+	 * @param string $submitted_field_data Submitted data.
 	 * @param array  $field_settings Field settings.
 	 * @return string
 	 */
-	public function get_calculable_value( $submitted_data, $field_settings ) {
-		$calculable_value = $submitted_data;
+	public static function get_calculable_value( $submitted_field_data, $field_settings ) {
+		$calculable_value = $submitted_field_data;
 		/**
 		 * Filter formula being used on calculable value on hidden field
 		 *
 		 * @param float $calculable_value
-		 * @param array $submitted_data
+		 * @param array $submitted_field_data
 		 * @param array $field_settings
 		 *
 		 * @return string|int|float
 		 */
-		$calculable_value = apply_filters( 'forminator_field_hidden_calculable_value', $calculable_value, $submitted_data, $field_settings );
+		$calculable_value = apply_filters( 'forminator_field_hidden_calculable_value', $calculable_value, $submitted_field_data, $field_settings );
 
 		return $calculable_value;
 	}

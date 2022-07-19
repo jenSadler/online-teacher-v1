@@ -278,8 +278,7 @@ class Forminator_Addon_Googlesheet_Quiz_Hooks extends Forminator_Addon_Quiz_Hook
 			$form_entry_fields = get_addons_lead_form_entry_data( $quiz_settings, $submitted_data, $addons_fields );
 
 			// all avail fields on library.
-			$fields      = forminator_fields_to_array();
-			$field_types = array_keys( $fields );
+			$field_types = Forminator_Core::get_field_types();
 
 			// sort by length, so stripos will work by traverse from longest field type first.
 			$field_types_strlen = array_map( 'strlen', $field_types );

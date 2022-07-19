@@ -15,8 +15,13 @@
 }
 
 	.tribe-report-panel.welcome-panel {
+		background: none;
 		overflow: visible;
 	}
+
+	.tribe-report-panel.welcome-panel:before {
+			content: none;
+		}
 
 	.tribe-report-panel .about-description {
 		width: 66%;
@@ -26,16 +31,29 @@
 		color: inherit;
 	}
 
+	.tribe-report-panel .welcome-panel-content {
+		min-height: initial;
+	}
+
 	.tribe-report-panel .welcome-panel-column-container {
-		display: flex;
-		flex-flow: row;
-		justify-content: space-between;
+		display: grid;
+		grid-gap: unset;
+		gap: unset;
+		grid-template-columns: repeat(3, 1fr);
+		grid-template-areas: 
+			"first middle last"
+			"extra extra last";
+		margin-top: 0px;
+		padding: 0px;
 		position: initial;
 		*zoom: 1;
 	}
 
 	.tribe-report-panel .welcome-panel-column {
+		display: inline-block;
+		max-width: none;
 		padding: 20px 10px;
+		width: auto;
 	}
 
 	.tribe-report-panel .welcome-panel-column li {
@@ -48,10 +66,24 @@
 				padding: 0 0 0 15px;
 			}
 
+	.tribe-report-panel .welcome-panel-first {
+		grid-area: first;
+	}
+
+	.tribe-report-panel .welcome-panel-extra {
+		grid-area: extra;
+	}
+
+	.tribe-report-panel .welcome-panel-middle {
+		grid-area: middle;
+	}
+
 	.tribe-report-panel .welcome-panel-last {
+		align-content: start;
 		border-left: 1px solid #eee;
 		display: flex;
 		flex-flow: row wrap;
+		grid-area: last;
 		padding: 10px 20px 5px;
 		*zoom: 1;
 	}
@@ -241,15 +273,27 @@ table.orders tr.refunded,
 			font-style: italic;
 		}
 
+.tec-admin__upsell-tec-tickets-manual-attendees .tec-admin__upsell-content {
+		padding: 0px;
+	}
+
+.tec-admin__upsell-tec-tickets-manual-attendees .tec-admin__upsell-text {
+		color: #1d2327;
+	}
+
 @media screen and (max-width: 768px) {
 
 	.tribe-report-panel .welcome-panel-column-container {
-			flex-wrap: wrap
+			grid-template-columns: 1fr;
+			grid-template-areas: 
+				"first" 
+				"middle"
+				"last"
+				"extra"
 	}
 
 	.tribe-report-panel .welcome-panel-column {
-			padding: 20px 0;
-			width: 100%
+			padding: 20px 0
 	}
 
 	.tribe-report-panel .welcome-panel-column h3 {
@@ -282,10 +326,7 @@ table.orders tr.refunded,
 @media screen and (min-width: 1024px) {
 
 	.tribe-report-panel .welcome-panel-column {
-			display: inline-block;
-			padding: 20px 2%;
-			width: 29%;
-			min-width: 29%
+			padding: 20px var(--tec-spacer-5)
 	}
 		}
 
@@ -303,10 +344,6 @@ table.orders tr.refunded,
 @media screen and (min-width: 870px) {
 				.tribe-report-panel .welcome-panel-last ul:first-child {
 					margin-bottom: 0;
-				}
-
-				.tribe-report-panel .welcome-panel-last ul:last-child {
-					margin-top: 0;
 				}
 			}
 

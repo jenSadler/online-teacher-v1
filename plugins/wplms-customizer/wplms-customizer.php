@@ -36,4 +36,6 @@ if(class_exists('WPLMS_Customizer_Plugin_Class'))
     $wplms_customizer = new WPLMS_Customizer_Plugin_Class();
 }
 
+add_action('wplms_course_start_after_timeline',function($course_id){
 
+echo '<p><i class="fa fa-book fa-fw"></i> Knowledge/Understanding<br/> <i class="fa  fa-lightbulb-o fa-fw"></i> Thinking<br/><i class="fa fa-desktop fa-fw"></i> Application<br/><i class="fa fa-comments fa-fw"></i> Communication</p><br/>'; },99999);

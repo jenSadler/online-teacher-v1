@@ -171,9 +171,8 @@ class Forminator_PayPal extends Forminator_Field {
 	 *
 	 * @param array        $field
 	 * @param array|string $data
-	 * @param array        $post_data
 	 */
-	public function validate( $field, $data, $post_data = array() ) {
+	public function validate( $field, $data ) {
 		$id = self::get_property( 'element_id', $field );
 	}
 
@@ -256,14 +255,10 @@ class Forminator_PayPal extends Forminator_Field {
 
 	/**
 	 * @param array                 $field
-	 * @param Forminator_Form_Model $custom_form
-	 * @param array                 $submitted_data
-	 * @param array                 $pseudo_submitted_data
-	 * @param array                 $field_data_array
 	 *
 	 * @return array
 	 */
-	public function process_to_entry_data( $field, $custom_form, $submitted_data, $pseudo_submitted_data, $field_data_array ) {
+	public function process_to_entry_data( $field ) {
 		$entry_data = array(
 			'mode'             => '',
 			'status'           => '',
@@ -279,11 +274,12 @@ class Forminator_PayPal extends Forminator_Field {
 
 		$entry_data['mode']     = $mode;
 		$entry_data['currency'] = $currency;
-		$charge_amount          = $this->get_payment_amount( $field, $custom_form, $submitted_data, $pseudo_submitted_data );
+		$charge_amount          = $this->get_payment_amount( $field );
 		$charge_amount          = number_format( $charge_amount, 2, '.', '' );
+		$transaction_id         = Forminator_CForm_Front_Action::$prepared_data['payment_transaction_id'];
 
 		$paypal = new Forminator_PayPal_Express();
-		$order  = $paypal->get_order( $submitted_data[ $element_id ], $mode );
+		$order  = $paypal->get_order( $transaction_id, $mode );
 
 		// Validate intent.
 		if ( ! isset( $order->intent ) || $order->intent !== 'CAPTURE' ) {
@@ -315,13 +311,9 @@ class Forminator_PayPal extends Forminator_Field {
 
 		$entry_data['amount']         = $charge_amount;
 		$entry_data['status']         = $order->status;
-		$entry_data['transaction_id'] = $submitted_data[ $element_id ];
+		$entry_data['transaction_id'] = $transaction_id;
 
-		$transaction_link = 'https://www.paypal.com/activity/payment/' . rawurlencode( $submitted_data[ $element_id ] );
-		if ( 'sandbox' === $mode ) {
-			$transaction_link = 'https://www.sandbox.paypal.com/activity/payment/' . rawurlencode( $submitted_data[ $element_id ] );
-		}
-		$entry_data['transaction_link'] = $transaction_link;
+		$entry_data['transaction_link'] = self::get_transanction_link( $mode, $transaction_id );
 		/**
 		 * Filter PayPal entry data that will be stored
 		 *
@@ -329,15 +321,33 @@ class Forminator_PayPal extends Forminator_Field {
 		 *
 		 * @param array                        $entry_data
 		 * @param array                        $field            field properties.
-		 * @param Forminator_Form_Model $custom_form
+		 * @param Forminator_Form_Model $module_object
 		 * @param array                        $submitted_data
 		 * @param array                        $field_data_array current entry meta.
 		 *
 		 * @return array
 		 */
-		$entry_data = apply_filters( 'forminator_field_paypal_process_to_entry_data', $entry_data, $field, $custom_form, $submitted_data, $field_data_array );
+		$entry_data = apply_filters( 'forminator_field_paypal_process_to_entry_data', $entry_data, $field, Forminator_Front_Action::$module_object, Forminator_CForm_Front_Action::$prepared_data, Forminator_CForm_Front_Action::$info['field_data_array'] );
 
 		return $entry_data;
+	}
+
+	/**
+	 * Get transaction link
+	 *
+	 * @param string $mode Payment mode.
+	 * @param string $transaction_id Transaction id.
+	 * @return string
+	 */
+	public static function get_transanction_link( $mode, $transaction_id ) {
+		if ( 'sandbox' === $mode ) {
+			$link_base = 'https://www.sandbox.paypal.com/activity/payment/';
+		} else {
+			$link_base = 'https://www.paypal.com/activity/payment/';
+		}
+		$transaction_link = $link_base . rawurlencode( $transaction_id );
+
+		return $transaction_link;
 	}
 
 	/**
@@ -377,47 +387,41 @@ class Forminator_PayPal extends Forminator_Field {
 	 * @since 1.7
 	 *
 	 * @param array                 $field
-	 * @param Forminator_Form_Model $custom_form
-	 * @param array                 $submitted_data
-	 * @param array                 $pseudo_submitted_data
 	 *
 	 * @return double
 	 */
-	public function get_payment_amount( $field, $custom_form, $submitted_data, $pseudo_submitted_data ) {
+	public function get_payment_amount( $field ) {
 		$payment_amount  = 0.0;
 		$amount_type     = self::get_property( 'amount_type', $field, 'fixed' );
 		$amount          = self::get_property( 'amount', $field, '0' );
-		$amount_variable = self::get_property( 'variable', $field, '' );
+		$amount_var      = self::get_property( 'variable', $field, '' );
 
 		if ( 'fixed' === $amount_type ) {
 			$payment_amount = $amount;
 		} else {
-			$amount_var = $amount_variable;
-			$form_field = $custom_form->get_field( $amount_var, false );
+			$form_field = Forminator_Front_Action::$module_object->get_field( $amount_var, false );
 			if ( $form_field ) {
 				$form_field        = $form_field->to_formatted_array();
-				$fields_collection = forminator_fields_to_array();
 				if ( isset( $form_field['type'] ) ) {
+					$field_id             = $form_field['element_id'];
+					$submitted_field_data = isset( Forminator_CForm_Front_Action::$prepared_data[ $field_id ] )
+							? Forminator_CForm_Front_Action::$prepared_data[ $field_id ]
+							: null;
 					if ( 'calculation' === $form_field['type'] ) {
 
 						// Calculation field get the amount from pseudo_submit_data.
-						if ( isset( $pseudo_submitted_data[ $amount_var ] ) ) {
-							$payment_amount = $pseudo_submitted_data[ $amount_var ];
+						if ( isset( Forminator_CForm_Front_Action::$prepared_data[ $amount_var ] ) ) {
+							$payment_amount = Forminator_CForm_Front_Action::$prepared_data[ $amount_var ];
 						}
 					} elseif ( 'currency' === $form_field['type'] ) {
 						// Currency field get the amount from submitted_data.
-						$field_id = $form_field['element_id'];
-						if ( isset( $submitted_data[ $field_id ] ) ) {
-							$payment_amount = self::forminator_replace_number( $form_field, $submitted_data[ $field_id ] );
+						if ( ! is_null( $submitted_field_data ) ) {
+							$payment_amount = self::forminator_replace_number( $form_field, $submitted_field_data );
 						}
 					} else {
-						if ( isset( $fields_collection[ $form_field['type'] ] ) ) {
-							/** @var Forminator_Field $field_object */
-							$field_object = $fields_collection[ $form_field['type'] ];
-
-							$field_id             = $form_field['element_id'];
-							$submitted_field_data = isset( $submitted_data[ $field_id ] ) ? $submitted_data[ $field_id ] : null;
-							$payment_amount       = $field_object->get_calculable_value( $submitted_field_data, $form_field );
+						$field_object = Forminator_Core::get_field_object( $form_field['type'] );
+						if ( $field_object ) {
+							$payment_amount = $field_object::get_calculable_value( $submitted_field_data, $form_field );
 						}
 					}
 				}
@@ -435,12 +439,29 @@ class Forminator_PayPal extends Forminator_Field {
 		 *
 		 * @param double                       $payment_amount
 		 * @param array                        $field field settings.
-		 * @param Forminator_Form_Model $custom_form
-		 * @param array                        $submitted_data
-		 * @param array                        $pseudo_submitted_data
+		 * @param Forminator_Form_Model $module_object
+		 * @param array                        $prepared_data
 		 */
-		$payment_amount = apply_filters( 'forminator_field_paypal_payment_amount', $payment_amount, $field, $custom_form, $submitted_data, $pseudo_submitted_data );
+		$payment_amount = apply_filters( 'forminator_field_paypal_payment_amount', $payment_amount, $field, Forminator_Front_Action::$module_object, Forminator_CForm_Front_Action::$prepared_data );
 
 		return $payment_amount;
+	}
+
+	/**
+	 * Get the fields that an amount depends on
+	 *
+	 * @param array $field_settings Field settings.
+	 * @return array
+	 */
+	public function get_amount_dependent_fields( $field_settings ) {
+		$depend_field = array();
+		$amount_type  = self::get_property( 'amount_type', $field_settings, 'fixed' );
+		$amount_var   = self::get_property( 'variable', $field_settings, '' );
+
+		if ( 'variable' === $amount_type && ! empty( $amount_var ) ) {
+			$depend_field[] = $amount_var;
+		}
+
+		return $depend_field;
 	}
 }

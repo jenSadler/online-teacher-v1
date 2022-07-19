@@ -17,7 +17,7 @@ class Forminator_QForm_Result extends Forminator_Result {
 	 */
 	public function get_og_description( $entry ) {
 		$description = '';
-		$quiz        = Forminator_Quiz_Model::model()->load( $entry->form_id );
+		$quiz        = Forminator_Base_Form_Model::get_model( $entry->form_id );
 		if ( $quiz instanceof Forminator_Quiz_Model ) {
 			if ( 'knowledge' === $quiz->quiz_type ) {
 				$description = $this->get_og_description_knowledge( $quiz, $entry );
@@ -37,7 +37,7 @@ class Forminator_QForm_Result extends Forminator_Result {
 	 * @return string
 	 */
 	public function get_og_title( $entry ) {
-		$quiz     = Forminator_Quiz_Model::model()->load( $entry->form_id );
+		$quiz     = Forminator_Base_Form_Model::get_model( $entry->form_id );
 		$entry_id = $entry->entry_id;
 
 		/**
@@ -117,7 +117,7 @@ class Forminator_QForm_Result extends Forminator_Result {
 	 * @return string
 	 */
 	public function get_og_image( $entry ) {
-		$quiz     = Forminator_Quiz_Model::model()->load( $entry->form_id );
+		$quiz     = Forminator_Base_Form_Model::get_model( $entry->form_id );
 		$entry_id = $entry->entry_id;
 
 		/**
@@ -164,7 +164,6 @@ class Forminator_QForm_Result extends Forminator_Result {
 		$data        = $entry;
 		$entry_id    = $entry->entry_id;
 		$quiz_title  = '';
-		$current_url = array();
 
 		if ( isset( $quiz->settings['quiz_name'] ) ) {
 			$quiz_title = esc_html( $quiz->settings['quiz_name'] );
@@ -181,13 +180,10 @@ class Forminator_QForm_Result extends Forminator_Result {
 				}
 			}
 		}
-		if ( isset( $data->meta_data['quiz_url'] ) ) {
-			$current_url['current_url'] = $data->meta_data['quiz_url']['value'];
-		}
 		if ( $total > 0 ) {
 			$result = esc_html( $right ) . '/' . esc_html( $total );
 
-			$description = forminator_get_social_message( $quiz->settings, $quiz_title, $result, $current_url );
+			$description = forminator_get_social_message( $quiz->settings, $quiz_title, $result );
 		}
 
 		/**
@@ -220,7 +216,6 @@ class Forminator_QForm_Result extends Forminator_Result {
 		$description  = '';
 		$quiz_title   = '';
 		$result_title = '';
-		$current_url  = array();
 		$entry_id     = $entry->entry_id;
 		if ( isset( $quiz->settings['quiz_name'] ) ) {
 			$quiz_title = esc_html( $quiz->settings['quiz_name'] );
@@ -246,16 +241,12 @@ class Forminator_QForm_Result extends Forminator_Result {
 			$result = $quiz->getResult( $result_slug );
 		}
 
-		if ( isset( $entry->meta_data['quiz_url'] ) ) {
-			$current_url['current_url'] = $entry->meta_data['quiz_url']['value'];
-		}
-
 		if ( $result ) {
 			if ( isset( $result['title'] ) ) {
 				$result_title = esc_html( $result['title'] );
 			}
 
-			$description = forminator_get_social_message( $quiz->settings, $quiz_title, $result_title, $current_url );
+			$description = forminator_get_social_message( $quiz->settings, $quiz_title, $result_title );
 		}
 
 		/**
@@ -346,7 +337,7 @@ class Forminator_QForm_Result extends Forminator_Result {
 			return false;
 		}
 
-		$quiz = Forminator_Quiz_Model::model()->load( $entry->form_id );
+		$quiz = Forminator_Base_Form_Model::get_model( $entry->form_id );
 
 		if ( ! $quiz instanceof Forminator_Quiz_Model ) {
 			return false;

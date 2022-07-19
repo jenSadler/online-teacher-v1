@@ -57,7 +57,7 @@
 			cursor: move;
 			float: left;
 			font-size: 1.8em;
-			margin-right: 10px;
+			margin-right: var(--tec-spacer-2);
 			position: relative;
 		}
 .tribe-tickets-editor-table .ui-sortable td.column-primary .tribe-handle {
@@ -68,9 +68,30 @@
 	}
 .tribe-tickets-editor-table .tribe-tickets__tickets-editor-ticket-name {
 		display: table;
+		font-size: 13px;
+		line-height: var(--tec-spacer-5);
 		table-layout: fixed;
 		width: 100%;
 	}
+.tribe-tickets-editor-table .tribe-tickets__tickets-editor-ticket-available-dates {
+		color: #999;
+		font-size: var(--tec-font-size-1);
+		line-height: var(--tec-spacer-4);
+	}
+.tribe-tickets-editor-table .tribe-tickets__tickets-editor-ticket-available-dates:before {
+			color: #ccc;
+			font-size: var(--tec-spacer-3);
+			height: var(--tec-spacer-3);
+			line-height: var(--tec-spacer-3);
+			margin-top: calc(var(--tec-spacer-0)/2);
+			width: var(--tec-spacer-3);
+		}
+.tribe-tickets-editor-table .tribe-tickets__tickets-editor-ticket-available-dates-icon-expired {
+		font-style: italic;
+	}
+.tribe-tickets-editor-table .tribe-tickets__tickets-editor-ticket-available-dates-icon-expired:before {
+			color: var(--tec-color-icon-error);
+		}
 .tribe-tickets-editor-table .tribe-tickets__tickets-editor-ticket-name-sortable,
 	.tribe-tickets-editor-table .tribe-tickets__tickets-editor-ticket-name-title {
 		display: table-cell;

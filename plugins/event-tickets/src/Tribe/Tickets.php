@@ -654,7 +654,7 @@ if ( ! class_exists( 'Tribe__Tickets__Tickets' ) ) {
 
 			$event_id = get_post_meta( $ticket_product, $this->get_event_key(), true );
 
-			if ( ! $event_id && '' === ( $event_id = get_post_meta( $ticket_product, $this->attendee_event_key, true ) ) ) {
+			if ( ! empty( $this->attendee_event_key ) && ! $event_id && '' === ( $event_id = get_post_meta( $ticket_product, $this->attendee_event_key, true ) ) ) {
 				return false;
 			}
 
@@ -2724,6 +2724,11 @@ if ( ! class_exists( 'Tribe__Tickets__Tickets' ) ) {
 		 * @return array
 		 */
 		public function get_ticket_prices( array $prices, $post_id ) {
+			// If value already exists, do not override it. Return it.
+			if ( ! empty( $prices ) ) {
+				return $prices;
+			}
+
 			// Iterate through all tickets from all providers
 			foreach ( self::get_all_event_tickets( $post_id ) as $ticket ) {
 				// No need to add the pricepoint if it is already in the array

@@ -5,7 +5,6 @@ if ( isset( static::$module_slug ) ) {
 	$module_slug = Forminator_Admin_Module_Edit_Page::get_slug_ajax();
 }
 
-$import_dialog = 'import_' . forminator_get_prefix( $module_slug, 'c' );
 // Empty message.
 $image_empty   = forminator_plugin_url() . 'assets/images/forminator-empty-message.png';
 $image_empty2x = forminator_plugin_url() . 'assets/images/forminator-empty-message@2x.png';
@@ -49,9 +48,9 @@ $search_empty2x = forminator_plugin_url() . 'assets/images/forminator-no-result@
 
 					<a href="#"
 						class="sui-button wpmudev-open-modal"
-						data-modal="<?php echo esc_attr( $import_dialog ); ?>"
+						data-modal="<?php echo esc_attr( 'import_' . $module_slug ); ?>"
 						data-modal-title=""
-						data-nonce="<?php echo esc_attr( wp_create_nonce( 'forminator_popup_' . $import_dialog ) ); ?>">
+						data-nonce="<?php echo esc_attr( wp_create_nonce( 'forminator_popup_import_' . $module_slug ) ); ?>">
 						<i class="sui-icon-upload-cloud" aria-hidden="true"></i> <?php esc_html_e( 'Import', 'forminator' ); ?>
 					</a>
 				</p>

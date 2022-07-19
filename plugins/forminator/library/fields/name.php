@@ -134,7 +134,7 @@ class Forminator_Name extends Forminator_Field {
 	 *
 	 * @return string
 	 */
-	public function get_simple( $field, $design ) {
+	public function get_simple( $field, $design, $draft_value = null ) {
 		$html        = '';
 		$id          = self::get_property( 'element_id', $field );
 		$name        = $id;
@@ -151,10 +151,15 @@ class Forminator_Name extends Forminator_Field {
 
 		$value = '';
 
-		// Check if Pre-fill parameter used.
-		if ( $this->has_prefill( $field ) ) {
+		if ( isset( $draft_value['value'] ) ) {
+
+			$value = esc_attr( $draft_value['value'] );
+
+		} elseif ( $this->has_prefill( $field ) ) {
+
 			// We have pre-fill parameter, use its value or $value.
 			$value = $this->get_prefill( $field, $value );
+
 		}
 
 		$name_attr = array(
@@ -167,7 +172,7 @@ class Forminator_Name extends Forminator_Field {
 			'aria-required' => $ariareq,
 		);
 
-		$autofill_markup = $this->get_element_autofill_markup_attr( $name, $this->form_settings );
+		$autofill_markup = $this->get_element_autofill_markup_attr( $name );
 
 		$name_attr = array_merge( $name_attr, $autofill_markup );
 
@@ -190,15 +195,20 @@ class Forminator_Name extends Forminator_Field {
 	 *
 	 * @return string
 	 */
-	public function get_multi_first_row( $field, $design ) {
-		$html     = '';
-		$cols     = 12;
-		$id       = self::get_property( 'element_id', $field );
-		$name     = $id;
-		$required = self::get_property( 'required', $field, false );
-		$prefix   = self::get_property( 'prefix', $field, false );
-		$fname    = self::get_property( 'fname', $field, false );
+	public function get_multi_first_row( $field, $design, $draft_value = null ) {
+		$html     	 = '';
+		$cols     	 = 12;
+		$id       	 = self::get_property( 'element_id', $field );
+		$name     	 = $id;
+		$required 	 = self::get_property( 'required', $field, false );
+		$prefix   	 = self::get_property( 'prefix', $field, false );
+		$fname    	 = self::get_property( 'fname', $field, false );
+		$draft_value = isset( $draft_value['value'] ) ? $draft_value['value'] : '';
 
+		// Return If prefix and first name is not enabled.
+		if ( empty( $prefix ) && empty( $fname ) ) {
+			return '';
+		}
 		/**
 		 * Backward compat, we dont have separate required configuration per fields
 		 * Fallback value from global `required`
@@ -232,18 +242,23 @@ class Forminator_Name extends Forminator_Field {
 			);
 
 			$options        = array();
-			$prefill        = false;
+			$value        = false;
 			$prefix_options = forminator_get_name_prefixes();
 
-			if ( $this->has_prefill( $field, 'prefix' ) ) {
+			if ( isset( $draft_value['prefix'] ) ) {
+
+				$value = esc_attr( $draft_value['prefix'] );
+
+			} elseif ( $this->has_prefill( $field, 'prefix' ) ) {
+
 				// We have pre-fill parameter, use its value or $value.
-				$prefill = $this->get_prefill( $field, false, 'prefix' );
+				$value = $this->get_prefill( $field, false, 'prefix' );
 			}
 
 			foreach ( $prefix_options as $key => $pfx ) {
 				$selected = false;
 
-				if ( strtolower( $key ) === strtolower( $prefill ) ) {
+				if ( strtolower( $key ) === strtolower( $value ) ) {
 					$selected = true;
 				}
 				$options[] = array(
@@ -284,11 +299,19 @@ class Forminator_Name extends Forminator_Field {
 				'data-multi'    => true,
 			);
 
-			$autofill_markup = $this->get_element_autofill_markup_attr( $id . '-first-name', $this->form_settings );
+			$autofill_markup = $this->get_element_autofill_markup_attr( $id . '-first-name' );
 
 			$first_name = array_merge( $first_name, $autofill_markup );
 
-			$first_name = $this->replace_from_prefill( $field, $first_name, 'fname' );
+			if ( isset( $draft_value['first-name'] ) ) {
+
+				$first_name['value'] = $draft_value['first-name'];
+
+			} elseif ( $this->has_prefill( $field, 'prefix' ) ) {
+
+				$first_name = $this->replace_from_prefill( $field, $first_name, 'fname' );
+
+			}
 
 			$html .= sprintf( '<div class="forminator-col forminator-col-%s">', $cols );
 
@@ -323,15 +346,20 @@ class Forminator_Name extends Forminator_Field {
 	 *
 	 * @return string
 	 */
-	public function get_multi_second_row( $field, $design ) {
-		$html     = '';
-		$cols     = 12;
-		$id       = self::get_property( 'element_id', $field );
-		$name     = $id;
-		$required = self::get_property( 'required', $field, false );
-		$mname    = self::get_property( 'mname', $field, false );
-		$lname    = self::get_property( 'lname', $field, false );
+	public function get_multi_second_row( $field, $design, $draft_value = null ) {
+		$html     	 = '';
+		$cols     	 = 12;
+		$id       	 = self::get_property( 'element_id', $field );
+		$name     	 = $id;
+		$required 	 = self::get_property( 'required', $field, false );
+		$mname    	 = self::get_property( 'mname', $field, false );
+		$lname    	 = self::get_property( 'lname', $field, false );
+		$draft_value = isset( $draft_value['value'] ) ? $draft_value['value'] : '';
 
+		// Return If middle name and last name is not enabled.
+		if ( empty( $mname ) && empty( $lname ) ) {
+			return '';
+		}
 		/**
 		 * Backward compat, we dont have separate required configuration per fields
 		 * Fallback value from global `required`
@@ -371,7 +399,15 @@ class Forminator_Name extends Forminator_Field {
 				'data-multi'    => true,
 			);
 
-			$middle_name = $this->replace_from_prefill( $field, $middle_name, 'mname' );
+			if ( isset( $draft_value['middle-name'] ) ) {
+
+				$middle_name['value'] = $draft_value['middle-name'];
+
+			} elseif ( $this->has_prefill( $field, 'prefix' ) ) {
+
+				$middle_name = $this->replace_from_prefill( $field, $middle_name, 'mname' );
+
+			}
 
 			$html .= sprintf( '<div class="forminator-col forminator-col-%s">', $cols );
 
@@ -403,11 +439,19 @@ class Forminator_Name extends Forminator_Field {
 				'data-multi'    => true,
 			);
 
-			$autofill_markup = $this->get_element_autofill_markup_attr( $id . '-last-name', $this->form_settings );
+			$autofill_markup = $this->get_element_autofill_markup_attr( $id . '-last-name' );
 
 			$last_name = array_merge( $last_name, $autofill_markup );
 
-			$last_name = $this->replace_from_prefill( $field, $last_name, 'lname' );
+			if ( isset( $draft_value['last-name'] ) ) {
+
+				$last_name['value'] = $draft_value['last-name'];
+
+			} elseif ( $this->has_prefill( $field, 'prefix' ) ) {
+
+				$last_name = $this->replace_from_prefill( $field, $last_name, 'lname' );
+
+			}
 
 			$html .= sprintf( '<div class="forminator-col forminator-col-%s">', $cols );
 
@@ -442,11 +486,9 @@ class Forminator_Name extends Forminator_Field {
 	 *
 	 * @return mixed
 	 */
-	public function markup( $field, $settings = array() ) {
+	public function markup( $field, $settings = array(), $draft_value = null ) {
 		$this->field         = $field;
 		$this->form_settings = $settings;
-
-		$this->init_autofill( $settings );
 
 		$multiple = self::get_property( 'multiple_name', $field, false, 'bool' );
 		$design   = $this->get_form_style( $settings );
@@ -454,11 +496,11 @@ class Forminator_Name extends Forminator_Field {
 		// Check we use multi fields.
 		if ( ! $multiple ) {
 			// Only one field.
-			$html = $this->get_simple( $field, $design );
+			$html = $this->get_simple( $field, $design, $draft_value );
 		} else {
 			// Multiple fields.
-			$html  = $this->get_multi_first_row( $field, $design );
-			$html .= $this->get_multi_second_row( $field, $design );
+			$html  = $this->get_multi_first_row( $field, $design, $draft_value );
+			$html .= $this->get_multi_second_row( $field, $design, $draft_value );
 		}
 
 		return apply_filters( 'forminator_field_name_markup', $html, $field );
@@ -616,9 +658,8 @@ class Forminator_Name extends Forminator_Field {
 	 *
 	 * @param array        $field
 	 * @param array|string $data
-	 * @param array        $post_data
 	 */
-	public function validate( $field, $data, $post_data = array() ) {
+	public function validate( $field, $data ) {
 		$id          = self::get_property( 'element_id', $field );
 		$is_multiple = self::get_property( 'multiple_name', $field, false, 'bool' );
 		$required    = $this->is_required( $field );

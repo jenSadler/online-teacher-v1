@@ -97,7 +97,7 @@ abstract class Forminator_Addon_Quiz_Hooks_Abstract extends Forminator_Addon_Hoo
 	public function __construct( Forminator_Addon_Abstract $addon, $quiz_id ) {
 		$this->addon   = $addon;
 		$this->quiz_id = $quiz_id;
-		$this->quiz    = Forminator_Quiz_Model::model()->load( $this->quiz_id );
+		$this->quiz    = Forminator_Base_Form_Model::get_model( $this->quiz_id );
 		if ( ! $this->quiz ) {
 			/* translators: ... */
 			throw new Forminator_Addon_Exception( sprintf( __( 'Quiz with id %d could not be found', 'forminator' ), $this->quiz_id ) );
@@ -109,7 +109,7 @@ abstract class Forminator_Addon_Quiz_Hooks_Abstract extends Forminator_Addon_Hoo
 		$this->quiz_settings_instance = $this->addon->get_addon_settings( $this->quiz_id, 'quiz' );
 
 		if ( isset( $this->quiz->settings['hasLeads'] ) && $this->quiz->settings['hasLeads'] ) {
-			$this->lead_model             = Forminator_Form_Model::model()->load( $this->quiz->settings['leadsId'] );
+			$this->lead_model             = Forminator_Base_Form_Model::get_model( $this->quiz->settings['leadsId'] );
 			$this->lead_settings_instance = $this->addon->get_addon_settings( $this->quiz->settings['leadsId'], 'form' );
 		}
 	}

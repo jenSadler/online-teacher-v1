@@ -119,7 +119,7 @@
 				this._stripe.confirmCardPayment(secret, {
 					payment_method: {
 						card: self._cardElement,
-						billing_details: self.getBillingData(),
+						...self.getBillingData(),
 					},
 				})
 				.then(function(result) {
@@ -152,6 +152,7 @@
 			this._stripe.createToken(this._cardElement).then(function (result) {
 				if (result.error) {
 					self.showCardError(result.error.message, true);
+					self.$el.find( 'button' ).removeAttr( 'disabled' );
 				} else {
 					self.hideCardError();
 

@@ -362,18 +362,13 @@ function forminator_get_allowed_field_types_for_addon() {
  */
 function forminator_addon_format_form_fields( Forminator_Base_Form_Model $custom_form_model ) {
 	$formatted_fields    = array();
-	$fields              = $custom_form_model->get_fields();
+	$fields              = $custom_form_model->get_real_fields();
 	$allowed_field_types = forminator_get_allowed_field_types_for_addon();
 
 	foreach ( $fields as $field ) {
-		$ignored_fields = Forminator_Form_Entry_Model::ignored_fields();
-		if ( in_array( $field->__get( 'type' ), $ignored_fields, true ) ) {
-			continue;
-		}
-
 		$field_as_array = $field->to_formatted_array();
 		// check non label fields.
-		if ( ! isset( $field_as_array['field_label'] ) || empty( $field_as_array['field_label'] ) ) {
+		if ( empty( $field_as_array['field_label'] ) ) {
 			$field_as_array['field_label'] = $field_as_array['type'];
 		}
 
@@ -755,7 +750,7 @@ function forminator_format_submitted_data_for_addon( $form_fields, $current_entr
 						$data['ampm'] = $ampm;
 					}
 
-					$time = Forminator_Form_Entry_Model::meta_value_to_string( $form_field['type'], $data, false );
+					$time = Forminator_Form_Entry_Model::meta_value_to_string( $form_field['type'], $data );
 
 					$formatted_post_data[ $form_field['element_id'] ] = $time;
 
@@ -789,7 +784,7 @@ function forminator_format_submitted_data_for_addon( $form_fields, $current_entr
 						$data['format'] = datepicker_default_format( $form_field['date_format'] );
 					}
 
-					$date = Forminator_Form_Entry_Model::meta_value_to_string( $form_field['type'], $data, false );
+					$date = Forminator_Form_Entry_Model::meta_value_to_string( $form_field['type'], $data );
 
 					$formatted_post_data[ $form_field['element_id'] ] = $date;
 
@@ -821,12 +816,12 @@ function forminator_format_submitted_data_for_addon( $form_fields, $current_entr
 						}
 					}
 				}
-			
+
 			// For ajax multi-upload
-			} elseif ( 
-				'upload' === $form_field['type'] && 
-				'multiple' === $form_field['file-type'] && 
-				( ! isset( $form_field['upload-method'] ) || 'ajax' === $form_field['upload-method'] ) 
+			} elseif (
+				'upload' === $form_field['type'] &&
+				'multiple' === $form_field['file-type'] &&
+				( ! isset( $form_field['upload-method'] ) || 'ajax' === $form_field['upload-method'] )
 			) {
 				$entry_key = array_search( $form_field['element_id'], array_column( $current_entry_fields, 'name') );
 				if ( false !== $entry_key && ! empty( $current_entry_fields[$entry_key] ) ) {
@@ -1040,10 +1035,9 @@ function forminator_addon_replace_custom_vars( $content, $submitted_data, Formin
 	}
 
 	$content = forminator_replace_variables( $content, $custom_form->id );
-	$content = forminator_replace_custom_form_data( $content, $custom_form, $submitted_data, $entry_model );
+	$content = forminator_replace_custom_form_data( $content, $custom_form, $entry_model );
 
-	$fields      = forminator_fields_to_array();
-	$field_types = array_keys( $fields );
+	$field_types = Forminator_Core::get_field_types();
 
 	// sort by length, so stripos will work by traverse from longest field type first.
 	$field_types_strlen = array_map( 'strlen', $field_types );
@@ -1062,14 +1056,8 @@ function forminator_addon_replace_custom_vars( $content, $submitted_data, Formin
 		foreach ( $matches[0] as $match ) {
 			$element_id = forminator_clear_field_id( $match );
 
-			$field_type = '';
 			$meta_value = array();
-			foreach ( $field_types as $type ) {
-				if ( false !== stripos( $element_id, $type . '-' ) ) {
-					$field_type = $type;
-					break;
-				}
-			}
+			$field_type = Forminator_Core::get_field_type( $element_id );
 
 			if ( isset( $entry_model->meta_data[ $element_id ] ) ) {
 				$meta_value = $entry_model->meta_data[ $element_id ]['value'];
@@ -1252,64 +1240,6 @@ function forminator_addon_format_poll_fields( Forminator_Base_Form_Model $poll )
 }
 
 /**
- * Formatted submitted data of Form to used by addon
- *
- * @since 1.6.1
- * @return array
- */
-function forminator_addon_format_poll_submitted_data() {
-	$files_data          = $_FILES;
-	$formatted_post_data = array();
-
-	$render_id = filter_input( INPUT_POST, 'render_id', FILTER_VALIDATE_INT );
-	if ( $render_id ) {
-		$formatted_post_data['render_id'] = $render_id;
-	}
-
-	$page_id = filter_input( INPUT_POST, 'page_id', FILTER_VALIDATE_INT );
-	if ( $page_id ) {
-		$formatted_post_data['page_id'] = $page_id;
-	}
-
-	$current_url = filter_input( INPUT_POST, 'current_url', FILTER_SANITIZE_URL );
-	if ( $current_url ) {
-		$formatted_post_data['current_url'] = $current_url;
-	}
-
-	$http_referer = filter_input( INPUT_POST, '_wp_http_referer', FILTER_SANITIZE_URL );
-	if ( $http_referer ) {
-		$formatted_post_data['_wp_http_referer'] = $http_referer;
-	}
-
-	$skipped_keys = array( 'forminator_nonce', 'form_id', 'action' );
-
-	// add left-over superglobal POST.
-	foreach ( $_POST as $key => $post_datum ) {
-		if ( ! isset( $formatted_post_data[ $key ] ) && ! in_array( $key, $skipped_keys, true ) ) {
-			$formatted_post_data[ $key ] = Forminator_Core::sanitize_array( $post_datum, $key );
-		}
-	}
-
-	// add left-over $_FILES.
-	foreach ( $files_data as $key => $files_datum ) {
-		if ( ! isset( $formatted_post_data[ $key ] ) ) {
-			$formatted_post_data[ $key ] = $files_datum;
-		}
-	}
-
-	/**
-	 * Filter formatted form submmitted data to be used by addon
-	 *
-	 * @since 1.6.1
-	 *
-	 * @param array $formatted_post_data current formatted post data.
-	 */
-	$formatted_post_data = apply_filters( 'forminator_addon_formatted_poll_submitted_data', $formatted_post_data );
-
-	return $formatted_post_data;
-}
-
-/**
  * Format quiz settings to used by addon
  *
  * @since 1.6.2
@@ -1334,64 +1264,6 @@ function forminator_addon_format_quiz_settings( Forminator_Quiz_Model $quiz ) {
 	$quiz_settings = apply_filters( 'forminator_addon_formatted_quiz_settings', $quiz_settings, $quiz );
 
 	return $quiz_settings;
-}
-
-/**
- * Formatted submitted data of Quiz to used by addon
- *
- * @since 1.6.2
- * @return array
- */
-function forminator_addon_format_quiz_submitted_data() {
-	$files_data          = $_FILES;
-	$formatted_post_data = array();
-
-	$render_id = filter_input( INPUT_POST, 'render_id', FILTER_VALIDATE_INT );
-	if ( ! empty( $render_id ) ) {
-		$formatted_post_data['render_id'] = $render_id;
-	}
-
-	$page_id = filter_input( INPUT_POST, 'page_id', FILTER_VALIDATE_INT );
-	if ( $page_id ) {
-		$formatted_post_data['page_id'] = $page_id;
-	}
-
-	$current_url = filter_input( INPUT_POST, 'current_url', FILTER_SANITIZE_URL );
-	if ( $current_url ) {
-		$formatted_post_data['current_url'] = $current_url;
-	}
-
-	$http_referer = filter_input( INPUT_POST, '_wp_http_referer', FILTER_SANITIZE_URL );
-	if ( $http_referer ) {
-		$formatted_post_data['_wp_http_referer'] = $http_referer;
-	}
-
-	$skipped_keys = array( 'forminator_nonce', 'form_id', 'action' );
-
-	// add left-over superglobal POST.
-	foreach ( $_POST as $key => $post_datum ) {
-		if ( ! isset( $formatted_post_data[ $key ] ) && ! in_array( $key, $skipped_keys, true ) ) {
-			$formatted_post_data[ $key ] = Forminator_Core::sanitize_array( $post_datum, $key );
-		}
-	}
-
-	// add left-over $_FILES.
-	foreach ( $files_data as $key => $files_datum ) {
-		if ( ! isset( $formatted_post_data[ $key ] ) ) {
-			$formatted_post_data[ $key ] = $files_datum;
-		}
-	}
-
-	/**
-	 * Filter formatted form submitted data to be used by addon
-	 *
-	 * @since 1.6.1
-	 *
-	 * @param array $formatted_post_data current formatted post data.
-	 */
-	$formatted_post_data = apply_filters( 'forminator_addon_formatted_quiz_submitted_data', $formatted_post_data );
-
-	return $formatted_post_data;
 }
 
 /**
@@ -1467,7 +1339,7 @@ function get_addons_lead_form_entry_data( $quiz_settings, $submitted_data, $addo
 		if ( ! empty( $addons_fields ) ) {
 			foreach ( $addons_fields as $form_field ) {
 				if ( array_key_exists( $form_field['element_id'], $submitted_data ) ) {
-					$form_value                                  = Forminator_Form_Entry_Model::meta_value_to_string( $form_field['field_type'], $submitted_data[ $form_field['element_id'] ], false );
+					$form_value                                  = Forminator_Form_Entry_Model::meta_value_to_string( $form_field['field_type'], $submitted_data[ $form_field['element_id'] ] );
 					$submitted_data[ $form_field['element_id'] ] = $form_value;
 				}
 			}

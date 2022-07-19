@@ -12,6 +12,9 @@ class MonsterInsights_Notification_No_Addons extends MonsterInsights_Notificatio
     public function prepare_notification_data( $notification ) {
 
         $addons = monsterinsights_get_addons();
+		if ( ! $addons || ! is_array( $addons['licensed'] ) ) {
+			return false;
+		}
         $licensed_addons = $addons['licensed'];
 
         $has_active_addons = false;

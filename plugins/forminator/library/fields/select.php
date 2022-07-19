@@ -117,7 +117,7 @@ class Forminator_Select extends Forminator_Field {
 	 *
 	 * @return mixed
 	 */
-	public function markup( $field, $settings = array() ) {
+	public function markup( $field, $settings = array(), $draft_value = null ) {
 
 		$this->field = $field;
 
@@ -163,9 +163,10 @@ class Forminator_Select extends Forminator_Field {
 		}
 
 		if ( 'multiselect' === $field_type ) {
-			$post_value = self::get_post_data( $name, self::FIELD_PROPERTY_VALUE_NOT_EXIST );
-			$field_name = $name;
-			$name       = $name . '[]';
+			$post_value  = self::get_post_data( $name, self::FIELD_PROPERTY_VALUE_NOT_EXIST );
+			$field_name  = $name;
+			$name        = $name . '[]';
+			$draft_value = isset( $draft_value['value'] ) ? array_map( 'trim', $draft_value['value'] ) : '';
 
 			$html .= '<div class="forminator-multiselect">';
 
@@ -185,8 +186,13 @@ class Forminator_Select extends Forminator_Field {
 					$option_first_key = $value;
 				}
 
-				// Check if Pre-fill parameter used.
-				if ( $this->has_prefill( $field ) ) {
+				if ( ! empty( $draft_value ) ) {
+
+					if ( in_array( trim( $value ), $draft_value ) ) { // phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict
+						$option_default = true;
+					}
+
+				} elseif ( $this->has_prefill( $field ) ) {
 					// We have pre-fill parameter, use its value or $value.
 					$prefill        = $this->get_prefill( $field, false );
 					$prefill_values = explode( ',', $prefill );
@@ -280,8 +286,13 @@ class Forminator_Select extends Forminator_Field {
 				$option_default    = isset( $option['default'] ) ? filter_var( $option['default'], FILTER_VALIDATE_BOOLEAN ) : false;
 				$calculation_value = $calc_enabled && isset( $option['calculation'] ) ? esc_html( $option['calculation'] ) : 0.0;
 
-				// Check if Pre-fill parameter used.
-				if ( $this->has_prefill( $field ) ) {
+				if ( isset( $draft_value['value'] ) ) {
+
+					if ( trim( $draft_value['value'] ) === trim( $value ) ) {
+						$option_default = true;
+					}
+
+				} elseif ( $this->has_prefill( $field ) ) {
 					// We have pre-fill parameter, use its value or $value.
 					$prefill        = $this->get_prefill( $field, false );
 					$prefill_values = explode( ',', $prefill );
@@ -406,13 +417,33 @@ class Forminator_Select extends Forminator_Field {
 	 *
 	 * @param array        $field
 	 * @param array|string $data
-	 * @param array        $post_data
 	 */
-	public function validate( $field, $data, $post_data = array() ) {
+	public function validate( $field, $data ) {
 		$select_type = isset( $field['value_type'] ) ? $field['value_type'] : 'single';
+		$id = self::get_property( 'element_id', $field );
+		$value_exists = true;
+
+		if ( is_array( $data ) ) {
+			foreach ( $data as $value ) {
+				if ( false === array_search( $value, array_column( $field['options'], 'value' ) ) ) {
+					$value_exists = false;
+					break;
+				}
+			}
+		} elseif ( ! empty( $data ) && false === array_search( $data, array_column( $field['options'], 'value' ) ) ) {
+			$value_exists = false;
+		}
+
+		if ( ! $value_exists ) {
+			$this->validation_message[ $id ] = apply_filters(
+				'forminator_select_field_nonexistent_validation_message',
+				__( 'Selected value does not exist.', 'forminator' ),
+				$id,
+				$field
+			);
+		}
 
 		if ( $this->is_required( $field ) ) {
-			$id = self::get_property( 'element_id', $field );
 			if ( ! isset( $data ) ||
 				 ( 'single' === $select_type && ! strlen( $data ) ) ||
 				 ( 'multiselect' === $select_type && empty( $data ) )
@@ -455,12 +486,12 @@ class Forminator_Select extends Forminator_Field {
 	 *
 	 * @since 1.7
 	 *
-	 * @param $submitted_data
+	 * @param $submitted_field
 	 * @param $field_settings
 	 *
 	 * @return float|string
 	 */
-	private function calculable_value( $submitted_data, $field_settings ) {
+	private static function calculable_value( $submitted_field, $field_settings ) {
 		$enabled = self::get_property( 'calculations', $field_settings, false, 'bool' );
 		if ( ! $enabled ) {
 			return self::FIELD_NOT_CALCULABLE;
@@ -473,9 +504,9 @@ class Forminator_Select extends Forminator_Field {
 
 		if ( 'multiselect' !== $field_type ) {
 			// process as array.
-			$submitted_data = array( $submitted_data );
+			$submitted_field = array( $submitted_field );
 		}
-		if ( ! is_array( $submitted_data ) ) {
+		if ( ! is_array( $submitted_field ) ) {
 			return $sums;
 		}
 
@@ -484,7 +515,7 @@ class Forminator_Select extends Forminator_Field {
 			$calculation_value = isset( $option['calculation'] ) ? $option['calculation'] : 0.0;
 
 			// strict array compare disabled to allow non-coercion type compare.
-			if ( in_array( $option_value, $submitted_data, true ) ) {
+			if ( in_array( $option_value, $submitted_field, true ) ) {
 				// this one is selected.
 				$sums += floatval( $calculation_value );
 			}
@@ -497,20 +528,20 @@ class Forminator_Select extends Forminator_Field {
 	 * @since 1.7
 	 * @inheritdoc
 	 */
-	public function get_calculable_value( $submitted_data, $field_settings ) {
-		$calculable_value = $this->calculable_value( $submitted_data, $field_settings );
+	public static function get_calculable_value( $submitted_field_data, $field_settings ) {
+		$calculable_value = self::calculable_value( $submitted_field_data, $field_settings );
 		/**
 		 * Filter formula being used on calculable value on select field
 		 *
 		 * @since 1.7
 		 *
 		 * @param float $calculable_value
-		 * @param array $submitted_data
+		 * @param array $submitted_field_data
 		 * @param array $field_settings
 		 *
 		 * @return string|int|float
 		 */
-		$calculable_value = apply_filters( 'forminator_field_select_calculable_value', $calculable_value, $submitted_data, $field_settings );
+		$calculable_value = apply_filters( 'forminator_field_select_calculable_value', $calculable_value, $submitted_field_data, $field_settings );
 
 		return $calculable_value;
 	}

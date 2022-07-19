@@ -237,16 +237,49 @@ $generated_i18n_strings = array(
 	// Reference: src/blocks/popular-posts-widget/index.js:476
 	__( 'Display Comments', 'ga-premium' ),
 
+	// Reference: src/plugins/exclude-page-tracking/components/page-insights-Pro.js:37
+	__( 'Last 30 days', 'ga-premium' ),
+
+	// Reference: src/plugins/exclude-page-tracking/components/page-insights-Pro.js:38
+	__( 'Yesterday', 'ga-premium' ),
+
+	// Reference: src/plugins/exclude-page-tracking/components/page-insights-hide-btn.js:8
+	__( 'Hide Page Insights', 'ga-premium' ),
+
+	// Reference: src/plugins/exclude-page-tracking/components/page-insights-show-btn.js:8
+	__( 'Show Page Insights', 'ga-premium' ),
+
+	// Reference: src/plugins/exclude-page-tracking/components/page-insights-status-message.js:7
+	__( 'There are no Page Insights available because your page is not published or has been published for less than 24 hours.', 'ga-premium' ),
+
+	// Reference: src/plugins/exclude-page-tracking/components/page-insights-tab-content.js:11
+	__( 'Bounce Rate', 'ga-premium' ),
+
+	// Reference: src/plugins/exclude-page-tracking/components/page-insights-tab-content.js:12
+	__( 'Time On Page', 'ga-premium' ),
+
+	// Reference: src/plugins/exclude-page-tracking/components/page-insights-tab-content.js:13
+	__( 'Load Time', 'ga-premium' ),
+
+	// Reference: src/plugins/exclude-page-tracking/components/page-insights-tab-content.js:14
+	__( 'Entrances', 'ga-premium' ),
+
+	// Reference: src/plugins/exclude-page-tracking/components/page-insights-tab-content.js:15
+	__( 'Page Views', 'ga-premium' ),
+
+	// Reference: src/plugins/exclude-page-tracking/components/page-insights-tab-content.js:16
+	__( 'Exits', 'ga-premium' ),
+
 	// Reference: src/plugins/exclude-page-tracking/components/pro-badge.js:11
 	__( 'This is a PRO feature.', 'ga-premium' ),
 
 	// Reference: src/plugins/exclude-page-tracking/components/pro-badge.js:12
 	__( 'Upgrade', 'ga-premium' ),
 
-	// Reference: src/plugins/exclude-page-tracking/index.js:29
+	// Reference: src/plugins/exclude-page-tracking/index.js:36
 	__( 'Toggle to prevent Google Analytics from tracking this page.', 'ga-premium' ),
 
-	// Reference: src/plugins/exclude-page-tracking/index.js:30
+	// Reference: src/plugins/exclude-page-tracking/index.js:37
 	__( 'Exclude page from Google Analytics Tracking', 'ga-premium' ),
 
 	// Reference: src/plugins/monsterinsights-Headline-Analyzer/components/HeadlinePanelCharacterCount.js:10

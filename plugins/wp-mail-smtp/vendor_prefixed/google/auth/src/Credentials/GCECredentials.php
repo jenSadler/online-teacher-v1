@@ -139,20 +139,26 @@ class GCECredentials extends \WPMailSMTP\Vendor\Google\Auth\CredentialsLoader im
      */
     private $quotaProject;
     /**
+     * @var string|null
+     */
+    private $serviceAccountIdentity;
+    /**
      * @param Iam $iam [optional] An IAM instance.
      * @param string|array $scope [optional] the scope of the access request,
      *        expressed either as an array or as a space-delimited string.
      * @param string $targetAudience [optional] The audience for the ID token.
      * @param string $quotaProject [optional] Specifies a project to bill for access
      *   charges associated with the request.
+     * @param string $serviceAccountIdentity [optional] Specify a service
+     *   account identity name to use instead of "default".
      */
-    public function __construct(\WPMailSMTP\Vendor\Google\Auth\Iam $iam = null, $scope = null, $targetAudience = null, $quotaProject = null)
+    public function __construct(\WPMailSMTP\Vendor\Google\Auth\Iam $iam = null, $scope = null, $targetAudience = null, $quotaProject = null, $serviceAccountIdentity = null)
     {
         $this->iam = $iam;
         if ($scope && $targetAudience) {
             throw new \InvalidArgumentException('Scope and targetAudience cannot both be supplied');
         }
-        $tokenUri = self::getTokenUri();
+        $tokenUri = self::getTokenUri($serviceAccountIdentity);
         if ($scope) {
             if (\is_string($scope)) {
                 $scope = \explode(' ', $scope);
@@ -160,31 +166,61 @@ class GCECredentials extends \WPMailSMTP\Vendor\Google\Auth\CredentialsLoader im
             $scope = \implode(',', $scope);
             $tokenUri = $tokenUri . '?scopes=' . $scope;
         } elseif ($targetAudience) {
-            $tokenUri = \sprintf('http://%s/computeMetadata/%s?audience=%s', self::METADATA_IP, self::ID_TOKEN_URI_PATH, $targetAudience);
+            $tokenUri = self::getIdTokenUri($serviceAccountIdentity);
+            $tokenUri = $tokenUri . '?audience=' . $targetAudience;
             $this->targetAudience = $targetAudience;
         }
         $this->tokenUri = $tokenUri;
         $this->quotaProject = $quotaProject;
+        $this->serviceAccountIdentity = $serviceAccountIdentity;
     }
     /**
      * The full uri for accessing the default token.
      *
+     * @param string $serviceAccountIdentity [optional] Specify a service
+     *   account identity name to use instead of "default".
      * @return string
      */
-    public static function getTokenUri()
+    public static function getTokenUri($serviceAccountIdentity = null)
     {
         $base = 'http://' . self::METADATA_IP . '/computeMetadata/';
-        return $base . self::TOKEN_URI_PATH;
+        $base .= self::TOKEN_URI_PATH;
+        if ($serviceAccountIdentity) {
+            return \str_replace('/default/', '/' . $serviceAccountIdentity . '/', $base);
+        }
+        return $base;
     }
     /**
      * The full uri for accessing the default service account.
      *
+     * @param string $serviceAccountIdentity [optional] Specify a service
+     *   account identity name to use instead of "default".
      * @return string
      */
-    public static function getClientNameUri()
+    public static function getClientNameUri($serviceAccountIdentity = null)
     {
         $base = 'http://' . self::METADATA_IP . '/computeMetadata/';
-        return $base . self::CLIENT_ID_URI_PATH;
+        $base .= self::CLIENT_ID_URI_PATH;
+        if ($serviceAccountIdentity) {
+            return \str_replace('/default/', '/' . $serviceAccountIdentity . '/', $base);
+        }
+        return $base;
+    }
+    /**
+     * The full uri for accesesing the default identity token.
+     *
+     * @param string $serviceAccountIdentity [optional] Specify a service
+     *   account identity name to use instead of "default".
+     * @return string
+     */
+    private static function getIdTokenUri($serviceAccountIdentity = null)
+    {
+        $base = 'http://' . self::METADATA_IP . '/computeMetadata/';
+        $base .= self::ID_TOKEN_URI_PATH;
+        if ($serviceAccountIdentity) {
+            return \str_replace('/default/', '/' . $serviceAccountIdentity . '/', $base);
+        }
+        return $base;
     }
     /**
      * The full uri for accessing the default project ID.
@@ -275,9 +311,9 @@ class GCECredentials extends \WPMailSMTP\Vendor\Google\Auth\CredentialsLoader im
         if (null === ($json = \json_decode($response, \true))) {
             throw new \Exception('Invalid JSON response');
         }
+        $json['expires_at'] = \time() + $json['expires_in'];
         // store this so we can retrieve it later
         $this->lastReceivedToken = $json;
-        $this->lastReceivedToken['expires_at'] = \time() + $json['expires_in'];
         return $json;
     }
     /**
@@ -318,7 +354,7 @@ class GCECredentials extends \WPMailSMTP\Vendor\Google\Auth\CredentialsLoader im
         if (!$this->isOnGce) {
             return '';
         }
-        $this->clientName = $this->getFromMetadata($httpHandler, self::getClientNameUri());
+        $this->clientName = $this->getFromMetadata($httpHandler, self::getClientNameUri($this->serviceAccountIdentity));
         return $this->clientName;
     }
     /**
@@ -331,17 +367,22 @@ class GCECredentials extends \WPMailSMTP\Vendor\Google\Auth\CredentialsLoader im
      * @param string $stringToSign The string to sign.
      * @param bool $forceOpenSsl [optional] Does not apply to this credentials
      *        type.
+     * @param string $accessToken The access token to use to sign the blob. If
+     *        provided, saves a call to the metadata server for a new access
+     *        token. **Defaults to** `null`.
      * @return string
      */
-    public function signBlob($stringToSign, $forceOpenSsl = \false)
+    public function signBlob($stringToSign, $forceOpenSsl = \false, $accessToken = null)
     {
         $httpHandler = \WPMailSMTP\Vendor\Google\Auth\HttpHandler\HttpHandlerFactory::build(\WPMailSMTP\Vendor\Google\Auth\HttpHandler\HttpClientCache::getHttpClient());
         // Providing a signer is useful for testing, but it's undocumented
         // because it's not something a user would generally need to do.
         $signer = $this->iam ?: new \WPMailSMTP\Vendor\Google\Auth\Iam($httpHandler);
         $email = $this->getClientName($httpHandler);
-        $previousToken = $this->getLastReceivedToken();
-        $accessToken = $previousToken ? $previousToken['access_token'] : $this->fetchAuthToken($httpHandler)['access_token'];
+        if (\is_null($accessToken)) {
+            $previousToken = $this->getLastReceivedToken();
+            $accessToken = $previousToken ? $previousToken['access_token'] : $this->fetchAuthToken($httpHandler)['access_token'];
+        }
         return $signer->signBlob($email, $accessToken, $stringToSign);
     }
     /**

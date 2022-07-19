@@ -1077,6 +1077,7 @@
 
 .event-tickets .tribe-tickets__attendee__fields__footer_checkout-button.tribe-common-c-btn:disabled, .event-tickets .tribe-tickets__tickets-buy.tribe-common-c-btn:disabled, .entry .entry-content .event-tickets .tribe-tickets__attendee__fields__footer_checkout-button.tribe-common-c-btn:disabled, .entry .entry-content .event-tickets .tribe-tickets__tickets-buy.tribe-common-c-btn:disabled {
 				background-color: var(--tec-color-accent-primary);
+				color: var(--tec-color-text-disabled);
 				cursor: not-allowed;
 			}
 

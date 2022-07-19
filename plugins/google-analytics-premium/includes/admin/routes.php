@@ -396,7 +396,7 @@ class MonsterInsights_Rest_Routes {
 			'active'    => function_exists( 'wpforms' ),
 			'icon'      => plugin_dir_url( MONSTERINSIGHTS_PLUGIN_FILE ) . 'assets/images/plugin-wpforms.png',
 			'title'     => 'WPForms',
-			'excerpt'   => __( 'The best drag & drop WordPress form builder. Easily create beautiful contact forms, surveys, payment forms, and more with our 150+ form templates. Trusted by over 4 million websites as the best forms plugin', 'google-analytics-for-wordpress' ),
+			'excerpt'   => __( 'The best drag & drop WordPress form builder. Easily create beautiful contact forms, surveys, payment forms, and more with our 150+ form templates. Trusted by over 5 million websites as the best forms plugin. We also have 400+ form templates and over 100 million downloads for WPForms Lite.', 'google-analytics-for-wordpress' ),
 			'installed' => array_key_exists( 'wpforms-lite/wpforms.php', $installed_plugins ),
 			'basename'  => 'wpforms-lite/wpforms.php',
 			'slug'      => 'wpforms-lite',
@@ -931,8 +931,12 @@ class MonsterInsights_Rest_Routes {
 			$data = apply_filters( 'monsterinsights_vue_reports_data', $report->get_data( $args ), $report_name, $report );
 		}
 
-		if ( ! empty( $data['success'] ) && ! empty( $data['data'] ) ) {
-			wp_send_json_success( $data['data'] );
+		if ( ! empty( $data['success'] ) ) {
+			if ( empty( $data['data'] ) ) {
+				wp_send_json_success( new stdclass() );
+			} else {
+				wp_send_json_success( $data['data'] );
+			}
 		} else if ( isset( $data['success'] ) && false === $data['success'] && ! empty( $data['error'] ) ) {
 			// Use a custom handler for invalid_grant errors.
 			if ( strpos( $data['error'], 'invalid_grant' ) > 0 ) {

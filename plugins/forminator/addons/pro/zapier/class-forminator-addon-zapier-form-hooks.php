@@ -172,18 +172,6 @@ class Forminator_Addon_Zapier_Form_Hooks extends Forminator_Addon_Form_Hooks_Abs
 
 			$args = $submitted_data;
 
-			// find calculation fields on entry.
-			$calculation_fields_meta_values = self::find_calculation_fields_meta_from_entry_fields( $form_entry_fields );
-			foreach ( $calculation_fields_meta_values as $element_id => $meta_value ) {
-				$args[ $element_id ] = Forminator_Form_Entry_Model::meta_value_to_string( 'calculation', $meta_value );
-			}
-
-			// find stripe fields (rarely will be multiple field) on entry.
-			$stripe_fields_meta_values = self::find_stripe_fields_meta_from_entry_fields( $form_entry_fields );
-			foreach ( $stripe_fields_meta_values as $element_id => $meta_value ) {
-				$args[ $element_id ] = Forminator_Form_Entry_Model::meta_value_to_string( 'stripe', $meta_value );
-			}
-
 			$args['form-title'] = $form_settings['formName'];
 			$args['entry-time'] = current_time( 'Y-m-d H:i:s' );
 

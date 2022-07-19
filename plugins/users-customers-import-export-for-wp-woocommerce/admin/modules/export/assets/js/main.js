@@ -5,7 +5,7 @@ var wt_iew_basic_export=(function( $ ) {
 		ajax_data:{},
 		selected_template:0,
 		selected_template_name:'',
-		to_export:'user',
+		to_export:( wt_iew_export_basic_params.to_export !== '' ) ?  wt_iew_export_basic_params.to_export : 'user',
 		to_export_title:'',
 		export_method:'',
 		current_step:'',
@@ -629,6 +629,9 @@ var wt_iew_basic_export=(function( $ ) {
 			if(this.to_export!="" && this.to_export_title=='')
 			{
 				$('[name="wt_iew_export_post_type"]').val(this.to_export);
+                                if(wt_iew_export_basic_params.to_export !== ''){
+                                    $('[name="wt_iew_export_post_type"]').trigger('change');
+                                }
 				this.to_export_title=$('[name="wt_iew_export_post_type"] option:selected').text();
 			}
 			$('.wt_iew_step_head_post_type_name').html(this.to_export_title);
@@ -637,12 +640,25 @@ var wt_iew_basic_export=(function( $ ) {
                         $('.wt-ierpro-name>img').attr("src", wt_iew_basic_params.pro_plugins[this.to_export]['icon_url']);
                         $('.wt-ier-gopro-cta').hide();
                         $('.wt-ier-'+this.to_export).show();
+                        
+                        $('.wt_iew_free_addon').hide();
+                        $('.wt_iew_export_action_btn').prop('disabled', false);
+                        if(!wt_iew_basic_params.pro_plugins[this.to_export]['is_active']){
+                            $('.wt_iew_export_action_btn').prop('disabled', true);
+                            $('.wt_iew_type_'+this.to_export).show();
+                        }                        
 		},
 		page_actions:function(step)
 		{
 			if(step=='post_type') /* post type page */
 			{
-				$('[name="wt_iew_export_post_type"]').unbind('change').change(function(){					
+				$('[name="wt_iew_export_post_type"]').unbind('change').change(function(){
+                                    
+                                        if (!wt_iew_basic_params.pro_plugins[$(this).val()]['is_active']) {
+                                            $('.wt_iew_export_action_btn').prop('disabled', true);
+                                            $('.wt_iew_type_' + this.to_export).show();
+                                        }
+                                        
 					wt_iew_basic_export.to_export=$(this).val();
 					wt_iew_basic_export.to_export_title='';
 					wt_iew_basic_export.reset_form_data();

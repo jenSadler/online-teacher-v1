@@ -25,11 +25,16 @@ class Forminator_CForm_User_Signups {
 
 		$this->meta     = maybe_unserialize( $signup->meta );
 		$this->entry    = new Forminator_Form_Entry_Model( $this->meta['entry_id'] );
-		$this->form     = Forminator_Form_Model::model()->load( $this->meta['form_id'] );
+		$this->form     = Forminator_Base_Form_Model::get_model( $this->meta['form_id'] );
 		$this->settings = $this->form->settings;
 		// Don't use null coalescing operator for PHP version 5.6.*.
-		$this->submitted_data = isset( $this->meta['submitted_data'] ) ? $this->meta['submitted_data'] : array();
 		$this->user_data      = isset( $this->meta['user_data'] ) ? $this->meta['user_data'] : array();
+		$this->submitted_data = array();
+		if ( isset( $this->meta['prepared_data'] ) ) {
+			$this->submitted_data = $this->meta['prepared_data'];
+		} elseif ( isset( $this->meta['submitted_data'] ) ) {
+			$this->submitted_data = $this->meta['submitted_data'];
+		}
 	}
 
 	public static function get( $key ) {
@@ -62,7 +67,7 @@ class Forminator_CForm_User_Signups {
 
 		// Remove password for security.
 		$this->meta['user_data']['user_pass'] = '';
-		$this->meta['submitted_data']         = '';
+		$this->meta['prepared_data']          = '';
 
 		$now    = current_time( 'mysql', true );
 		$result = $wpdb->update(
@@ -76,6 +81,13 @@ class Forminator_CForm_User_Signups {
 		);
 
 		return $result;
+	}
+
+	public static function get_activation_email( $key ) {
+		$signup = self::get( $key );
+		return ! empty( $signup->settings['activation-email'] )
+			? $signup->settings['activation-email']
+			: 'default';
 	}
 
 	/**
@@ -221,9 +233,13 @@ class Forminator_CForm_User_Signups {
 	}
 
 	public static function modify_signup_user_notification_message( $message, $user, $user_email, $key ) {
+		if ( 'none' === self::get_activation_email( $key ) ) {
+			/* translators: New user notification email. %s: Activation URL. */
+			$message = __( "To activate your user, please click the following link:\n\n%s\n", 'forminator' );
+		}
 		$url = add_query_arg(
 			array(
-				'page' => 'forminator_activation',
+				'page' => 'account_activation',
 				'key'  => $key,
 			),
 			home_url( '/' )
@@ -233,9 +249,14 @@ class Forminator_CForm_User_Signups {
 	}
 
 	public static function modify_signup_blog_notification_message( $message, $domain, $path, $title, $user, $user_email, $key ) {
+		if ( 'none' === self::get_activation_email( $key ) ) {
+			/* translators: New site notification email. 1: Activation URL, 2: New site URL. */
+			$message = __( "To activate your site, please click the following link:\n\n%1\$s\n\nAfter you activate, you can visit your site here:\n\n%2\$s", 'forminator' );
+		}
+
 		$url = add_query_arg(
 			array(
-				'page' => 'forminator_activation',
+				'page' => 'account_activation',
 				'key'  => $key,
 			),
 			home_url( '/' )
@@ -327,10 +348,11 @@ class Forminator_CForm_User_Signups {
 
 			return new WP_Error( 'create_user', $user_data );
 		}
+		Forminator_CForm_Front_Action::$prepared_data = $signup->submitted_data;
 		// For decrypted password.
-		$signup->submitted_data = $forminator_user_registration->change_submitted_data( $signup->submitted_data, $password );
+		$forminator_user_registration->change_submitted_data( $password );
 
-		$user_id = $forminator_user_registration->create_user( $user_data, $signup->form, $signup->entry, $signup->submitted_data, $is_user_signon );
+		$user_id = $forminator_user_registration->create_user( $user_data, $signup->form, $signup->entry, $is_user_signon );
 		if ( ! $user_id ) {
 			return new WP_Error( 'create_user', __( 'Could not create user', 'forminator' ), $signup );
 		}
@@ -343,7 +365,7 @@ class Forminator_CForm_User_Signups {
 		if ( forminator_is_main_site() ) {
 			$option_create_site = forminator_get_property( $signup->settings, 'site-registration' );
 			if ( isset( $option_create_site ) && 'enable' === $option_create_site ) {
-				$forminator_user_registration->create_site( $user_id, $signup->form, $signup->entry, $password, $signup->submitted_data );
+				$forminator_user_registration->create_site( $user_id, $signup->form, $signup->entry, $password );
 			}
 		}
 

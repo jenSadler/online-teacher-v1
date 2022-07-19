@@ -1,6 +1,6 @@
 <?php
 $is_addons = false;
-$nonce     = wp_create_nonce( 'forminator_save_import_custom_form_cf7' );
+$nonce     = wp_create_nonce( 'forminator_save_import_form_cf7' );
 $forms     = forminator_list_thirdparty_contact_forms( 'cf7' );
 
 // Empty message.
@@ -12,7 +12,7 @@ $image_empty2x = forminator_plugin_url() . 'assets/images/forminator-summary@2x.
 
 	<form class="forminator-cf7-import-form" method="post">
 
-		<input type="hidden" name="action" value="forminator_save_import_custom_form_cf7_popup" />
+		<input type="hidden" name="action" value="forminator_save_import_form_cf7_popup" />
 		<input type="hidden" name="_ajax_nonce" value="<?php echo esc_attr( $nonce ); ?>" />
 
 		<div class="sui-box-body wpmudev-popup-form">

@@ -42,12 +42,16 @@
 	$.extend(ForminatorFrontCondition.prototype, {
 		init: function () {
 			var self = this,
-				form = this.$el;
+				form = this.$el,
+				$forminatorFields = this.$el.find( ".forminator-field input, .forminator-row input[type=hidden], .forminator-field select, .forminator-field textarea, .forminator-field-signature")
+				;
+
 			this.add_missing_relations();
 
-			this.$el.find( ".forminator-field input, .forminator-row input[type=hidden], .forminator-field select, .forminator-field textarea, .forminator-field-signature").on( 'change input', function (e) {
+			$forminatorFields.on( 'change input forminator.change', function (e) {
 				var $element = $(this),
-					element_id = $element.closest('.forminator-col').attr('id');
+					element_id = $element.closest('.forminator-col').attr('id')
+					;
 
 				if (typeof element_id === 'undefined') {
                     /*
@@ -95,10 +99,10 @@
             }
 
 			this.$el.find('.forminator-button.forminator-button-back, .forminator-button.forminator-button-next').on("click", function () {
-				form.find('.forminator-field input:not([type="file"]), .forminator-row input[type=hidden], .forminator-field select, .forminator-field textarea').trigger( 'change', 'forminator_emulate_trigger' );
+				form.find('.forminator-field input:not([type="file"]), .forminator-row input[type=hidden], .forminator-field select, .forminator-field textarea').trigger( 'forminator.change', 'forminator_emulate_trigger' );
 			});
 			// Simulate change
-			this.$el.find('.forminator-field input, .forminator-row input[type=hidden], .forminator-field select, .forminator-field textarea').trigger( 'change', 'forminator_emulate_trigger' );
+			this.$el.find('.forminator-field input, .forminator-row input[type=hidden], .forminator-field select, .forminator-field textarea').trigger( 'forminator.change', 'forminator_emulate_trigger' );
 			this.init_events();
 		},
 
@@ -635,6 +639,10 @@
 			switch (operator) {
 				case "is":
 					if (!isArrayValue) {
+						if ( this.is_numeric( value1 ) && this.is_numeric( value2 ) ) {
+							return Number( value1 ) === Number( value2 );
+						}
+
 						return value1 === value2;
 					} else {
 						return $.inArray(value2, value1) > -1;

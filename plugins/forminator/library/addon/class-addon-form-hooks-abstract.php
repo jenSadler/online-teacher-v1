@@ -82,7 +82,7 @@ abstract class Forminator_Addon_Form_Hooks_Abstract extends Forminator_Addon_Hoo
 	public function __construct( Forminator_Addon_Abstract $addon, $form_id ) {
 		$this->addon       = $addon;
 		$this->form_id     = $form_id;
-		$this->custom_form = Forminator_Form_Model::model()->load( $this->form_id );
+		$this->custom_form = Forminator_Base_Form_Model::get_model( $this->form_id );
 		if ( ! $this->custom_form ) {
 			/* translators: ... */
 			throw new Forminator_Addon_Exception( sprintf( __( 'Form with id %d could not be found', 'forminator' ), $this->form_id ) );
@@ -874,6 +874,31 @@ abstract class Forminator_Addon_Form_Hooks_Abstract extends Forminator_Addon_Hoo
 	}
 
 	/**
+	 * Check if element_id is Signature
+	 *
+	 * @param string $element_id Field slug.
+	 *
+	 * @return bool
+	 */
+	public static function element_is_signature( $element_id ) {
+		$is_signature = stripos( $element_id, 'signature-' ) !== false;
+
+		/**
+		 * Filter date flag of element
+		 *
+		 * @since 1.16.0
+		 *
+		 * @param bool   $is_signature
+		 * @param string $element_id Field slug
+		 *
+		 * @return bool
+		 */
+		$is_signature = apply_filters( 'forminator_addon_element_is_signature', $is_signature, $element_id );
+
+		return $is_signature;
+	}
+
+	/**
 	 * Find stripe fields from entry fields
 	 *
 	 * @since 1.7
@@ -949,11 +974,11 @@ abstract class Forminator_Addon_Form_Hooks_Abstract extends Forminator_Addon_Hoo
 
 		if ( is_array( $element ) ) {
 
-			if ( self::element_is_upload( $element_id ) && isset( $element['file_url'] ) ) {
-				if ( is_array( $element['file_url'] ) ) {
-					$element_value = implode( ',', $element['file_url'] );
+			if ( self::element_is_upload( $element_id ) && isset( $element['file']['file_url'] ) ) {
+				if ( is_array( $element['file']['file_url'] ) ) {
+					$element_value = implode( ',', $element['file']['file_url'] );
 				} else {
-					$element_value = $element['file_url'];
+					$element_value = $element['file']['file_url'];
 				}
 			} else {
 				$element_value = implode( ',', $element );
@@ -997,6 +1022,33 @@ abstract class Forminator_Addon_Form_Hooks_Abstract extends Forminator_Addon_Hoo
 		$date->modify( 'midnight' );
 
 		return $date->getTimestamp() * 1000;
+	}
+
+	/**
+	 * Prepare field value for passing to addon
+	 *
+	 * @param string $element_id Field slug.
+	 * @param type $form_entry_fields Form entry fields.
+	 * @param array $submitted_data Submitted data.
+	 * @return string
+	 */
+	public static function prepare_field_value_for_addon( $element_id, $form_entry_fields, $submitted_data ) {
+		$element_value = null;
+		if ( self::element_is_calculation( $element_id ) ) {
+			$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
+			$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'calculation', $meta_value );
+		} elseif ( self::element_is_stripe( $element_id ) ) {
+			$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
+			$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'stripe', $meta_value );
+		} elseif ( self::element_is_signature( $element_id ) ) {
+			$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
+			$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'signature', $meta_value );
+		} elseif ( ! empty( $submitted_data[ $element_id ] ) ) {
+			$field_type    = Forminator_Core::get_field_type( $element_id );
+			$element_value = Forminator_Form_Entry_Model::meta_value_to_string( $field_type, $submitted_data[ $element_id ] );
+		}
+
+		return $element_value;
 	}
 
 }

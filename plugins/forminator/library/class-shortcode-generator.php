@@ -132,7 +132,7 @@ class Forminator_Shortcode_Generator {
 		// Get shortcode generator styles.
 		wp_enqueue_style(
 			'forminator-shortcode-generator-styles',
-			forminator_plugin_url() . 'assets/css/forminator-scgen.min.css',
+			forminator_plugin_url() . 'build/css/forminator-scgen.min.css',
 			array(),
 			FORMINATOR_VERSION
 		);
@@ -141,7 +141,7 @@ class Forminator_Shortcode_Generator {
 		$sui_handle = 'shared-ui';
 		wp_enqueue_script(
 			$sui_handle,
-			forminator_plugin_url() . 'assets/js/shared-ui.min.js',
+			forminator_plugin_url() . 'build/js/shared-ui.min.js',
 			array( 'jquery', 'clipboard' ),
 			$sui_body_class,
 			true
@@ -168,7 +168,7 @@ class Forminator_Shortcode_Generator {
 
 		?>
 		<script type="text/javascript">
-			jQuery(document).ready(function () {
+			jQuery(function () {
 				jQuery("#forminator-generate-shortcode").on( 'click', function(e) {
 					e.preventDefault();
 				});

@@ -318,7 +318,7 @@ class Forminator_Addon_Mailchimp_Form_Hooks extends Forminator_Addon_Form_Hooks_
                 $submitted_data[$field] = $mailchimp_formatted;
             }
 			if (
-				! empty( $value ) && 
+				! empty( $value ) &&
 				( false !== strpos( $field, 'gdprcheckbox' ) || false !== strpos( $field, 'consent' ) )
 			) {
 				$gdpr = true;
@@ -475,20 +475,10 @@ class Forminator_Addon_Mailchimp_Form_Hooks extends Forminator_Addon_Form_Hooks_
 				} else {
 					if ( isset( $addon_setting_values['fields_map'][ $item->tag ] ) && ! empty( $addon_setting_values['fields_map'][ $item->tag ] ) ) {
 						$element_id = $addon_setting_values['fields_map'][ $item->tag ];
-						if ( self::element_is_calculation( $element_id ) ) {
-							$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
-							$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'calculation', $meta_value );
-						} elseif ( self::element_is_stripe( $element_id ) ) {
-							$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
-							$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'stripe', $meta_value );
-						} elseif ( isset( $submitted_data[ $element_id ] ) && ! empty( $submitted_data[ $element_id ] ) ) {
-							$element_value = self::get_field_value( $element_id, $submitted_data[ $element_id ] );
+						if ( ! isset( $submitted_data[ $element_id ] ) ) {
+							continue;
 						}
-
-						if ( isset( $element_value ) ) {
-							$merge_fields[ $item->tag ] = $element_value;
-							unset( $element_value ); // unset for next loop.
-						}
+						$merge_fields[ $item->tag ] = $submitted_data[ $element_id ];
 					}
 				}
 			}

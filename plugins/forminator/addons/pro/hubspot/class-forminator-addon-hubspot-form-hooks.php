@@ -191,27 +191,19 @@ class Forminator_Addon_Hubspot_Form_Hooks extends Forminator_Addon_Form_Hooks_Ab
 
 				if ( ! empty( $fields_map[ $common_field ] ) ) {
 					$element_id = $fields_map[ $common_field ];
-
-					if ( self::element_is_calculation( $element_id ) ) {
-						$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
-						$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'calculation', $meta_value );
-					} elseif ( self::element_is_stripe( $element_id ) ) {
-						$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
-						$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'stripe', $meta_value );
-					} elseif ( self::element_is_datepicker( $element_id ) ) {
+					if ( ! isset( $submitted_data[ $element_id ] ) ) {
+						continue;
+					}
+					$element_value = $submitted_data[ $element_id ];
+					if ( self::element_is_datepicker( $element_id ) ) {
 						$hs_field_type = $api->get_property( 'fieldType', $common_field, $args );
 
 						if ( 'date' === $hs_field_type ) {
 							$element_value = self::get_date_in_ms( $element_id, $submitted_data[ $element_id ], $form_id );
-						} else {
-							$element_value = self::get_field_value( $element_id, $submitted_data[ $element_id ] );
 						}
-					} elseif ( isset( $submitted_data[ $element_id ] ) && ! empty( $submitted_data[ $element_id ] ) ) {
-						$element_value = self::get_field_value( $element_id, $submitted_data[ $element_id ] );
 					}
-					if ( isset( $element_value ) ) {
+					if ( ! is_null( $element_value ) ) {
 						$args[ $common_field ] = $element_value;
-						unset( $element_value ); // unset for next loop.
 					}
 				}
 				// processed.

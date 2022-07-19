@@ -416,13 +416,10 @@ class Forminator_Stripe extends Forminator_Field {
 	 *
 	 * @since 1.7.3
 	 *
-	 * @param $id
-	 * @param $amount
 	 * @param $submitted_data
 	 * @param $field
-	 * @param $pseudo_submitted_data
 	 */
-	public function update_paymentIntent( $id, $amount, $submitted_data, $field, $pseudo_submitted_data ) {
+	public function update_paymentIntent( $submitted_data, $field ) {
 		$mode     = self::get_property( 'mode', $field, 'test' );
 		$currency = self::get_property( 'currency', $field, $this->get_default_currency() );
 
@@ -438,7 +435,7 @@ class Forminator_Stripe extends Forminator_Field {
 		// apply merge tags to payment description.
 		$product_description = isset( $field['product_description'] ) ? $field['product_description'] : '';
 		if ( ! empty( $product_description ) ) {
-			$product_description          = forminator_replace_form_data( $product_description, $submitted_data );
+			$product_description          = forminator_replace_form_data( $product_description );
 			$field['product_description'] = $product_description;
 		}
 
@@ -450,6 +447,9 @@ class Forminator_Stripe extends Forminator_Field {
 
 		Forminator_Gateway_Stripe::set_stripe_app_info();
 
+		$field_id = Forminator_Field::get_property( 'element_id', $field );
+		$amount   = $submitted_data[ $field_id ];
+		$id       = $submitted_data['paymentid'];
 		// Check if we already have payment ID, if not generate new one.
 		if ( empty( $id ) ) {
 			$payment_intent = $this->generate_paymentIntent( $amount, $field );
@@ -463,7 +463,7 @@ class Forminator_Stripe extends Forminator_Field {
 		} catch ( Exception $e ) {
 			$payment_intent = $this->generate_paymentIntent( $amount, $field );
 
-			$intent = \Forminator\Stripe\PaymentIntent::retrieve( $payment_intent->$id );
+			$intent = \Forminator\Stripe\PaymentIntent::retrieve( $payment_intent->id );
 		}
 
 		// Convert object to array.
@@ -472,16 +472,14 @@ class Forminator_Stripe extends Forminator_Field {
 		// New metadata array.
 		$metadata = array();
 
-		$submitted_data_combined = array_merge( $submitted_data, $pseudo_submitted_data );
-
 		if ( ! empty( $stored_metadata ) ) {
 			foreach ( (array) $stored_metadata as $key => $meta ) {
-				$metadata[ $key ] = forminator_replace_form_data( '{' . $meta . '}', $submitted_data_combined );
+				$metadata[ $key ] = forminator_replace_form_data( '{' . $meta . '}', Forminator_Front_Action::$module_object );
 			}
 		}
 
 		// Throw error if payment ID is empty.
-		if ( empty( $id ) || '' === $id ) {
+		if ( empty( $id ) ) {
 			$response = array(
 				'message' => __( 'Your Payment ID is empty, please reload the page and try again!', 'forminator' ),
 				'errors'  => array(),
@@ -580,9 +578,8 @@ class Forminator_Stripe extends Forminator_Field {
 	 *
 	 * @param array        $field
 	 * @param array|string $data
-	 * @param array        $post_data
 	 */
-	public function validate( $field, $data, $post_data = array() ) {
+	public function validate( $field, $data ) {
 		$id = self::get_property( 'element_id', $field );
 	}
 
@@ -687,14 +684,10 @@ class Forminator_Stripe extends Forminator_Field {
 
 	/**
 	 * @param array                 $field
-	 * @param Forminator_Form_Model $custom_form
-	 * @param array                 $submitted_data
-	 * @param array                 $pseudo_submitted_data
-	 * @param array                 $field_data_array
 	 *
 	 * @return array
 	 */
-	public function process_to_entry_data( $field, $custom_form, $submitted_data, $pseudo_submitted_data, $field_data_array ) {
+	public function process_to_entry_data( $field ) {
 
 		$entry_data = array(
 			'mode'             => '',
@@ -711,25 +704,22 @@ class Forminator_Stripe extends Forminator_Field {
 		$currency = self::get_property( 'currency', $field, $this->get_default_currency() );
 
 		try {
-			// Makue sure payment ID exist.
-			if ( ! isset( $submitted_data['paymentid'] ) ) {
-				throw new Exception( __( 'Stripe Payment ID does not exist.', 'forminator' ) );
-			}
-
 			// Get Payment intent.
-			$intent = $this->get_paymentIntent( $field, $submitted_data );
+			$intent = $this->get_paymentIntent( $field );
 
-			// Makue sure Payment Intent is object.
-			if ( ! is_object( $intent ) ) {
+			if ( is_wp_error( $intent ) ) {
+				throw new Exception( $intent->get_error_message() );
+			} elseif ( ! is_object( $intent ) ) {
+				// Make sure Payment Intent is object.
 				throw new Exception( __( 'Payment Intent object is not valid Payment object.', 'forminator' ) );
 			}
 
 			// Check if the PaymentIntent is set or empty.
-			if ( ! isset( $intent->id ) || empty( $intent->id ) ) {
+			if ( empty( $intent->id ) ) {
 				throw new Exception( __( 'Payment Intent ID is not valid!', 'forminator' ) );
 			}
 
-			$charge_amount = $this->get_payment_amount( $field, $custom_form, $submitted_data, $pseudo_submitted_data );
+			$charge_amount = $this->get_payment_amount( $field );
 
 			$entry_data['mode']     = $mode;
 			$entry_data['currency'] = $currency;
@@ -740,21 +730,10 @@ class Forminator_Stripe extends Forminator_Field {
 				$entry_data['quantity']     = $this->payment_plan['quantity'];
 			}
 
-			$entry_data['transaction_id'] = $intent->id;
-
-			$transaction_link = 'https://dashboard.stripe.com/payments/' . rawurlencode( $intent->id );
-
-			if ( 'test' === $mode ) {
-				$transaction_link = 'https://dashboard.stripe.com/test/payments/' . rawurlencode( $intent->id );
-			}
-
-			$entry_data['transaction_link'] = $transaction_link;
-			$entry_data['status']           = 'fail';
+			$entry_data['transaction_link'] = self::get_transanction_link( $mode, $intent->id );
 			$entry_data['transaction_id']   = $intent->id;
 		} catch ( Exception $e ) {
-			$entry_data['status']     = 'fail';
-			$entry_data['error']      = $e->getMessage();
-			$entry_data['error_type'] = 'stripe_error';
+			$entry_data['error'] = $e->getMessage();
 		}
 
 		/**
@@ -764,13 +743,13 @@ class Forminator_Stripe extends Forminator_Field {
 		 *
 		 * @param array                        $entry_data
 		 * @param array                        $field            field properties.
-		 * @param Forminator_Form_Model $custom_form
+		 * @param Forminator_Form_Model $module_object
 		 * @param array                        $submitted_data
 		 * @param array                        $field_data_array current entry meta.
 		 *
 		 * @return array
 		 */
-		$entry_data = apply_filters( 'forminator_field_stripe_process_to_entry_data', $entry_data, $field, $custom_form, $submitted_data, $field_data_array );
+		$entry_data = apply_filters( 'forminator_field_stripe_process_to_entry_data', $entry_data, $field, Forminator_Front_Action::$module_object, Forminator_CForm_Front_Action::$prepared_data, Forminator_CForm_Front_Action::$info['field_data_array'] );
 
 		return $entry_data;
 	}
@@ -810,11 +789,10 @@ class Forminator_Stripe extends Forminator_Field {
 	 * Retrieve PaymentIntent object
 	 *
 	 * @param $field
-	 * @param $submitted_data
 	 *
 	 * @return mixed object|string
 	 */
-	public function get_paymentIntent( $field, $submitted_data ) {
+	public function get_paymentIntent( $field ) {
 		$mode     = self::get_property( 'mode', $field, 'test' );
 		$currency = self::get_property( 'currency', $field, $this->get_default_currency() );
 
@@ -828,12 +806,12 @@ class Forminator_Stripe extends Forminator_Field {
 
 		try {
 			// Makue sure payment ID exist.
-			if ( ! isset( $submitted_data['paymentid'] ) ) {
+			if ( ! isset( Forminator_CForm_Front_Action::$prepared_data['paymentid'] ) ) {
 				throw new Exception( __( 'Stripe Payment ID does not exist.', 'forminator' ) );
 			}
 
 			// Check payment amount.
-			$intent = \Forminator\Stripe\PaymentIntent::retrieve( $submitted_data['paymentid'] );
+			$intent = \Forminator\Stripe\PaymentIntent::retrieve( Forminator_CForm_Front_Action::$prepared_data['paymentid'] );
 
 			return $intent;
 		} catch ( Exception $e ) {
@@ -916,24 +894,52 @@ class Forminator_Stripe extends Forminator_Field {
 	}
 
 	/**
+	 * Get the fields that an amount depends on
+	 *
+	 * @param array $field_settings Field settings.
+	 * @return array
+	 */
+	public function get_amount_dependent_fields( $field_settings ) {
+		$depend_field = array();
+		$this->payment_plan = $this->get_payment_plan( $field_settings );
+		$plan = $this->payment_plan;
+
+		if ( empty( $plan['payment_method'] ) ) {
+			return $depend_field;
+		}
+
+		if ( 'single' === $plan['payment_method']
+				&& ! empty( $plan['amount_type'] )
+				&& 'variable' === $plan['amount_type']
+				&& ! empty( $plan['variable'] ) ) {
+			$depend_field[] = $plan['variable'];
+		}
+
+		if ( 'subscription' === $plan['payment_method']
+				&& ! empty( $plan['subscription_amount_type'] )
+				&& 'variable' === $plan['subscription_amount_type']
+				&& ! empty( $plan['subscription_variable'] ) ) {
+			$depend_field[] = $plan['subscription_variable'];
+		}
+
+		return $depend_field;
+	}
+
+	/**
 	 * Get payment amount
 	 *
 	 * @since 1.7
 	 *
 	 * @param array                 $field
-	 * @param Forminator_Form_Model $custom_form
-	 * @param array                 $submitted_data
-	 * @param array                 $pseudo_submitted_data
 	 *
 	 * @return double
 	 */
-	public function get_payment_amount( $field, $custom_form, $submitted_data, $pseudo_submitted_data ) {
+	public function get_payment_amount( $field ) {
 		$payment_amount  = 0.0;
 		$amount_type     = self::get_property( 'amount_type', $field, 'fixed' );
 		$amount          = self::get_property( 'amount', $field, '0' );
 		$amount_variable = self::get_property( 'variable', $field, '' );
-
-		$this->payment_plan = $this->get_payment_plan( $custom_form, $field, $submitted_data, $pseudo_submitted_data );
+		$submitted_data  = Forminator_CForm_Front_Action::$prepared_data;
 
 		if ( ! empty( $this->payment_plan ) ) {
 			$amount_type     = isset( $this->payment_plan['amount_type'] ) ? $this->payment_plan['amount_type'] : $amount_type;
@@ -945,16 +951,15 @@ class Forminator_Stripe extends Forminator_Field {
 			$payment_amount = $amount;
 		} else {
 			$amount_var = $amount_variable;
-			$form_field = $custom_form->get_field( $amount_var, false );
+			$form_field = Forminator_Front_Action::$module_object->get_field( $amount_var, false );
 			if ( $form_field ) {
 				$form_field        = $form_field->to_formatted_array();
-				$fields_collection = forminator_fields_to_array();
 				if ( isset( $form_field['type'] ) ) {
 					if ( 'calculation' === $form_field['type'] ) {
 
 						// Calculation field get the amount from pseudo_submit_data.
-						if ( isset( $pseudo_submitted_data[ $amount_var ] ) ) {
-							$payment_amount = $pseudo_submitted_data[ $amount_var ];
+						if ( isset( Forminator_CForm_Front_Action::$prepared_data[ $amount_var ] ) ) {
+							$payment_amount = Forminator_CForm_Front_Action::$prepared_data[ $amount_var ];
 						}
 					} elseif ( 'currency' === $form_field['type'] ) {
 						// Currency field get the amount from submitted_data.
@@ -963,13 +968,12 @@ class Forminator_Stripe extends Forminator_Field {
 							$payment_amount = self::forminator_replace_number( $form_field, $submitted_data[ $field_id ] );
 						}
 					} else {
-						if ( isset( $fields_collection[ $form_field['type'] ] ) ) {
-							/** @var Forminator_Field $field_object */
-							$field_object = $fields_collection[ $form_field['type'] ];
+						$field_object = Forminator_Core::get_field_object( $form_field['type'] );
+						if ( $field_object ) {
 
 							$field_id             = $form_field['element_id'];
 							$submitted_field_data = isset( $submitted_data[ $field_id ] ) ? $submitted_data[ $field_id ] : null;
-							$payment_amount       = $field_object->get_calculable_value( $submitted_field_data, $form_field );
+							$payment_amount       = $field_object::get_calculable_value( $submitted_field_data, $form_field );
 						}
 					}
 				}
@@ -987,11 +991,10 @@ class Forminator_Stripe extends Forminator_Field {
 		 *
 		 * @param double                       $payment_amount
 		 * @param array                        $field field settings.
-		 * @param Forminator_Form_Model $custom_form
-		 * @param array                        $submitted_data
-		 * @param array                        $pseudo_submitted_data
+		 * @param Forminator_Form_Model $module_object
+		 * @param array                        $prepared_data
 		 */
-		$payment_amount = apply_filters( 'forminator_field_stripe_payment_amount', $payment_amount, $field, $custom_form, $submitted_data, $pseudo_submitted_data );
+		$payment_amount = apply_filters( 'forminator_field_stripe_payment_amount', $payment_amount, $field, Forminator_Front_Action::$module_object, Forminator_CForm_Front_Action::$prepared_data );
 
 		return $payment_amount;
 	}
@@ -999,30 +1002,40 @@ class Forminator_Stripe extends Forminator_Field {
 	/**
 	 * Get Payment plan
 	 *
-	 * @param $custom_form
 	 * @param $field
-	 * @param $submitted_data
-	 * @param $pseudo_submitted_data
 	 *
 	 * @return array
 	 */
-	public function get_payment_plan( $custom_form, $field, $submitted_data, $pseudo_submitted_data ) {
-		$plan           = array();
-		$field_forms    = forminator_fields_to_array();
-		$payments       = self::get_property( 'payments', $field, array() );
-		$field_type     = isset( $field['type'] ) ? $field['type'] : '';
-		$form_field_obj = isset( $field_forms[ $field_type ] ) ? $field_forms[ $field_type ] : null;
+	public function get_payment_plan( $field ) {
+		$payments = self::get_property( 'payments', $field, array() );
 
 		if ( ! empty( $payments ) ) {
-			foreach ( $payments as $payment ) {
-				if ( $form_field_obj && ! $form_field_obj->is_hidden( $field, $submitted_data, $pseudo_submitted_data, $custom_form, array(), $payment ) ) {
-
-					return $payment;
+			foreach ( $payments as $payment_settings ) {
+				if ( ! Forminator_Field::is_hidden( $field, $payment_settings ) ) {
+					return $payment_settings;
 				}
 			}
 		}
 
-		return $plan;
+		return array();
+	}
+
+	/**
+	 * Get transaction link
+	 *
+	 * @param string $mode Payment mode.
+	 * @param string $transaction_id Transaction id.
+	 * @return string
+	 */
+	public static function get_transanction_link( $mode, $transaction_id ) {
+		if ( 'test' === $mode ) {
+			$link_base = 'https://dashboard.stripe.com/test/payments/';
+		} else {
+			$link_base = 'https://dashboard.stripe.com/payments/';
+		}
+		$transaction_link = $link_base . rawurlencode( $transaction_id );
+
+		return $transaction_link;
 	}
 
 	/**

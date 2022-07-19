@@ -338,7 +338,7 @@ foreach ( $template_vars as $key => $val ) {
 
 <script>
 	(function ($) {
-		$(document).ready(function (e) {
+		$( function (e) {
 			$('#create-ticket').on('change', function () {
                 let ticketField = $('.ticket-fields'),
                     ticketActivate = $('div#ticket-activate');

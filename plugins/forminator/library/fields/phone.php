@@ -153,7 +153,7 @@ class Forminator_Phone extends Forminator_Field {
 	 *
 	 * @return mixed
 	 */
-	public function markup( $field, $settings = array() ) {
+	public function markup( $field, $settings = array(), $draft_value = null ) {
 
 		$this->field = $field;
 
@@ -184,8 +184,12 @@ class Forminator_Phone extends Forminator_Field {
 			$format_check = false === $phone_check ? 'none' : '';
 		}
 
-		// Check if Pre-fill parameter used.
-		if ( $this->has_prefill( $field ) ) {
+		if ( isset( $draft_value['value'] ) ) {
+
+			$value = esc_attr( $draft_value['value'] );
+
+		} elseif ( $this->has_prefill( $field ) ) {
+
 			// We have pre-fill parameter, use its value or $value.
 			$value = $this->get_prefill( $field, $value );
 		}
@@ -391,11 +395,10 @@ class Forminator_Phone extends Forminator_Field {
 	 *
 	 * @param array        $field
 	 * @param array|string $data
-	 * @param array        $post_data
 	 *
 	 * @return bool
 	 */
-	public function validate( $field, $data, $post_data = array() ) {
+	public function validate( $field, $data ) {
 		$id = self::get_property( 'element_id', $field );
 
 		if ( $this->is_required( $field ) ) {

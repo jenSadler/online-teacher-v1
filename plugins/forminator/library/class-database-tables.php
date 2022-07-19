@@ -79,6 +79,7 @@ class Forminator_Database_Tables {
 			$sql = "CREATE TABLE {$table_name} (
 				`entry_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				`entry_type` VARCHAR(191) NOT NULL,
+				`draft_id` VARCHAR(12) NULL,
 				`form_id` bigint(20) unsigned NOT NULL,
 				`is_spam` TINYINT(1) NOT NULL DEFAULT 0,
 				`date_created` datetime NOT NULL default '0000-00-00 00:00:00',

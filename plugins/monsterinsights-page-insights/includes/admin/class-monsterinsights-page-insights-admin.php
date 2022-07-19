@@ -35,11 +35,15 @@ final class MonsterInsights_Page_Insights_Admin {
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'load_scripts' ) );
 
+		add_action( 'admin_enqueue_scripts', array( $this, 'load_metabox_scripts' ) );
+
 		add_action( 'admin_footer', array( $this, 'add_reports_markup' ) );
 
 		// Clear the cache when the profile is updated.
 		add_action( 'update_option_monsterinsights_site_profile', array( $this, 'clear_cache' ) );
 		add_action( 'update_site_option_monsterinsights_network_profile', array( $this, 'clear_network_cache' ) );
+
+		add_action( 'monsterinsights_after_exclude_metabox', array( $this, 'print_page_insights_metabox_html' ), 10, 2 );
 	}
 
 	/**
@@ -164,6 +168,19 @@ final class MonsterInsights_Page_Insights_Admin {
 
 	}
 
+	public function load_metabox_scripts() {
+		wp_enqueue_script( 'monsterinsights-admin-metabox-script', MONSTERINSIGHTS_PAGE_INSIGHTS_ADDON_PLUGIN_URL . 'assets/js/metaboxes.js', array( 'jquery' ), monsterinsights_get_asset_version(), true );
+
+		wp_localize_script( 'monsterinsights-admin-metabox-script', 'monsterinsights_page_insights_admin', array(
+			'admin_nonce'   => wp_create_nonce( 'mi-admin-nonce' ),
+			'isnetwork'     => is_network_admin(),
+			'timezone'      => date( 'e' ),
+			'error_text'    => esc_html__( 'Error', 'monsterinsights-page-insights' ),
+			'error_default' => esc_html__( 'There was an issue loading the report data. Please try again.', 'monsterinsights-page-insights' ),
+			'loading_txt'   => esc_html__( 'Loading Page Insights...', 'monsterinsights-page-insights' ),
+		) );
+	}
+
 	/**
 	 * Add the reports overlay markup to the admin footer.
 	 *
@@ -248,6 +265,162 @@ final class MonsterInsights_Page_Insights_Admin {
 	 */
 	public function clear_cache() {
 		MonsterInsights_Page_Insights_Cache::get_instance()->clear_cache();
+	}
+
+	private function show_pending_message( $post ) {
+		if ( ! $post ) {
+			return false;
+		}
+
+		$post_status = get_post_status( $post );
+		$hours       = ( current_time( 'U' ) - get_post_timestamp( $post ) ) / ( 60 * 60 );
+
+		return 'draft' === $post_status || 24 > $hours;
+	}
+
+	public function print_page_insights_metabox_html( $skipped, $post ) {
+		if ( $skipped ) {
+			return;
+		}
+		$show_pending_message = $this->show_pending_message( $post );
+		?>
+		<div class="monsterinsights-metabox pro" id="monsterinsights-metabox-page-insights" <?php if ( $show_pending_message ){ ?>data-skip-requests="1"<?php } ?>>
+			<a class="button" href="#" id="monsterinsights_show_page_insights">
+				<?php _e( 'Show Page Insights', 'google-analytics-for-wordpress' ); ?>
+			</a>
+
+			<div id="monsterinsights-page-insights-content">
+				<div class="monsterinsights-page-insights__tabs">
+					<a href="#" class="monsterinsights-page-insights__tabs-tab active" data-tab="monsterinsights-last-30-days-content" data-interval="30days">
+						<?php _e( 'Last 30 days', 'google-analytics-for-wordpress' ); ?>
+					</a>
+					<a href="#" class="monsterinsights-page-insights__tabs-tab" data-tab="monsterinsights-yesterday-content" data-interval="yesterday">
+						<?php _e( 'Yesterday', 'google-analytics-for-wordpress' ); ?>
+					</a>
+				</div>
+				<div class="monsterinsights-page-insights-tabs-content">
+					<div class="monsterinsights-page-insights-tabs-content__tab active" id="monsterinsights-last-30-days-content">
+						<div class="monsterinsights-page-insights-tabs-content__tab-items">
+
+							<div class="monsterinsights-page-insights-tabs-content__tab-item">
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__result">
+									<span data-monsterinsights-metric="bouncerate">---</span>
+								</div>
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__title">
+									<?php _e( 'Bounce Rate', 'google-analytics-for-wordpress' ); ?>
+								</div>
+							</div>
+							<div class="monsterinsights-page-insights-tabs-content__tab-item">
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__result">
+									<span data-monsterinsights-metric="timeonpage">---</span>
+								</div>
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__title">
+									<?php _e( 'Time on Page', 'google-analytics-for-wordpress' ); ?>
+								</div>
+							</div>
+							<div class="monsterinsights-page-insights-tabs-content__tab-item">
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__result">
+									<span data-monsterinsights-metric="pageloadtime">---</span>
+								</div>
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__title">
+									<?php _e( 'Load Time', 'google-analytics-for-wordpress' ); ?>
+								</div>
+							</div>
+							<div class="monsterinsights-page-insights-tabs-content__tab-item">
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__result">
+									<span data-monsterinsights-metric="entrances">---</span>
+								</div>
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__title">
+									<?php _e( 'Entrances', 'google-analytics-for-wordpress' ); ?>
+								</div>
+							</div>
+							<div class="monsterinsights-page-insights-tabs-content__tab-item">
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__result">
+									<span data-monsterinsights-metric="pageviews">---</span>
+								</div>
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__title">
+									<?php _e( 'Page Views', 'google-analytics-for-wordpress' ); ?>
+								</div>
+							</div>
+							<div class="monsterinsights-page-insights-tabs-content__tab-item">
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__result">
+									<span data-monsterinsights-metric="exits">---</span>
+								</div>
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__title">
+									<?php _e( 'Exits', 'google-analytics-for-wordpress' ); ?>
+								</div>
+							</div>
+
+						</div>
+					</div>
+					<div class="monsterinsights-page-insights-tabs-content__tab" id="monsterinsights-yesterday-content">
+						<div class="monsterinsights-page-insights-tabs-content__tab-items">
+
+							<div class="monsterinsights-page-insights-tabs-content__tab-item">
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__result">
+									<span data-monsterinsights-metric="bouncerate">---</span>
+								</div>
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__title">
+									<?php _e( 'Bounce Rate', 'google-analytics-for-wordpress' ); ?>
+								</div>
+							</div>
+							<div class="monsterinsights-page-insights-tabs-content__tab-item">
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__result">
+									<span data-monsterinsights-metric="timeonpage">---</span>
+								</div>
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__title">
+									<?php _e( 'Time on Page', 'google-analytics-for-wordpress' ); ?>
+								</div>
+							</div>
+							<div class="monsterinsights-page-insights-tabs-content__tab-item">
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__result">
+									<span data-monsterinsights-metric="pageloadtime">---</span>
+								</div>
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__title">
+									<?php _e( 'Load Time', 'google-analytics-for-wordpress' ); ?>
+								</div>
+							</div>
+							<div class="monsterinsights-page-insights-tabs-content__tab-item">
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__result">
+									<span data-monsterinsights-metric="entrances">---</span>
+								</div>
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__title">
+									<?php _e( 'Entrances', 'google-analytics-for-wordpress' ); ?>
+								</div>
+							</div>
+							<div class="monsterinsights-page-insights-tabs-content__tab-item">
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__result">
+									<span data-monsterinsights-metric="pageviews">---</span>
+								</div>
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__title">
+									<?php _e( 'Page Views', 'google-analytics-for-wordpress' ); ?>
+								</div>
+							</div>
+							<div class="monsterinsights-page-insights-tabs-content__tab-item">
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__result">
+									<span data-monsterinsights-metric="exits">---</span>
+								</div>
+								<div class="monsterinsights-page-insights-tabs-content__tab-item__title">
+									<?php _e( 'Exits', 'google-analytics-for-wordpress' ); ?>
+								</div>
+							</div>
+
+						</div>
+					</div>
+				</div>
+				<?php if ( $show_pending_message ){ ?>
+				<div class="monsterinsights-insights-draft">
+					<?php _e("There are no Page Insights available because your page is not published or has been published for less than 24 hours.", 'google-analytics-for-wordpress'); ?>
+				</div>
+				<?php } ?>
+
+				<a class="button" href="#" id="monsterinsights_hide_page_insights">
+					<?php _e( 'Hide Page Insights', 'google-analytics-for-wordpress' ); ?>
+				</a>
+			</div>
+
+		</div>
+		<?php
 	}
 
 }

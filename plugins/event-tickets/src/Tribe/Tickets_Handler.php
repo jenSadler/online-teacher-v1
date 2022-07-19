@@ -43,6 +43,15 @@ class Tribe__Tickets__Tickets_Handler {
 	public $key_start_date = '_ticket_start_date';
 
 	/**
+	 * Post meta key for the ticket start time
+	 *
+	 * @since 5.4.1
+	 *
+	 * @var    string
+	 */
+	public $key_start_time = '_ticket_start_time';
+
+	/**
 	 * Post meta key for the ticket end date
 	 *
 	 * @since  4.6
@@ -50,6 +59,15 @@ class Tribe__Tickets__Tickets_Handler {
 	 * @var    string
 	 */
 	public $key_end_date = '_ticket_end_date';
+
+	/**
+	 * Post meta key for the ticket end time
+	 *
+	 * @since 5.4.1
+	 *
+	 * @var    string
+	 */
+	public $key_end_time = '_ticket_end_time';
 
 	/**
 	 * Post meta key for the manual updated meta keys
@@ -639,6 +657,11 @@ class Tribe__Tickets__Tickets_Handler {
 	public function trigger_shared_cap_sync( $post_id, $ticket, $raw_data ) {
 		$ticket_capacity_data = Tribe__Utils__Array::get( $raw_data, 'tribe-ticket', [] );
 		$ticket_capacity      = Tribe__Utils__Array::get( $ticket_capacity_data, 'capacity', false );
+		$capacity_mode        = Tribe__Utils__Array::get( $ticket_capacity_data, 'mode', false );
+
+		if ( Tribe__Tickets__Global_Stock::OWN_STOCK_MODE === $capacity_mode ) {
+			return false;
+		}
 
 		if ( empty( $ticket_capacity_data ) || ! $ticket_capacity ) {
 			return new WP_Error( 'invalid_capacity', __( 'Invalid ticket capacity data.', 'event-tickets' ), $raw_data );

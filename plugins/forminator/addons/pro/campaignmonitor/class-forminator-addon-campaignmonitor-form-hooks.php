@@ -173,24 +173,13 @@ class Forminator_Addon_Campaignmonitor_Form_Hooks extends Forminator_Addon_Form_
 			unset( $fields_map['default_field_email'] );
 
 			$name_element_id = $connection_settings['fields_map']['default_field_name'];
-			if ( self::element_is_calculation( $name_element_id ) ) {
-				$meta_value    = self::find_meta_value_from_entry_fields( $name_element_id, $form_entry_fields );
-				$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'calculation', $meta_value );
-				$name          = $element_value;
-			} elseif ( self::element_is_stripe( $name_element_id ) ) {
-				$meta_value    = self::find_meta_value_from_entry_fields( $name_element_id, $form_entry_fields );
-				$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'stripe', $meta_value );
-				$name          = $element_value;
-			} elseif ( ! isset( $submitted_data[ $name_element_id ] ) || empty( $submitted_data[ $name_element_id ] ) ) {
+
+			if ( isset( $submitted_data[ $name_element_id ] ) ) {
+				$args['Name'] = $submitted_data[ $name_element_id ];
+			} else {
 				throw new Forminator_Addon_Campaignmonitor_Exception(/* translators: ... */
 					sprintf( __( 'Name on element %1$s not found or not filled on submitted data.', 'forminator' ), $name_element_id )
 				);
-			}
-
-			if ( isset( $name ) ) {
-				$args['Name'] = $name;
-			} else {
-				$args['Name'] = $submitted_data[ $name_element_id ];
 			}
 
 			// processed.
@@ -199,27 +188,11 @@ class Forminator_Addon_Campaignmonitor_Form_Hooks extends Forminator_Addon_Form_
 			$custom_fields = array();
 			// process rest extra fields if available.
 			foreach ( $fields_map as $field_id => $element_id ) {
-				if ( ! empty( $element_id ) ) {
-					if ( self::element_is_calculation( $element_id ) ) {
-						$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
-						$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'calculation', $meta_value );
-					} elseif ( self::element_is_stripe( $element_id ) ) {
-						$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
-						$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'stripe', $meta_value );
-					} elseif ( isset( $submitted_data[ $element_id ] ) && ! empty( $submitted_data[ $element_id ] ) ) {
-						$element_value = $submitted_data[ $element_id ];
-						if ( is_array( $element_value ) ) {
-							$element_value = implode( ',', $element_value );
-						}
-					}
-
-					if ( isset( $element_value ) ) {
-						$custom_fields[] = array(
-							'Key'   => $field_id,
-							'Value' => $element_value,
-						);
-						unset( $element_value ); // unset for next loop.
-					}
+				if ( ! empty( $element_id ) && isset( $submitted_data[ $element_id ] ) ) {
+					$custom_fields[] = array(
+						'Key'   => $field_id,
+						'Value' => $submitted_data[ $element_id ],
+					);
 				}
 			}
 			$args['CustomFields'] = $custom_fields;

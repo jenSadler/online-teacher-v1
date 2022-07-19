@@ -275,7 +275,7 @@ $custom_field_map = isset( $vars['custom_fields_map'] ) ? array_filter( $vars['c
 
 <script type="text/javascript">
 	(function ($) {
-		$(document).ready(function (e) {
+		$( function (e) {
             $(".add-hubspot-field").unbind().on('click', function(e) {
 				e.preventDefault();
 				if( $('.custom-field:visible').length < 1 ) {
@@ -285,7 +285,7 @@ $custom_field_map = isset( $vars['custom_fields_map'] ) ? array_filter( $vars['c
 					custom_field.find( '.sui-select' ).each(function(){
 						if ($(this).data('select2')) {
 							$(this).SUIselect2('destroy');
-						} 
+						}
 					});
 					var clone_field = custom_field.clone();
 					$('.add-additional-field').before( clone_field );

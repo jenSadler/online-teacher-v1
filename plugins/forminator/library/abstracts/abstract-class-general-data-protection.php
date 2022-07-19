@@ -129,8 +129,8 @@ abstract class Forminator_General_Data_Protection {
 	 * @param int    $module_id
 	 * @param string $retain_time
 	 */
-	protected function delete_older_entries( $module_id, $retain_time ) {
-		$entry_ids = Forminator_Form_Entry_Model::get_older_entry_ids( $retain_time, '', $module_id );
+	protected function delete_older_entries( $module_id, $retain_time, $is_draft = false ) {
+		$entry_ids = Forminator_Form_Entry_Model::get_older_entry_ids( $retain_time, '', $module_id, $is_draft );
 		foreach ( $entry_ids as $entry_id ) {
 			Forminator_Form_Entry_Model::delete_by_entry( $entry_id );
 		}

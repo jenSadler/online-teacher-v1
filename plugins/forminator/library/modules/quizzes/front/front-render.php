@@ -35,7 +35,7 @@ class Forminator_QForm_Front extends Forminator_Render_Form {
 	 * @param bool $hide If true, display: none will be added on the form markup and later removed with JS.
 	 */
 	public function display( $id, $is_preview = false, $data = false, $hide = true ) {
-		$this->model = Forminator_Quiz_Model::model()->load( $id );
+		$this->model = Forminator_Base_Form_Model::get_model( $id );
 		if ( ! $this->model instanceof Forminator_Quiz_Model ) {
 			return;
 		}
@@ -85,6 +85,8 @@ class Forminator_QForm_Front extends Forminator_Render_Form {
 		}
 
 		if ( $this->is_displayable( $is_preview ) ) {
+
+			$this->generate_render_id( $id );
 
 			echo $this->get_html( $hide, $is_preview ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
@@ -629,7 +631,7 @@ class Forminator_QForm_Front extends Forminator_Render_Form {
 	 * @since 1.0
 	 * @return string
 	 */
-	public function render_form_header() {
+	public function render_form_header( $maybe_error = '' ) {
 		global $wp_embed;
 		ob_start();
 

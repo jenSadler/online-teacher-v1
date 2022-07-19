@@ -52,7 +52,7 @@ class Forminator_Poll_Admin extends Forminator_Admin_Module {
 
 			$id = filter_input( INPUT_GET, 'id', FILTER_VALIDATE_INT );
 			if ( $id && is_null( $model ) ) {
-				$model = Forminator_Poll_Model::model()->load( $id );
+				$model = Forminator_Base_Form_Model::get_model( $id );
 			}
 
 			$answers = array();
@@ -320,7 +320,7 @@ class Forminator_Poll_Admin extends Forminator_Admin_Module {
 				$status = Forminator_Poll_Model::STATUS_PUBLISH;
 			}
 		} else {
-			$form_model = Forminator_Poll_Model::model()->load( $id );
+			$form_model = Forminator_Base_Form_Model::get_model( $id );
 			$action     = 'update';
 
 			if ( ! is_object( $form_model ) ) {

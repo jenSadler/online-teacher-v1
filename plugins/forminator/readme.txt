@@ -1,13 +1,13 @@
 === Forminator - Contact Form, Payment Form & Custom Form Builder ===
 Plugin Name: Forminator - Contact Form, Payment Form & Custom Form Builder
-Version: 1.15.12
+Version: 1.17.1
 Author: WPMU DEV
 Author URI: https://wpmudev.com/
 Contributors: WPMUDEV
 Tags: forms, contact form, wordpress form plugin, payment form, custom form, form builder, paypal form wordpress, form maker, quiz, quiz builder, order form, stripe payments, paypal payments, stripe form, paypal form
 Requires at least: 5.2
-Tested up to: 5.9
-Stable tag: 1.15.12
+Tested up to: 6.0
+Stable tag: 1.17.1
 Requires PHP: 5.6.20
 License: GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
@@ -210,6 +210,95 @@ Find out all you need to know by checking out our API documentation [here](https
 9. Allow simple drag and drop multi-file uploads for users.
 
 == Changelog ==
+
+= 1.17.1 ( 2022-07-04 ) =
+
+- Features: Partial submissions
+- Add: Giveaway campaign
+- Add: Resend email button to Submissions page
+- Improvement: Clean-up and maintenance in admin styles
+- Improvement: Edit form button on frontend
+- Fix: Close icon is missing in email notification tab
+- Fix: Rich-text editor bugs with pagination
+- Fix: Nested options in Quiz shows scrollbar
+- Fix: For quizzes and polls, the dropdown label is not aligned with the dropdown
+- Fix: Checkbox does not pass the correct value to URL
+- Fix: A custom class isn't applied to the submit button
+- Fix: User registration does not store signature meta
+- Fix: The form data featured image should only accept images
+- Fix: The embed URL field is incorrect
+- Fix: The Poll Appearance padding does not work
+- Fix: jQuery "ready" method deprecated
+- Fix: Views are not properly counted
+- Fix: Incorrect encoding of characters
+- Fix: Stripe fields can be submitted multiple times
+- Fix: When Decimal Points are set in the Currency Field, the visibility does not work
+- Fix: ReCaptcha does not work on popups
+- Fix: Chinese characters are cut off in submissions and emails
+- Fix: Even if the radio/checkbox/dropdown field has a value other than one that the owner added, the form still submits
+- Fix: Error on form submission with invalid nonce
+- Fix: List of countries where conditions do not work
+- Fix: Next week's dates have been selected
+- Fix: A few fields on the quiz lead do not use custom fonts
+- Fix: Error in activation email for user registration
+- Fix: In Elementor Popups, Forminator Load From Ajax does not work
+- Fix: In the Setup Name screen, there is a description
+- Fix: When Hummingbird Page caching is active, Forminator Form stops rendering after nonce expiry
+- Fix: The Preview Notice on submissions shows '0'
+- Fix: When I try to submit the quiz lead form as a guest, it doesn't show any message about 'Enable logged in submission only'
+- Fix: Consent does not work with custom error messages
+- Fix: The submission schedule export does not work for monthly and weekly submissions
+- Fix: CSV template download no longer works
+- Fix: Ajax forms load without returning the values of the fields for partial submissions
+- Fix: Limit validation fails for the Currency field
+
+= 1.16.2 ( 2022-06-02 ) =
+
+- Improvement: Refactor submission process
+- Fix: Member function fatal error after updating the latest version
+- Fix: HTML field is not working
+- Fix: Can't submit the registration form when the Autofill option is enabled
+- Fix: Custom field is not rendering slug value
+- Fix: Blank PHP file issue while creating Polls
+- Fix: Visibility conditions don't work with subfields
+
+= 1.15.14 =
+
+- Fix: Submission indicator is not working in a validation error
+- Fix: Form name input field is not working while the New Update popup opens
+- Fix: Typo on the links for Invisible hCaptcha
+- Fix: manage_forminator capability no longer exists in user role
+- Fix: HubSpot and AWeber Identifier aren't working
+- Fix: Whitespace in select fields causing error in visibility conditions
+- Fix: Fields do not support blank space from URLs
+
+= 1.15.13 =
+
+- Improvement: 2FA functionality backward compatibility with Defender
+- Improvement: Show Localized numbers in the HTML field
+- Improvement: Replace Forminator registration form activation URLs with a more generic URL
+- Fix: Multiple polls getting closed on the same page
+- Fix: Select field's bulk edit affects visibility rules
+- Fix: Multi upload does not remove the number of files when selecting none style
+- Fix: Visibility condition not working for Address field
+- Fix: Receipt is not receiving in email for stripe payment
+- Fix: Phone number field CSS issue inside Hustle
+- Fix: When two User Registration forms are added on the same page forms can't be submitted
+- Fix: Conflict with WP Forms plugin
+- Fix: Select field is not working when the form is placed on a slide-in
+- Fix: Vietnamese Phone Number Format
+- Fix: Optional password setting does not work when minimum strength is not set to 'None'
+- Fix: Pre-populate feature doesn't add spaces when AJAX is disabled
+- Fix: Creating a new Quiz and Poll is not working with PHP 7.3
+- Fix: The pagination button doesn't have the same heights on mobile
+- Fix: Featured Image description not used in the frontend
+- Fix: Console error when you remove a file to be uploaded
+- Fix: Conditions logic breaks after submission
+- Fix: Submission causing a 500 error
+- Fix: PHP Warning when submitting a form with a number field
+- Fix: 3rd secure payment is not working
+- Fix: Limit is not working when Rich Text enabled for Textarea
+- Fix: Quiz Leads "Coming Soon" is missing for Duplicate and Export
 
 = 1.15.12 =
 

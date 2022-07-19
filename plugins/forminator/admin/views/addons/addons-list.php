@@ -291,7 +291,7 @@ if ( FORMINATOR_PRO ) {
 						target="_blank"
 						class="sui-button sui-button-purple"
 				    >
-						<?php esc_html_e( 'Try Pro for 35% Off', 'forminator' ); ?>
+						<?php esc_html_e( 'Try Pro for 10% Off', 'forminator' ); ?>
 				    </a>
 				<?php } ?>
 

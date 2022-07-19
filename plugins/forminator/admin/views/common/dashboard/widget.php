@@ -1,7 +1,7 @@
 <?php
 $_per_page          = forminator_form_view_per_page();
 $module_type        = forminator_get_prefix( $module_slug, 'c' );
-$export_dialog      = 'export_' . $module_type;
+$export_dialog      = 'export_' . $module_slug;
 $preview_dialog     = 'preview_' . forminator_get_prefix( $module_slug, 'c', false, true );
 $create_dialog      = forminator_get_prefix( $module_slug, 'custom_', false, true );
 $dashboard_settings = forminator_get_dashboard_settings( forminator_get_prefix( $module_slug, '', false, true ), array() );
@@ -90,7 +90,7 @@ $modules = Forminator_API::$method( null, 1, $num_recent, $statuses );
 							$status_text  = esc_html__( 'Draft', 'forminator' );
 						}
 						// For Quizzes.
-						$has_leads = isset( $module['has_leads'] ) ? $module['has_leads'] : false;
+						$has_leads = isset( $module['settings']['hasLeads'] ) ? $module['settings']['hasLeads'] : false;
 						$leads_id  = isset( $module['leads_id'] ) ? $module['leads_id'] : 0;
 						?>
 

@@ -1,6 +1,6 @@
 <?php
 $preview_dialog = 'preview_' . forminator_get_prefix( static::$module_slug, 'c', false, true );
-$export_dialog  = 'export_' . forminator_get_prefix( static::$module_slug, 'c' );
+$export_dialog  = 'export_' . static::$module_slug;
 $post_type      = 'forminator_' . forminator_get_prefix( static::$module_slug, '', false, true );
 $soon           = 'quiz' === static::$module_slug;
 

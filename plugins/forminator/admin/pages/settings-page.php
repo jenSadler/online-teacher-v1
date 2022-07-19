@@ -28,7 +28,7 @@ class Forminator_Settings_Page extends Forminator_Admin_Page {
 
 		wp_enqueue_script(
 			'forminator-settings-page',
-			forminator_plugin_url() . 'assets/js/settings.js',
+			forminator_plugin_url() . 'build/settings.js',
 			array(
 				'jquery',
 				'wp-color-picker',

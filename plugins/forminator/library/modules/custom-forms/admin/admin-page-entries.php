@@ -260,10 +260,9 @@ class Forminator_CForm_View_Page extends Forminator_Admin_View_Page {
 	 */
 	private function build_fields_mappers() {
 		/** @var  Forminator_Form_Model $model */
-		$model               = $this->model;
-		$fields              = apply_filters( 'forminator_custom_form_build_fields_mappers', $model->get_fields() );
-		$visible_fields      = $this->get_visible_fields();
-		$ignored_field_types = Forminator_Form_Entry_Model::ignored_fields();
+		$model          = $this->model;
+		$fields         = apply_filters( 'forminator_custom_form_build_fields_mappers', $model->get_real_fields() );
+		$visible_fields = $this->get_visible_fields();
 
 		/** @var  Forminator_Form_Field_Model $fields */
 		$mappers = array(
@@ -283,10 +282,6 @@ class Forminator_CForm_View_Page extends Forminator_Admin_View_Page {
 
 		foreach ( $fields as $field ) {
 			$field_type = $field->__get( 'type' );
-
-			if ( in_array( $field_type, $ignored_field_types, true ) ) {
-				continue;
-			}
 
 			if ( ! empty( $visible_fields ) ) {
 				if ( ! in_array( $field->slug, $visible_fields, true ) ) {
@@ -690,6 +685,7 @@ class Forminator_CForm_View_Page extends Forminator_Admin_View_Page {
 			$iterator = array(
 				'id'         => $numerator_id,
 				'entry_id'   => $entry->entry_id,
+				'draft_id'   => $entry->draft_id,
 				'entry_date' => $entry->time_created,
 				'summary'    => array(),
 				'detail'     => array(),
@@ -948,11 +944,9 @@ class Forminator_CForm_View_Page extends Forminator_Admin_View_Page {
 	 * @return bool
 	 */
 	public function has_payments() {
-		$model = Forminator_Form_Model::model()->load( $this->form_id );
-		if ( is_object( $model ) ) {
-			if ( $model->has_stripe_field() || $model->has_paypal_field() ) {
-				return true;
-			}
+		$model = Forminator_Base_Form_Model::get_model( $this->form_id );
+		if ( is_object( $model ) && $model->has_stripe_or_paypal() ) {
+			return true;
 		}
 
 		return false;

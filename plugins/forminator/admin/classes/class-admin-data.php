@@ -126,7 +126,7 @@ class Forminator_Admin_Data {
 			'cloneNonce'                     => wp_create_nonce( 'forminator-nonce-clone-' . $id ),
 			'addons_enabled'                 => Forminator::is_addons_feature_enabled(),
 			'pluginUrl'                      => forminator_plugin_url(),
-			'imagesUrl'                      => forminator_plugin_url() . '/assets/images',
+			'imagesUrl'                      => forminator_plugin_url() . 'assets/images',
 			'addonNonce'                     => Forminator_Addon_Admin_Ajax::get_instance()->get_nonce(),
 			'countries'                      => forminator_get_countries_list(),
 			'userList'                       => forminator_list_users(),

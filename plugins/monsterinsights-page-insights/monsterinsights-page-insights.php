@@ -5,7 +5,7 @@
  * Description:       Adds individual page insights directly in the WordPress admin.
  * Author:            MonsterInsights Team
  * Author URI:        https://www.monsterinsights.com
- * Version:           1.4.1
+ * Version:           1.5.0
  * Requires at least: 4.8.0
  * Requires PHP:      5.5
  * Text Domain:       monsterinsights-page-insights
@@ -40,7 +40,7 @@ class MonsterInsights_Page_Insights {
 	 *
 	 * @var string
 	 */
-	public $version = '1.4.1';
+	public $version = '1.5.0';
 
 	/**
 	 * The name of the plugin.
@@ -154,7 +154,7 @@ class MonsterInsights_Page_Insights {
 			return;
 		}
 
-		if ( version_compare( MONSTERINSIGHTS_VERSION, '7.3.0', '<' ) ) {
+		if ( version_compare( MONSTERINSIGHTS_VERSION, '8.5.1', '<' ) ) {
 			// MonsterInsights version not supported.
 			add_action( 'admin_notices', array( self::$instance, 'requires_monsterinsights_version' ) );
 
@@ -305,7 +305,7 @@ class MonsterInsights_Page_Insights {
 	public function requires_monsterinsights_version() {
 		?>
 		<div class="error">
-			<p><?php esc_html_e( 'Please install or update MonsterInsights Pro with version 7.4.0 or newer to use the MonsterInsights Page Insights addon', 'monsterinsights-page-insights' ); ?></p>
+			<p><?php esc_html_e( 'Please install or update MonsterInsights Pro with version 8.5.1 or newer to use the MonsterInsights Page Insights addon', 'monsterinsights-page-insights' ); ?></p>
 		</div>
 		<?php
 	}

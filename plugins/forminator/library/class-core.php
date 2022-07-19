@@ -44,6 +44,13 @@ class Forminator_Core {
 	public $pro_fields = array();
 
 	/**
+	 * Store field objects
+	 *
+	 * @var array
+	 */
+	private static $field_objects = array();
+
+	/**
 	 * Plugin instance
 	 *
 	 * @var null
@@ -93,6 +100,8 @@ class Forminator_Core {
 		$fields       = new Forminator_Fields();
 		$this->fields = $fields->get_fields();
 
+		$this->set_field_objects();
+
 		/**
 		 * Filter Pro fields for promotion PRO version
 		 *
@@ -123,6 +132,60 @@ class Forminator_Core {
 
 		// Post meta box.
 		add_action( 'init', array( &$this, 'post_field_meta_box' ) );
+	}
+
+	/**
+	 * Set field objects
+	 */
+	private function set_field_objects() {
+		if ( self::$field_objects ) {
+			return;
+		}
+		foreach ( $this->fields as $field_object ) {
+			self::$field_objects[ $field_object->slug ] = $field_object;
+		}
+	}
+
+	/**
+	 * Get field object by field type
+	 *
+	 * @param string $type Field type.
+	 * @return object
+	 */
+	public static function get_field_object( $type ) {
+		$object = isset( self::$field_objects[ $type ] ) ? self::$field_objects[ $type ] : null;
+
+		return $object;
+	}
+
+	/**
+	 * Get field types
+	 *
+	 * @return array
+	 */
+	public static function get_field_types() {
+		$types = array_keys( self::$field_objects );
+
+		return $types;
+	}
+
+	/**
+	 * Get field type based on $element_id
+	 *
+	 * @param $element_id Field slug.
+	 * @return array
+	 */
+	public static function get_field_type( $element_id ) {
+		$field_type = '';
+		$parts      = explode( '-', $element_id );
+		// all avail fields on library.
+		$field_types = Forminator_Core::get_field_types();
+
+		if ( in_array( $parts[0], $field_types, true ) ) {
+			$field_type = $parts[0];
+		}
+
+		return $field_type;
 	}
 
 	/**
@@ -368,9 +431,14 @@ class Forminator_Core {
 	public static function sanitize_array( $data, $current_key = '' ) {
 		$data = wp_unslash( $data );
 		$skipped_keys = array( 'preview_data' );
-		if ( in_array( $current_key, $skipped_keys, true ) ) {
+		// TODO: Should skip fields that has its own sanitize function
+		if (
+			in_array( $current_key, $skipped_keys, true ) ||
+			0 === strpos( $current_key, 'url-' )
+		) {
 			return $data;
 		}
+
 		$allow_html = array(
 			'variations',
 			'question_description',
@@ -391,6 +459,7 @@ class Forminator_Core {
             'label',
             'value',
             'importable',
+            'sc_message',
 		);
 		if (
 			in_array( $current_key, $allow_html, true ) ||
@@ -400,7 +469,7 @@ class Forminator_Core {
 			false !== strpos( $current_key, '-post-content' ) ||
 			false !== strpos( $current_key, '-post-excerpt' )
 		) {
-			return wp_kses_post( $data );
+			return trim( wp_kses_post( $data ) );
 		}
 		if ( 'custom_css' === $current_key ) {
 			return sanitize_textarea_field( $data );

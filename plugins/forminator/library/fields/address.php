@@ -135,23 +135,24 @@ class Forminator_Address extends Forminator_Field {
 	 *
 	 * @return mixed
 	 */
-	public function markup( $field, $settings = array() ) {
+	public function markup( $field, $settings = array(), $draft_value = null ) {
 		$this->field         = $field;
 		$this->form_settings = $settings;
+		$draft_value 		 = isset( $draft_value['value'] ) ? $draft_value['value'] : '';
 
 		$design = $this->get_form_style( $settings );
 
 		// Address.
-		$html = $this->get_address( $field, 'street_address', $design );
+		$html = $this->get_address( $field, 'street_address', $design, $draft_value );
 
 		// Second Address.
-		$html .= $this->get_address( $field, 'address_line', $design );
+		$html .= $this->get_address( $field, 'address_line', $design, $draft_value );
 
 		// City & State fields.
-		$html .= $this->get_city_state( $field, $design );
+		$html .= $this->get_city_state( $field, $design, $draft_value );
 
 		// ZIP & Country fields.
-		$html .= $this->get_zip_country( $field, $design );
+		$html .= $this->get_zip_country( $field, $design, $draft_value );
 
 		return apply_filters( 'forminator_field_address_markup', $html, $field );
 	}
@@ -166,7 +167,7 @@ class Forminator_Address extends Forminator_Field {
 	 *
 	 * @return string
 	 */
-	public function get_address( $field, $slug, $design ) {
+	public function get_address( $field, $slug, $design, $draft_value = null ) {
 
 		$html        = '';
 		$cols        = 12;
@@ -191,13 +192,20 @@ class Forminator_Address extends Forminator_Field {
 			'aria-required' => $ariareq,
 		);
 
-		$address = $this->replace_from_prefill( $field, $address, $slug );
+		if ( is_null( $draft_value ) ) {
+
+			$address = $this->replace_from_prefill( $field, $address, $slug );
+
+		} elseif ( isset( $draft_value[$slug] ) ) {
+
+			$address['value'] = esc_attr( $draft_value[$slug] );
+		}
 
 		if ( $enabled ) {
 
 			$html .= '<div class="forminator-row">';
 
-				$html .= '<div class="forminator-col">';
+				$html .= sprintf( '<div id="%s" class="forminator-col">', $address['name'] );
 
 					$html .= '<div class="forminator-field">';
 
@@ -228,7 +236,7 @@ class Forminator_Address extends Forminator_Field {
 	 *
 	 * @return string
 	 */
-	public function get_city_state( $field, $design ) {
+	public function get_city_state( $field, $design, $draft_value = null) {
 		$html           = '';
 		$cols           = 12;
 		$id             = self::get_property( 'element_id', $field );
@@ -272,9 +280,17 @@ class Forminator_Address extends Forminator_Field {
 					'aria-required' => $city_ariareq,
 				);
 
-				$city_data = $this->replace_from_prefill( $field, $city_data, 'address_city' );
+				if ( isset( $draft_value['city'] ) ) {
 
-				$html .= sprintf( '<div class="forminator-col forminator-col-%s">', $cols );
+					$city_data['value'] = esc_attr( $draft_value['city'] );
+
+				} else {
+
+					$city_data = $this->replace_from_prefill( $field, $city_data, 'address_city' );
+
+				}
+
+				$html .= sprintf( '<div id="%s" class="forminator-col forminator-col-%s">', $city_data['name'], $cols );
 
 					$html .= '<div class="forminator-field">';
 
@@ -304,9 +320,17 @@ class Forminator_Address extends Forminator_Field {
 					'aria-required' => $state_ariareq,
 				);
 
-				$state_data = $this->replace_from_prefill( $field, $state_data, 'address_state' );
+				if ( isset( $draft_value['state'] ) ) {
 
-				$html .= sprintf( '<div class="forminator-col forminator-col-%s">', $cols );
+					$state_data['value'] = esc_attr( $draft_value['state'] );
+
+				} else {
+
+					$state_data = $this->replace_from_prefill( $field, $state_data, 'address_state' );
+
+				}
+
+				$html .= sprintf( '<div id="%s" class="forminator-col forminator-col-%s">', $state_data['name'], $cols );
 
 					$html .= '<div class="forminator-field">';
 
@@ -340,7 +364,7 @@ class Forminator_Address extends Forminator_Field {
 	 *
 	 * @return string
 	 */
-	public function get_zip_country( $field, $design ) {
+	public function get_zip_country( $field, $design, $draft_value = null ) {
 		$html            = '';
 		$cols            = 12;
 		$id              = self::get_property( 'element_id', $field );
@@ -380,9 +404,17 @@ class Forminator_Address extends Forminator_Field {
 					'class'       => 'forminator-input',
 				);
 
-				$zip_data = $this->replace_from_prefill( $field, $zip_data, 'address_zip' );
+				if ( isset( $draft_value['zip'] ) ) {
 
-				$html .= sprintf( '<div class="forminator-col forminator-col-%s">', $cols );
+					$zip_data['value'] = esc_attr( $draft_value['zip'] );
+
+				} else {
+
+					$zip_data = $this->replace_from_prefill( $field, $zip_data, 'address_zip' );
+
+				}
+
+				$html .= sprintf( '<div id="%s" class="forminator-col forminator-col-%s">', $zip_data['name'], $cols );
 
 					$html .= '<div class="forminator-field">';
 
@@ -419,18 +451,25 @@ class Forminator_Address extends Forminator_Field {
 
 				$options   = forminator_to_field_array( forminator_get_countries_list() );
 				$countries = array_merge( $countries, $options );
-				$prefill   = false;
+				$country   = false;
 
-				if ( $this->has_prefill( $field, 'address_country' ) ) {
+				if ( isset( $draft_value['country'] ) ) {
+
+					$country = esc_attr( $draft_value['country'] );
+
+				} elseif ( $this->has_prefill( $field, 'address_country' ) ) {
+
 					// We have pre-fill parameter, use its value or $value.
-					$prefill = $this->get_prefill( $field, false, 'address_country' );
+					$country = $this->get_prefill( $field, false, 'address_country' );
+
 				}
 
 				$new_countries = array();
 				foreach ( $countries as $option ) {
 					$selected = false;
 
-					if ( strtolower( $option['value'] ) === strtolower( $prefill ) ) {
+					// Should use label here. Option values are 2-letter country codes.
+					if ( strtolower( $option['label'] ) === strtolower( $country ) ) {
 						$selected = true;
 					}
 					$new_countries[] = array(
@@ -448,7 +487,7 @@ class Forminator_Address extends Forminator_Field {
 				 */
 				$countries = apply_filters( 'forminator_countries_field', $new_countries );
 
-				$html .= sprintf( '<div class="forminator-col forminator-col-%s">', $cols );
+				$html .= sprintf( '<div id="%s" class="forminator-col forminator-col-%s">', $country_data['name'], $cols );
 
 					$html .= '<div class="forminator-field">';
 
@@ -707,9 +746,8 @@ class Forminator_Address extends Forminator_Field {
 	 *
 	 * @param array        $field
 	 * @param array|string $data
-	 * @param array        $post_data
 	 */
-	public function validate( $field, $data, $post_data = array() ) {
+	public function validate( $field, $data ) {
 		$id = self::get_property( 'element_id', $field );
 
 		$street  = self::get_property( 'street_address', $field, false );

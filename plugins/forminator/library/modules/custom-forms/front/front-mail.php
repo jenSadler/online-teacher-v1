@@ -31,22 +31,21 @@ class Forminator_CForm_Front_Mail extends Forminator_Mail {
 	 * @param array  $settings Settings.
 	 * @param string $option_name Current option name.
 	 * @param object $module Module.
-	 * @param array  $data Submitted data.
 	 * @param object $entry Saved entry.
 	 * @param bool   $full_mode Use full mode or not.
 	 * @return string
 	 */
-	private function replace_placeholders( $settings, $option_name, $module, $data, $entry, $full_mode = false ) {
+	private function replace_placeholders( $settings, $option_name, $module, $entry, $full_mode = false ) {
 		if ( ! isset( $settings[ $option_name ] ) ) {
 			return '';
 		}
 		if ( $full_mode ) {
-			$text = forminator_replace_form_data( $settings[ $option_name ], $data, $module, $entry, true );
+			$text = forminator_replace_form_data( $settings[ $option_name ], $module, $entry, true );
 		} else {
-			$text = forminator_replace_form_data( $settings[ $option_name ], $data, null, null, true );
+			$text = forminator_replace_form_data( $settings[ $option_name ], null, null, true );
 		}
-		$text = forminator_replace_variables( $text, $module->id, $data['current_url'], $data['page_id'] );
-		$text = forminator_replace_custom_form_data( $text, $module, $data, $entry, $this->skip_custom_form_data['admin'] );
+		$text = forminator_replace_variables( $text, $module->id );
+		$text = forminator_replace_custom_form_data( $text, $module, $entry, $this->skip_custom_form_data['admin'] );
 
 		return $text;
 	}
@@ -55,20 +54,18 @@ class Forminator_CForm_Front_Mail extends Forminator_Mail {
 	 * Get files for email sending.
 	 *
 	 * @param object $custom_form Module.
-	 * @param array  $data Submitted data.
 	 * @param object $entry Saved entry.
-	 * @param array  $pseudo_submitted_data Pseudo submitted data.
 	 * @return array
 	 */
-	private function get_files( $custom_form, $data, $entry, $pseudo_submitted_data ) {
+	private function get_files( $custom_form, $entry ) {
 		$files       = array();
 		$form_fields = $custom_form->get_fields();
 		foreach ( $form_fields as $form_field ) {
 			$field_array    = $form_field->to_formatted_array();
-			$field_forms    = forminator_fields_to_array();
 			$field_type     = $field_array['type'];
-			$form_field_obj = $field_forms[ $field_type ];
-			if ( 'upload' === $field_type && ! $form_field_obj->is_hidden( $field_array, $data, $pseudo_submitted_data ) ) {
+			$field_id       = Forminator_Field::get_property( 'element_id', $field_array );
+			if ( 'upload' === $field_type &&
+					! in_array( $field_id, Forminator_CForm_Front_Action::$hidden_fields, true ) ) {
 				$field_slug = isset( $entry->meta_data[ $form_field->slug ] ) ? $entry->meta_data[ $form_field->slug ] : '';
 				if ( ! empty( $field_slug ) && ! empty( $field_slug['value']['file'] ) ) {
 					$email_files = isset( $field_slug['value']['file'] ) ? $field_slug['value']['file']['file_path'] : array();
@@ -88,19 +85,28 @@ class Forminator_CForm_Front_Mail extends Forminator_Mail {
 	 *
 	 * @since 1.0
 	 *
-	 * @param Forminator_Form_Model       $custom_form
-	 * @param array                       $data
-	 * @param array                       $pseudo_submitted_data
-	 * @param Forminator_Form_Entry_Model $entry - saved entry @since 1.0.3.
+	 * @param Forminator_Form_Model       	$custom_form
+	 * @param Forminator_Form_Entry_Model 	$entry - saved entry @since 1.0.3.
+	 * @param array 						$submitted_data - submitted data from email draft form	@since 1.17.0
 	 */
-	public function process_mail( $custom_form, $data, Forminator_Form_Entry_Model $entry, $pseudo_submitted_data = array() ) {
+	public function process_mail( $custom_form, Forminator_Form_Entry_Model $entry, $submitted_data = array() ) {
+		$data          = Forminator_CForm_Front_Action::$prepared_data;
 		$notifications = $custom_form->notifications;
+
+		if (
+			empty( $data ) && ! empty( $submitted_data ) &&
+			isset( $submitted_data['action'] ) &&
+			'forminator_email_draft_link' === $submitted_data['action']
+		) {
+			// Must already be sanitized in the previous function
+			$data = $submitted_data;
+		}
 
 		if ( empty( $data['current_url'] ) ) {
 			$data['current_url'] = forminator_get_current_url();
 		}
 
-		$files = $this->get_files( $custom_form, $data, $entry, $pseudo_submitted_data );
+		$files = $this->get_files( $custom_form, $entry );
 
 		/**
 		 * Message data filter
@@ -131,34 +137,26 @@ class Forminator_CForm_Front_Mail extends Forminator_Mail {
 			// Process admin mail.
 			foreach ( $notifications as $notification ) {
 
-				if ( $this->is_condition( $notification, $data, $pseudo_submitted_data ) ) {
+				// If notification is save_draft type, skip
+				if (
+					isset( $data['action'] ) && 'forminator_email_draft_link' !== $data['action'] &&
+					isset( $notification['type'] ) && 'save_draft' === $notification['type']
+				) {
 					continue;
 				}
 
-				$recipients = $this->get_admin_email_recipients( $notification, $data, $custom_form, $entry, $pseudo_submitted_data );
-				/**
-				 * Custom form admin mail recipients filter
-				 *
-				 * @since 1.0.3
-				 *
-				 * @param array $recipients
-				 * @param Forminator_Form_Model - the current form
-				 *
-				 * @return array $recipients
-				 */
-				$recipients = apply_filters_deprecated(
-					'forminator_custom_form_mail_admin_recipients',
-					array( $recipients, $custom_form, $data, $entry, $this ),
-					'1.6.2',
-					'forminator_get_admin_email_recipients'
-				);
+				if ( $this->is_condition( $notification ) ) {
+					continue;
+				}
+
+				$recipients = $this->get_admin_email_recipients( $notification, $custom_form, $entry );
 
 				if ( empty( $recipients ) ) {
 					continue;
 				}
 
-				$subject = $this->replace_placeholders( $notification, 'email-subject', $custom_form, $data, $entry, true );
-				$message = $this->replace_placeholders( $notification, 'email-editor', $custom_form, $data, $entry, true );
+				$subject = $this->replace_placeholders( $notification, 'email-subject', $custom_form, $entry, true );
+				$message = $this->replace_placeholders( $notification, 'email-editor', $custom_form, $entry, true );
 				/**
 				 * Custom form mail subject filter
 				 *
@@ -195,7 +193,12 @@ class Forminator_CForm_Front_Mail extends Forminator_Mail {
 					$this->set_attachment( array() );
 				}
 
-				$this->send_multiple();
+				// If draft, get the wp_mail response
+				if ( isset( $notification['type'] ) && 'save_draft' === $notification['type'] ) {
+					return $this->send_multiple();
+				} else {
+					$this->send_multiple();
+				}
 
 				/**
 				 * Action called after admin mail sent
@@ -230,7 +233,7 @@ class Forminator_CForm_Front_Mail extends Forminator_Mail {
 	 */
 	private function prepare_headers( $notification, $custom_form, $data, $entry ) {
 
-		$from_name = $this->replace_placeholders( $notification, 'from-name', $custom_form, $data, $entry );
+		$from_name = $this->replace_placeholders( $notification, 'from-name', $custom_form, $entry );
 		if ( empty( $from_name ) ) {
 			$from_name = $this->sender_name;
 		}
@@ -247,7 +250,7 @@ class Forminator_CForm_Front_Mail extends Forminator_Mail {
 		 */
 		$from_name = apply_filters( 'forminator_custom_form_mail_admin_from_name', $from_name, $custom_form, $data, $entry, $this );
 
-		$from_email = $this->replace_placeholders( $notification, 'form-email', $custom_form, $data, $entry );
+		$from_email = $this->replace_placeholders( $notification, 'form-email', $custom_form, $entry );
 		if ( ! is_email( $from_email ) ) {
 			$from_email = $this->sender_email;
 		}
@@ -264,7 +267,7 @@ class Forminator_CForm_Front_Mail extends Forminator_Mail {
 		 */
 		$from_email = apply_filters( 'forminator_custom_form_mail_admin_from_email', $from_email, $custom_form, $data, $entry, $this );
 
-		$reply_to_address = trim( $this->replace_placeholders( $notification, 'replyto-email', $custom_form, $data, $entry ) );
+		$reply_to_address = trim( $this->replace_placeholders( $notification, 'replyto-email', $custom_form, $entry ) );
 		if ( ! is_email( $reply_to_address ) ) {
 			$reply_to_address = '';
 		}
@@ -281,7 +284,7 @@ class Forminator_CForm_Front_Mail extends Forminator_Mail {
 		 */
 		$reply_to_address = apply_filters( 'forminator_custom_form_mail_admin_reply_to', $reply_to_address, $custom_form, $data, $entry, $this );
 
-		$notification_cc_addresses = $this->replace_placeholders( $notification, 'cc-email', $custom_form, $data, $entry );
+		$notification_cc_addresses = $this->replace_placeholders( $notification, 'cc-email', $custom_form, $entry );
 		$notification_cc_addresses = array_map( 'trim', explode( ',', $notification_cc_addresses ) );
 
 		$cc_addresses = array();
@@ -303,7 +306,7 @@ class Forminator_CForm_Front_Mail extends Forminator_Mail {
 		 */
 		$cc_addresses = apply_filters( 'forminator_custom_form_mail_admin_cc_addresses', $cc_addresses, $custom_form, $data, $entry, $this );
 
-		$notification_bcc_addresses = $this->replace_placeholders( $notification, 'bcc-email', $custom_form, $data, $entry );
+		$notification_bcc_addresses = $this->replace_placeholders( $notification, 'bcc-email', $custom_form, $entry );
 		$notification_bcc_addresses = array_map( 'trim', explode( ',', $notification_bcc_addresses ) );
 
 		$bcc_addresses = array();
@@ -473,9 +476,9 @@ class Forminator_CForm_Front_Mail extends Forminator_Mail {
 	 *
 	 * @return string
 	 */
-	public function get_recipient( $recipient, $custom_form, $data, $entry, $lead_model ) {
+	public function get_recipient( $recipient, $custom_form, $entry, $lead_model ) {
 		$settings  = array( 'recipient' => $recipient );
-		$recipient = $this->replace_placeholders( $settings, 'recipient', $custom_form, $data, $entry );
+		$recipient = $this->replace_placeholders( $settings, 'recipient', $custom_form, $entry );
 
 		return $recipient;
 	}
@@ -524,14 +527,12 @@ class Forminator_CForm_Front_Mail extends Forminator_Mail {
 			$setting_recipients = $setting['user-email-recipients'];
 
 			foreach ( $setting_recipients as $key => $setting_recipient ) {
-				$setting_recipient = $this->replace_placeholders( $setting_recipients, $key, $custom_form, $data, $entry );
+				$setting_recipient = $this->replace_placeholders( $setting_recipients, $key, $custom_form, $entry );
 				if ( is_email( $setting_recipient ) ) {
 					$email[] = $setting_recipient;
 				}
 			}
 		}
-
-		$email = apply_filters_deprecated( 'forminator_get_admin_email_recipients', array( $email, $setting, $custom_form, $entry ), '1.6.2', 'forminator_get_user_email_recipients' );
 
 		return apply_filters( 'forminator_get_user_email_recipients', $email, $setting, $data, $custom_form, $entry );
 	}
@@ -540,15 +541,12 @@ class Forminator_CForm_Front_Mail extends Forminator_Mail {
 	 * Check if Field is hidden based on conditions property and POST-ed data
 	 *
 	 * @since 1.0
-	 * @since 1.7 add $pseudo_submitted_data to get value of calculation and stripe etc
 	 *
 	 * @param $notification
-	 * @param $form_data
-	 * @param $pseudo_submitted_data
 	 *
 	 * @return bool
 	 */
-	public function is_condition( $notification, $form_data, $pseudo_submitted_data = array(), $form_object = false ) {
+	public function is_condition( $notification ) {
 		// empty conditions.
 		if ( empty( $notification['conditions'] ) ) {
 			return false;
@@ -562,7 +560,7 @@ class Forminator_CForm_Front_Mail extends Forminator_Mail {
 		$all_conditions = $notification['conditions'];
 
 		foreach ( $all_conditions as $condition ) {
-			$is_condition_fulfilled = Forminator_Field::is_condition_matched( $condition, $form_data, $pseudo_submitted_data );
+			$is_condition_fulfilled = Forminator_Field::is_condition_matched( $condition );
 			if ( $is_condition_fulfilled ) {
 				$condition_fulfilled ++;
 			}
@@ -591,12 +589,11 @@ class Forminator_CForm_Front_Mail extends Forminator_Mail {
 	 * @since 1.0
 	 *
 	 * @param $condition
-	 * @param $form_data
-	 * @param $pseudo_submitted_data
+	 * @param $module
 	 *
 	 * @return bool
 	 */
-	public function is_routing( $condition, $form_data, $module, $pseudo_submitted_data = array() ) {
-		return Forminator_Field::is_condition_matched( $condition, $form_data, $pseudo_submitted_data );
+	public function is_routing( $condition, $module ) {
+		return Forminator_Field::is_condition_matched( $condition );
 	}
 }

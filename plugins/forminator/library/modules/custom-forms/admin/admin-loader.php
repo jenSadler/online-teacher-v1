@@ -48,20 +48,20 @@ class Forminator_Custom_Form_Admin extends Forminator_Admin_Module {
 		$model = null;
 		if ( $this->is_admin_wizard() ) {
 			$data['application'] = 'builder';
+			$settings            = array();
 
 			$id = filter_input( INPUT_GET, 'id', FILTER_VALIDATE_INT );
 			if ( $id ) {
 				$data['formNonce'] = wp_create_nonce( 'forminator_save_builder_fields' );
-				$model             = Forminator_Form_Model::model()->load( $id );
+				$model             = Forminator_Base_Form_Model::get_model( $id );
+				$settings          = $model->get_form_settings();
+				$behavior          = $model->get_behavior_array();
 			}
 
 			$wrappers = array();
 			if ( is_object( $model ) ) {
 				$wrappers = $model->get_fields_grouped();
 			}
-
-			// Load stored record
-			$settings = apply_filters( 'forminator_form_settings', $this->get_form_settings( $model ), $model, $data, $this );
 
 			if ( isset( $model->settings['form-type'] ) && 'registration' === $model->settings['form-type'] ) {
 				$notifications = self::get_registration_form_notifications( $model );
@@ -92,7 +92,7 @@ class Forminator_Custom_Form_Admin extends Forminator_Admin_Module {
 					)
 				),
 				'notifications' => $notifications,
-				'behaviorArray' => Forminator_Form_Model::get_behavior_array( $model, $settings ),
+				'behaviorArray' => isset( $behavior ) ? $behavior : array(),
 				'integrationConditions' => ! empty( $model->integration_conditions ) ? $model->integration_conditions : array(),
 			);
 		}
@@ -194,41 +194,6 @@ class Forminator_Custom_Form_Admin extends Forminator_Admin_Module {
 	}
 
 	/**
-	 * Return Form Settins
-	 *
-	 * @since 1.1
-	 *
-	 * @param Forminator_Form_Model $form
-	 *
-	 * @return mixed
-	 */
-	public function get_form_settings( $form ) {
-
-		if ( ! isset( $form ) ) {
-			$form = new stdClass();
-		}
-
-		// If not using the new "submission-behaviour" setting, set it according to the previous settings.
-		if ( ! isset( $form->settings['submission-behaviour'] ) ) {
-			$redirect = ( isset( $form->settings['redirect'] ) && filter_var( $form->settings['redirect'], FILTER_VALIDATE_BOOLEAN ) );
-
-			if ( $redirect ) {
-				$form->settings['submission-behaviour'] = 'behaviour-redirect';
-			} else {
-				$form->settings['submission-behaviour'] = 'behaviour-thankyou';
-			}
-		}
-
-		if ( Forminator_Form_Model::has_stripe_or_paypal( $form ) && $this->is_ajax_submit( $form ) ) {
-			if ( isset( $form->settings['submission-behaviour'] ) && 'behaviour-thankyou' === $form->settings['submission-behaviour'] ) {
-				$form->settings['submission-behaviour'] = 'behaviour-hide';
-			}
-		}
-
-		return $form->settings;
-	}
-
-	/**
 	 * Return Form notifications
 	 *
 	 * @since 1.1
@@ -248,6 +213,7 @@ class Forminator_Custom_Form_Admin extends Forminator_Admin_Module {
 					'email-subject'    => __( 'New Form Entry #{submission_id} for {form_name}', 'forminator' ),
 					'email-editor'     => __( 'You have a new website form submission: <br/> {all_fields} <br/>---<br/> This message was sent from {site_url}.', 'forminator' ),
 					'email-attachment' => 'true',
+					'type'			   => 'default',
 				),
 			);
 		}
@@ -292,6 +258,7 @@ class Forminator_Custom_Form_Admin extends Forminator_Admin_Module {
 				'email-editor-method-email'   => $message_method_email,
 				'email-subject-method-manual' => __( 'New User Registration on {site_url} needs approval.', 'forminator' ),
 				'email-editor-method-manual'  => $message_method_manual,
+				'type'  					  => 'registration',
 			);
 			if ( ! is_null( $template ) ) {
 				$email = self::get_registration_form_customer_email_slug( $template );
@@ -355,28 +322,6 @@ class Forminator_Custom_Form_Admin extends Forminator_Admin_Module {
 		}
 
 		return $default;
-	}
-
-	/**
-	 * Check if submit is handled with AJAX
-	 *
-	 * @since 1.9.3
-	 *
-	 * @return bool
-	 */
-	public function is_ajax_submit( $form ) {
-		$form_settings = $form->settings;
-
-		// Force AJAX submit if form contains Stripe payment field.
-		if ( $form->has_stripe_field() ) {
-			return true;
-		}
-
-		if ( ! isset( $form_settings['enable-ajax'] ) || empty( $form_settings['enable-ajax'] ) ) {
-			return false;
-		}
-
-		return filter_var( $form_settings['enable-ajax'], FILTER_VALIDATE_BOOLEAN );
 	}
 
 	/**
@@ -488,7 +433,7 @@ class Forminator_Custom_Form_Admin extends Forminator_Admin_Module {
 		$model->settings = self::validate_settings( $settings );
 		$model->status   = $status;
 
-		$behaviors        = Forminator_Form_Model::get_behavior_array( $model, $model->settings );
+		$behaviors        = $model->get_behavior_array();
 		$model->behaviors = $behaviors;
 
 		// Save data.
@@ -515,7 +460,7 @@ class Forminator_Custom_Form_Admin extends Forminator_Admin_Module {
 				$status = Forminator_Form_Model::STATUS_PUBLISH;
 			}
 		} else {
-			$form_model = Forminator_Form_Model::model()->load( $id );
+			$form_model = Forminator_Base_Form_Model::get_model( $id );
 			$action     = 'update';
 
 			if ( ! is_object( $form_model ) ) {
@@ -617,6 +562,9 @@ class Forminator_Custom_Form_Admin extends Forminator_Admin_Module {
 
 		forminator_update_form_submissions_retention( $id, $retention_number, $retention_unit );
 
+		// Add function here for draft retentions
+		self::add_draft_retention_settings( $id, $settings );
+
 		Forminator_Render_Form::regenerate_css_file( $id );
 		// Purge count forms cache
 		wp_cache_delete( 'forminator_form_total_entries', 'forminator_form_total_entries' );
@@ -624,5 +572,26 @@ class Forminator_Custom_Form_Admin extends Forminator_Admin_Module {
 		wp_cache_delete( 'forminator_form_total_entries_draft', 'forminator_form_total_entries_draft' );
 
 		return $id;
+	}
+
+	/**
+	 * Add draft retention settings to global retention options
+	 *
+	 * @param	string 	$form_id Module ID.
+	 * @param 	array 	$settings Form settings.
+	 */
+	public static function add_draft_retention_settings( $form_id, $settings ) {
+		if ( ! isset( $settings['use_save_and_continue'] ) || ! filter_var( $settings['use_save_and_continue'], FILTER_VALIDATE_BOOLEAN ) ) {
+			return;
+		}
+
+		$retention_number = null;
+		$retention_unit   = null;
+		if ( ! empty( $settings['sc_draft_retention'] ) ) {
+			$retention_number = (int) $settings['sc_draft_retention'];
+			$retention_unit	  = 'days';
+		}
+
+		forminator_update_form_submissions_retention( $form_id, $retention_number, $retention_unit, true );
 	}
 }

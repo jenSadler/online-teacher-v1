@@ -815,7 +815,12 @@ class BP_Course_Action{
                     }
 
                     ?>
-                    <br /></div><h1><?php 
+                    <br /></div>
+				
+				<div class="hold-title-section">
+					
+				
+				<h1><?php 
                     if(isset($this->status_course_id)){
                         echo get_the_title($this->status_unit_id);
                     }else{
@@ -829,7 +834,10 @@ class BP_Course_Action{
                         the_sub_title();    
                     }   
                     ?>  
+					
+					<?php echo get_the_post_thumbnail($this->status_unit_id, 'unitTitle', array( 'class' => 'header-thumb' )); ?>
                     </div>
+				</div>
                     <?php
 
                     if(isset($this->status_course_taken) && $this->status_course_taken && $this->status_unit_id !=''){

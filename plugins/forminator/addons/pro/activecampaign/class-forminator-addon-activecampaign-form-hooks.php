@@ -189,18 +189,8 @@ class Forminator_Addon_Activecampaign_Form_Hooks extends Forminator_Addon_Form_H
 				if ( ! empty( $fields_map[ $common_field ] ) ) {
 					$element_id = $fields_map[ $common_field ];
 
-					if ( self::element_is_calculation( $element_id ) ) {
-						$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
-						$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'calculation', $meta_value );
-					} elseif ( self::element_is_stripe( $element_id ) ) {
-						$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
-						$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'stripe', $meta_value );
-					} elseif ( isset( $submitted_data[ $element_id ] ) && ! empty( $submitted_data[ $element_id ] ) ) {
-						$element_value = self::get_field_value( $element_id, $submitted_data[ $element_id ] );
-					}
-					if ( isset( $element_value ) ) {
-						$args[ $common_field ] = $element_value;
-						unset( $element_value ); // unset for next loop.
+					if ( isset( $submitted_data[ $element_id ] ) ) {
+						$args[ $common_field ] = $submitted_data[ $element_id ];
 					}
 				}
 				// processed.
@@ -209,21 +199,8 @@ class Forminator_Addon_Activecampaign_Form_Hooks extends Forminator_Addon_Form_H
 
 			// process rest extra fields if available.
 			foreach ( $fields_map as $field_id => $element_id ) {
-				if ( ! empty( $element_id ) ) {
-					if ( self::element_is_calculation( $element_id ) ) {
-						$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
-						$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'calculation', $meta_value );
-					} elseif ( self::element_is_stripe( $element_id ) ) {
-						$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
-						$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'stripe', $meta_value );
-					} elseif ( isset( $submitted_data[ $element_id ] ) && ! empty( $submitted_data[ $element_id ] ) ) {
-						$element_value = self::get_field_value( $element_id, $submitted_data[ $element_id ] );
-					}
-
-					if ( isset( $element_value ) ) {
-						$args[ 'field[' . $field_id . ',0]' ] = $element_value;
-						unset( $element_value ); // unset for next loop.
-					}
+				if ( ! empty( $element_id ) && isset( $submitted_data[ $element_id ] ) ) {
+					$args[ 'field[' . $field_id . ',0]' ] = $submitted_data[ $element_id ];
 				}
 			}
 
@@ -235,21 +212,10 @@ class Forminator_Addon_Activecampaign_Form_Hooks extends Forminator_Addon_Form_H
 						&& stripos( $tag, '}' ) === ( strlen( $tag ) - 1 )
 					) {
 						// translate to value.
-						$element_id = str_ireplace( '{', '', $tag );
-						$element_id = str_ireplace( '}', '', $element_id );
-						if ( self::element_is_calculation( $element_id ) ) {
-							$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
-							$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'calculation', $meta_value );
-						} elseif ( self::element_is_stripe( $element_id ) ) {
-							$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
-							$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'stripe', $meta_value );
-						} elseif ( isset( $submitted_data[ $element_id ] ) && ! empty( $submitted_data[ $element_id ] ) ) {
-							$element_value = self::get_field_value( $element_id, $submitted_data[ $element_id ] );
-						}
+						$element_id = str_replace( array( '{', '}' ), '', $tag );
 
-						if ( isset( $element_value ) ) {
-							$tags[] = $element_value;
-							unset( $element_value ); // unset for next loop.
+						if ( isset( $submitted_data[ $element_id ] ) ) {
+							$tags[] = $submitted_data[ $element_id ];
 						}
 					} else {
 						$tags[] = $tag;

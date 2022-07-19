@@ -33,9 +33,9 @@
 							<button
 								role="button"
 								class="sui-button wpmudev-open-modal"
-								data-modal="import_cform_cf7"
+								data-modal="import_form_cf7"
 								data-modal-title=""
-								data-nonce="<?php echo esc_attr( wp_create_nonce( 'forminator_popup_import_cform_cf7' ) ); ?>"
+								data-nonce="<?php echo esc_attr( wp_create_nonce( 'forminator_popup_import_form_cf7' ) ); ?>"
 							>
 								<i class="sui-icon-upload-cloud" aria-hidden="true"></i> <?php esc_html_e( 'Import', 'forminator' ); ?>
 							</button>
@@ -78,9 +78,9 @@
 							<button
 								role="button"
 								class="sui-button wpmudev-open-modal"
-								data-modal="import_cform_ninja"
+								data-modal="import_form_ninja"
 								data-modal-title=""
-								data-nonce="<?php echo esc_attr( wp_create_nonce( 'forminator_popup_import_cform_ninjaforms' ) ); ?>"
+								data-nonce="<?php echo esc_attr( wp_create_nonce( 'forminator_popup_import_form_ninjaforms' ) ); ?>"
 							>
 								<i class="sui-icon-upload-cloud" aria-hidden="true"></i> <?php esc_html_e( 'Import Ninja Forms', 'forminator' ); ?>
 							</button>
@@ -100,9 +100,9 @@
 							<button
 								role="button"
 								class="sui-button wpmudev-open-modal"
-								data-modal="import_cform_gravity"
+								data-modal="import_form_gravity"
 								data-modal-title=""
-								data-nonce="<?php echo esc_attr( wp_create_nonce( 'forminator_popup_import_cform_gravityforms' ) ); ?>"
+								data-nonce="<?php echo esc_attr( wp_create_nonce( 'forminator_popup_import_form_gravityforms' ) ); ?>"
 							>
 								<i class="sui-icon-upload-cloud" aria-hidden="true"></i> <?php esc_html_e( 'Import Gravity Forms', 'forminator' ); ?>
 							</button>

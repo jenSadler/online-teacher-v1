@@ -105,7 +105,7 @@ class Forminator_Website extends Forminator_Field {
 	 *
 	 * @return mixed
 	 */
-	public function markup( $field, $settings = array() ) {
+	public function markup( $field, $settings = array(), $draft_value = null ) {
 
 		$this->field = $field;
 
@@ -126,8 +126,11 @@ class Forminator_Website extends Forminator_Field {
 			$ariareq = 'true';
 		}
 
-		// Check if Pre-fill parameter used.
-		if ( $this->has_prefill( $field ) ) {
+		if ( isset( $draft_value['value'] ) ) {
+
+			$value = esc_attr( $draft_value['value'] );
+
+		} elseif ( $this->has_prefill( $field ) ) {
 			// We have pre-fill parameter, use its value or $value.
 			$value = $this->get_prefill( $field, $value );
 		}
@@ -270,9 +273,8 @@ class Forminator_Website extends Forminator_Field {
 	 *
 	 * @param array        $field
 	 * @param array|string $data
-	 * @param array        $post_data
 	 */
-	public function validate( $field, $data, $post_data = array() ) {
+	public function validate( $field, $data ) {
 		$id                 = self::get_property( 'element_id', $field );
 		$validation_enabled = self::get_property( 'validation', $field, false, 'bool' );
 		$validation_message = self::get_property( 'validation_message', $field, self::FIELD_PROPERTY_VALUE_NOT_EXIST );
@@ -321,7 +323,7 @@ class Forminator_Website extends Forminator_Field {
 	public function sanitize( $field, $data ) {
 		$original_data = $data;
 		// Sanitize.
-		$data = forminator_sanitize_field( $data );
+		$data = esc_url_raw( $data );
 
 		return apply_filters( 'forminator_field_website_sanitize', $data, $field, $original_data );
 	}

@@ -273,7 +273,7 @@ $has_date = true;
 
 <script type="text/javascript">
     ( function ($) {
-        $( document ).ready(function (e) {
+        $( function (e) {
             $( '#due_date' ).datepicker({
                 beforeShow: function( input, inst ) {
                     $( '#ui-datepicker-div' ).addClass( 'sui-calendar' );

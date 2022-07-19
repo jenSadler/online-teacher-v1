@@ -258,6 +258,38 @@ final class MonsterInsights_Report_Page_Insights extends MonsterInsights_Report 
 
 	}
 
+	public function prepare_report_raw_data( $data = array() ) {
+
+		check_ajax_referer( 'mi-admin-nonce', 'security' );
+
+		$output = [];
+
+		$interval = '30days';
+		if ( isset( $_REQUEST['interval'] ) ) {
+			$interval = sanitize_text_field( wp_unslash( $_REQUEST['interval'] ) );
+		}
+
+		$report_data = array();
+		if ( isset( $data[ $interval ] ) ) {
+			$report_data = $data[ $interval ];
+		}
+		$report_data = wp_parse_args( $report_data, self::get_default_metrics_value() );
+		$labels      = self::get_metrics_labels();
+
+		foreach ( $report_data as $metric_name => $metric_value ) {
+			$label        = isset( $labels[ $metric_name ] ) ? $labels[ $metric_name ] : $metric_name;
+			$metric_value = self::prepare_metric( $metric_value, $metric_name );
+
+			$output[ $metric_name ] = [
+				'label' => $label,
+				'value' => $metric_value,
+			];
+		}
+
+		return $output;
+
+	}
+
 	/**
 	 * Add the page-specific path to the request.
 	 *

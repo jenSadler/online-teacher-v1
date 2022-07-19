@@ -217,8 +217,6 @@ class Forminator_Upload extends Forminator_Field {
 			);
 		}
 
-		$html .= self::get_description( $description, 'forminator-field-' . $id );
-
 		if ( 'multiple' === $file_type ) {
 			$html .= sprintf( '<ul class="forminator-uploaded-files upload-container-%s"></ul>', $id );
 		}
@@ -235,9 +233,8 @@ class Forminator_Upload extends Forminator_Field {
 	 *
 	 * @param array        $field
 	 * @param array|string $data
-	 * @param array        $post_data
 	 */
-	public function validate( $field, $data, $post_data = array() ) {
+	public function validate( $field, $data ) {
 		if ( $this->is_required( $field ) ) {
 			$id               = self::get_property( 'element_id', $field );
 			$required_message = self::get_property( 'required_message', $field, '' );

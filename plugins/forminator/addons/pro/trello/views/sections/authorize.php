@@ -111,7 +111,7 @@ foreach ( $template_vars as $key => $val ) {
 	}
 
 	(function ($) {
-		$(document).ready(function (e) {
+		$( function (e) {
 			<?php if ( $vars['is_close'] ) : ?>
 
 			setTimeout(function () {

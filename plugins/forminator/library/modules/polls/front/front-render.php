@@ -56,7 +56,7 @@ class Forminator_Poll_Front extends Forminator_Render_Form {
 
 		} else {
 
-			$this->model = Forminator_Poll_Model::model()->load( $id );
+			$this->model = Forminator_Base_Form_Model::get_model( $id );
 
 			if ( ! $this->model instanceof Forminator_Poll_Model ) {
 				return;
@@ -84,6 +84,8 @@ class Forminator_Poll_Front extends Forminator_Render_Form {
 		}
 
 		if ( $this->is_displayable( $is_preview ) ) {
+
+			$this->generate_render_id( $id );
 
 			echo $this->get_html( $hide, $is_preview ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
@@ -162,14 +164,15 @@ class Forminator_Poll_Front extends Forminator_Render_Form {
 	 * @since 1.0
 	 * @return string
 	 */
-	public function render_form_header() {
+	public function render_form_header( $maybe_error = '' ) {
 
 		$html         = '';
 		$label_class  = '';
 		$message_wrap = '';
 		$status_info = $this->model->opening_status();
 		if ( 'open' !== $status_info['status'] ) {
-			$html .= '<div class="forminator-response-message forminator-error forminator-show">';
+			$html .= '<div class="forminator-response-message forminator-error
+ forminator-show">';
 			$html .= '<p>' . esc_html( $status_info['msg'] ) . '</p>';
 			$html .= '</div>';
 		}
@@ -1086,7 +1089,7 @@ class Forminator_Poll_Front extends Forminator_Render_Form {
 
 				'use strict';
 
-				$( 'document' ).ready( function() {
+				$(function() {
 
 					var chartExtras = [
 						'<?php echo esc_html_e( 'vote(s)', 'forminator' ); ?>',

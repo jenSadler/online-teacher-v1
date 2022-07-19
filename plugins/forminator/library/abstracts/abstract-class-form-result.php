@@ -36,9 +36,9 @@ abstract class Forminator_Result {
 		}
 	}
 
-	public function set_postdata( $data = false ) {
-		if ( false !== $data ) {
-			$this->post_data = $data;
+	public function set_postdata() {
+		if ( Forminator_Front_Action::$prepared_data ) {
+			$this->post_data = Forminator_Front_Action::$prepared_data;
 		}
 	}
 

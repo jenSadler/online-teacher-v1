@@ -177,38 +177,6 @@ class Forminator_Assets_Enqueue_Form extends Forminator_Assets_Enqueue {
 		}
 	}
 
-	public function load_base_scripts() {
-		// LOAD: Forminator validation scripts.
-		wp_enqueue_script(
-			'forminator-jquery-validate',
-			forminator_plugin_url() . 'assets/js/library/jquery.validate.min.js',
-			array( 'jquery' ),
-			FORMINATOR_VERSION,
-			false
-		);
-
-		// LOAD: Forminator UI JS.
-		wp_enqueue_script(
-			'forminator-form',
-			forminator_plugin_url() . 'assets/forminator-ui/js/forminator-form.min.js',
-			array( 'jquery' ),
-			FORMINATOR_VERSION,
-			false
-		);
-
-		// LOAD: Forminator front scripts.
-		wp_enqueue_script(
-			'forminator-front-scripts',
-			forminator_plugin_url() . 'build/front/front.multi.min.js',
-			array( 'jquery', 'forminator-form', 'forminator-jquery-validate' ),
-			FORMINATOR_VERSION,
-			false
-		);
-
-		// Localize front script.
-		wp_localize_script( 'forminator-front-scripts', 'ForminatorFront', forminator_localize_data() );
-	}
-
 	/**
 	 * Load date field scripts
 	 *

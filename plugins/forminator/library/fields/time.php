@@ -114,7 +114,7 @@ class Forminator_Time extends Forminator_Field {
 	 *
 	 * @return mixed
 	 */
-	public function markup( $field, $settings = array() ) {
+	public function markup( $field, $settings = array(), $draft_value = null ) {
 
 		$this->field = $field;
 
@@ -132,6 +132,7 @@ class Forminator_Time extends Forminator_Field {
 		$increment_hour   = self::get_property( 'increment_hour', $field, 0 );
 		$increment_minute = self::get_property( 'increment_minute', $field, 0 );
 		$required_origin  = $required;
+		$draft_value 	  = isset( $draft_value['value'] ) ? $draft_value['value'] : '';
 
 		$default_time_hour   = '';
 		$default_time_minute = '';
@@ -146,8 +147,21 @@ class Forminator_Time extends Forminator_Field {
 		// Parse prefill settings.
 		$prefill = $this->parse_prefill( $field );
 
-		// Check if prefill array is empty.
-		if ( ! empty( $prefill ) ) {
+		if ( ! empty( $draft_value ) ) {
+
+			if ( isset( $draft_value['hours'] ) ) {
+				$default_time_hour = trim( $draft_value['hours'] );
+			}
+
+			if ( isset( $draft_value['minutes'] ) ) {
+				$default_time_minute = trim( $draft_value['minutes'] );
+			}
+
+			if ( isset( $draft_value['ampm'] ) ) {
+				$default_time_ampm = strtolower( trim( $draft_value['ampm'] ) );
+			}
+
+		} elseif ( ! empty( $prefill ) ) {
 			if ( isset( $prefill['hour'] ) ) {
 				$default_time_hour = $prefill['hour'];
 			}
@@ -648,9 +662,8 @@ class Forminator_Time extends Forminator_Field {
 	 *
 	 * @param array        $field
 	 * @param array|string $data
-	 * @param array        $post_data
 	 */
-	public function validate( $field, $data, $post_data = array() ) {
+	public function validate( $field, $data ) {
 		$isValid       = true;
 		$type          = self::get_property( 'time_type', $field, 'twelve' );
 		$restrict_time = self::get_property( 'restrict_time', $field, 'none' );

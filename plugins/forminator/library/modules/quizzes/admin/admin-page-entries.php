@@ -85,7 +85,7 @@ class Forminator_Quiz_View_Page extends Forminator_Admin_View_Page {
 	 * @return bool
 	 */
 	public function has_leads() {
-		if ( isset( $this->model->settings['hasLeads'] ) && in_array( $this->model->settings['hasLeads'], array( true, 'true' ), true ) ) {
+		if ( isset( $this->model->settings['hasLeads'] ) && filter_var( $this->model->settings['hasLeads'], FILTER_VALIDATE_BOOLEAN ) ) {
 			return true;
 		}
 

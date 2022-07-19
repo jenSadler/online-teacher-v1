@@ -80,7 +80,6 @@ abstract class Forminator_User {
 		if ( ! empty( $form_fields ) ) {
 			foreach ( $form_fields as $key => $form_field ) {
 				$field_array = $form_field->to_formatted_array();
-				$field_forms = forminator_fields_to_array();
 				$field_type  = $field_array['type'];
 				if ( 'password' === $field_type ) {
 					unset( $form_fields[ $key ] );

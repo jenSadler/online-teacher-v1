@@ -219,19 +219,8 @@ class Forminator_Addon_Aweber_Form_Hooks extends Forminator_Addon_Form_Hooks_Abs
 
 			$name_element_id = $connection_settings['fields_map']['default_field_name'];
 
-			if ( self::element_is_calculation( $name_element_id ) ) {
-				$meta_value = self::find_meta_value_from_entry_fields( $name_element_id, $form_entry_fields );
-				$name       = Forminator_Form_Entry_Model::meta_value_to_string( 'calculation', $meta_value );
-			} elseif ( self::element_is_stripe( $name_element_id ) ) {
-				$meta_value = self::find_meta_value_from_entry_fields( $name_element_id, $form_entry_fields );
-				$name       = Forminator_Form_Entry_Model::meta_value_to_string( 'stripe', $meta_value );
-			} elseif ( isset( $submitted_data[ $name_element_id ] ) && ! empty( $submitted_data[ $name_element_id ] ) ) {
-				$name = $submitted_data[ $name_element_id ];
-
-			}
-
-			if ( isset( $name ) ) {
-				$args['name'] = $name;
+			if ( isset( $submitted_data[ $name_element_id ] ) ) {
+				$args['name'] = $submitted_data[ $name_element_id ];
 			}
 
 			// processed.
@@ -240,26 +229,11 @@ class Forminator_Addon_Aweber_Form_Hooks extends Forminator_Addon_Form_Hooks_Abs
 			$custom_fields = array();
 			// process rest extra fields if available.
 			foreach ( $fields_map as $field_id => $element_id ) {
-				if ( ! empty( $element_id ) ) {
-
-					if ( self::element_is_calculation( $element_id ) ) {
-						$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
-						$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'calculation', $meta_value );
-					} elseif ( self::element_is_stripe( $element_id ) ) {
-						$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
-						$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'stripe', $meta_value );
-					} elseif ( isset( $submitted_data[ $element_id ] ) && ! empty( $submitted_data[ $element_id ] ) ) {
-						$element_value = $submitted_data[ $element_id ];
-						if ( is_array( $element_value ) ) {
-							$element_value = implode( ',', $element_value );
-						}
-					}
-
-					if ( isset( $fields_mapper[ $field_id ] ) && isset( $element_value ) ) {
-						$custom_fields[ $fields_mapper[ $field_id ] ] = (string) $element_value; // custom value must be string.
-						unset( $element_value ); // unset for next loop.
-					}
+				if ( empty( $element_id ) || ! isset( $fields_mapper[ $field_id ] ) || ! isset( $submitted_data[ $element_id ] ) ) {
+					continue;
 				}
+
+				$custom_fields[ $fields_mapper[ $field_id ] ] = (string) $submitted_data[ $element_id ]; // custom value must be string.
 			}
 			if ( ! empty( $custom_fields ) ) {
 				$args['custom_fields'] = $custom_fields;
@@ -316,22 +290,9 @@ class Forminator_Addon_Aweber_Form_Hooks extends Forminator_Addon_Form_Hooks_Abs
 						// translate to value.
 						$element_id = str_ireplace( '{', '', $tag );
 						$element_id = str_ireplace( '}', '', $element_id );
-						if ( self::element_is_calculation( $element_id ) ) {
-							$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
-							$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'calculation', $meta_value );
-						} elseif ( self::element_is_stripe( $element_id ) ) {
-							$meta_value    = self::find_meta_value_from_entry_fields( $element_id, $form_entry_fields );
-							$element_value = Forminator_Form_Entry_Model::meta_value_to_string( 'stripe', $meta_value );
-						} elseif ( isset( $submitted_data[ $element_id ] ) && ! empty( $submitted_data[ $element_id ] ) ) {
-							$element_value = $submitted_data[ $element_id ];
-							if ( is_array( $element_value ) ) {
-								$element_value = implode( ',', $element_value );
-							}
-						}
 
-						if ( isset( $element_value ) ) {
-							$tags[] = strtolower( (string) $element_value ); // tag must be string.
-							unset( $element_value ); // unset for next loop.
+						if ( isset( $submitted_data[ $element_id ] ) ) {
+							$tags[] = strtolower( (string) $submitted_data[ $element_id ] ); // tag must be string.
 						}
 					} else {
 						$tags[] = strtolower( $tag );

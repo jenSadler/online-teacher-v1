@@ -1,5 +1,5 @@
 <?php
-$nonce = wp_create_nonce( 'forminator_save_import_custom_form_gravity' );
+$nonce = wp_create_nonce( 'forminator_save_import_form_gravity' );
 $forms = forminator_list_thirdparty_contact_forms( 'gravityforms' );
 ?>
 

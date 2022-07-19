@@ -76,6 +76,18 @@ class ServiceAccountCredentials extends \WPMailSMTP\Vendor\Google\Auth\Credentia
      * @var string|null
      */
     protected $projectId;
+    /*
+     * @var array|null
+     */
+    private $lastReceivedJwtAccessToken;
+    /*
+     * @var bool
+     */
+    private $useJwtAccessWithScope = \false;
+    /*
+     * @var ServiceAccountJwtAccessCredentials|null
+     */
+    private $jwtAccessCredentials;
     /**
      * Create a new ServiceAccountCredentials.
      *
@@ -118,6 +130,17 @@ class ServiceAccountCredentials extends \WPMailSMTP\Vendor\Google\Auth\Credentia
         $this->projectId = isset($jsonKey['project_id']) ? $jsonKey['project_id'] : null;
     }
     /**
+     * When called, the ServiceAccountCredentials will use an instance of
+     * ServiceAccountJwtAccessCredentials to fetch (self-sign) an access token
+     * even when only scopes are supplied. Otherwise,
+     * ServiceAccountJwtAccessCredentials is only called when no scopes and an
+     * authUrl (audience) is suppled.
+     */
+    public function useJwtAccessWithScope()
+    {
+        $this->useJwtAccessWithScope = \true;
+    }
+    /**
      * @param callable $httpHandler
      *
      * @return array A set of auth related metadata, containing the following
@@ -128,6 +151,15 @@ class ServiceAccountCredentials extends \WPMailSMTP\Vendor\Google\Auth\Credentia
      */
     public function fetchAuthToken(callable $httpHandler = null)
     {
+        if ($this->useSelfSignedJwt()) {
+            $jwtCreds = $this->createJwtAccessCredentials();
+            $accessToken = $jwtCreds->fetchAuthToken($httpHandler);
+            if ($lastReceivedToken = $jwtCreds->getLastReceivedToken()) {
+                // Keep self-signed JWTs in memory as the last received token
+                $this->lastReceivedJwtAccessToken = $lastReceivedToken;
+            }
+            return $accessToken;
+        }
         return $this->auth->fetchAuthToken($httpHandler);
     }
     /**
@@ -146,7 +178,9 @@ class ServiceAccountCredentials extends \WPMailSMTP\Vendor\Google\Auth\Credentia
      */
     public function getLastReceivedToken()
     {
-        return $this->auth->getLastReceivedToken();
+        // If self-signed JWTs are being used, fetch the last received token
+        // from memory. Else, fetch it from OAuth2
+        return $this->useSelfSignedJwt() ? $this->lastReceivedJwtAccessToken : $this->auth->getLastReceivedToken();
     }
     /**
      * Get the project ID from the service account keyfile.
@@ -171,14 +205,30 @@ class ServiceAccountCredentials extends \WPMailSMTP\Vendor\Google\Auth\Credentia
     public function updateMetadata($metadata, $authUri = null, callable $httpHandler = null)
     {
         // scope exists. use oauth implementation
-        $scope = $this->auth->getScope();
-        if (!\is_null($scope)) {
+        if (!$this->useSelfSignedJwt()) {
             return parent::updateMetadata($metadata, $authUri, $httpHandler);
         }
-        // no scope found. create jwt with the auth uri
-        $credJson = array('private_key' => $this->auth->getSigningKey(), 'client_email' => $this->auth->getIssuer());
-        $jwtCreds = new \WPMailSMTP\Vendor\Google\Auth\Credentials\ServiceAccountJwtAccessCredentials($credJson);
-        return $jwtCreds->updateMetadata($metadata, $authUri, $httpHandler);
+        $jwtCreds = $this->createJwtAccessCredentials();
+        if ($this->auth->getScope()) {
+            // Prefer user-provided "scope" to "audience"
+            $updatedMetadata = $jwtCreds->updateMetadata($metadata, null, $httpHandler);
+        } else {
+            $updatedMetadata = $jwtCreds->updateMetadata($metadata, $authUri, $httpHandler);
+        }
+        if ($lastReceivedToken = $jwtCreds->getLastReceivedToken()) {
+            // Keep self-signed JWTs in memory as the last received token
+            $this->lastReceivedJwtAccessToken = $lastReceivedToken;
+        }
+        return $updatedMetadata;
+    }
+    private function createJwtAccessCredentials()
+    {
+        if (!$this->jwtAccessCredentials) {
+            // Create credentials for self-signing a JWT (JwtAccess)
+            $credJson = array('private_key' => $this->auth->getSigningKey(), 'client_email' => $this->auth->getIssuer());
+            $this->jwtAccessCredentials = new \WPMailSMTP\Vendor\Google\Auth\Credentials\ServiceAccountJwtAccessCredentials($credJson, $this->auth->getScope());
+        }
+        return $this->jwtAccessCredentials;
     }
     /**
      * @param string $sub an email address account to impersonate, in situations when
@@ -208,5 +258,17 @@ class ServiceAccountCredentials extends \WPMailSMTP\Vendor\Google\Auth\Credentia
     public function getQuotaProject()
     {
         return $this->quotaProject;
+    }
+    private function useSelfSignedJwt()
+    {
+        // If claims are set, this call is for "id_tokens"
+        if ($this->auth->getAdditionalClaims()) {
+            return \false;
+        }
+        // When true, ServiceAccountCredentials will always use JwtAccess for access tokens
+        if ($this->useJwtAccessWithScope) {
+            return \true;
+        }
+        return \is_null($this->auth->getScope());
     }
 }

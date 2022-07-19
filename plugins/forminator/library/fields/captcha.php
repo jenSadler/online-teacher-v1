@@ -77,7 +77,7 @@ class Forminator_Captcha extends Forminator_Field {
 			'captcha_badge'           => 'bottomright',
 			'hc_invisible_notice'	  => sprintf(
 											__(
-												'This site is protected by hCaptcha and its %1$s Privacy Policy %3$s and %2$s Terms of Service %3$s apply.',
+												'This site is protected by hCaptcha and its %1$sPrivacy Policy%3$s and %2$sTerms of Service%3$s apply.',
 												'forminator'
 											),
 											'<a href="https://hcaptcha.com/privacy">',
@@ -200,7 +200,7 @@ class Forminator_Captcha extends Forminator_Field {
 					break;
 				default:
 					$key = get_option( 'forminator_captcha_key', '' );
-					
+
 			}
 		} else {
 			$key = get_option( 'forminator_hcaptcha_key', '' );
@@ -220,11 +220,10 @@ class Forminator_Captcha extends Forminator_Field {
 	 *
 	 * @param array        $field
 	 * @param array|string $data
-	 * @param array        $post_data
 	 *
 	 * @return bool
 	 */
-	public function validate( $field, $data, $post_data = array() ) {
+	public function validate( $field, $data ) {
 		$element_id    = self::get_property( 'element_id', $field );
 		$provider  	   = self::get_property( 'captcha_provider', $field, 'recaptcha' );
 		$captcha_type  = self::get_property( 'captcha_type', $field, '' );

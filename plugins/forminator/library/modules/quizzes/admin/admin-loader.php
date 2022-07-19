@@ -156,7 +156,7 @@ class Forminator_Quiz_Admin extends Forminator_Admin_Module {
 			$id = filter_input( INPUT_GET, 'id', FILTER_VALIDATE_INT );
 			if ( $id && is_null( $model ) ) {
 				/** @var  Forminator_Quiz_Model $model */
-				$model = Forminator_Quiz_Model::model()->load( $id );
+				$model = Forminator_Base_Form_Model::get_model( $id );
 			}
 
 			if ( $this->is_knowledge_wizard() ) {
@@ -170,7 +170,7 @@ class Forminator_Quiz_Admin extends Forminator_Admin_Module {
 
 					$has_lead   = isset( $settings['hasLeads'] ) ? $settings['hasLeads'] : false;
 					$lead_id    = isset( $settings['leadsId'] ) ? $settings['leadsId'] : 0;
-					$form_model = Forminator_Form_Model::model()->load( $lead_id );
+					$form_model = Forminator_Base_Form_Model::get_model( $lead_id );
 					if ( is_object( $form_model ) && $has_lead ) {
 						$wrappers      = $form_model->get_fields_grouped();
 						$lead_settings = $form_model->settings;
@@ -212,7 +212,7 @@ class Forminator_Quiz_Admin extends Forminator_Admin_Module {
 
 					$has_lead   = isset( $settings['hasLeads'] ) ? $settings['hasLeads'] : false;
 					$lead_id    = isset( $settings['leadsId'] ) ? $settings['leadsId'] : 0;
-					$form_model = Forminator_Form_Model::model()->load( $lead_id );
+					$form_model = Forminator_Base_Form_Model::get_model( $lead_id );
 					if ( is_object( $form_model ) && $has_lead ) {
 						$wrappers      = $form_model->get_fields_grouped();
 						$lead_settings = $form_model->settings;
@@ -822,7 +822,7 @@ class Forminator_Quiz_Admin extends Forminator_Admin_Module {
 				$status = Forminator_Poll_Model::STATUS_PUBLISH;
 			}
 		} else {
-			$form_model = Forminator_Quiz_Model::model()->load( $id );
+			$form_model = Forminator_Base_Form_Model::get_model( $id );
 			$action     = 'update';
 
 			if ( ! is_object( $form_model ) ) {

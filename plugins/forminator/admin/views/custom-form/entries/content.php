@@ -76,7 +76,7 @@ if ( $this->total_entries() > 0 ) :
 				$this->template(
 					'common/entries/filter',
 					array(
-						'fields'          => $this->get_fields(),
+						'fields'          => $this->model->get_real_fields(),
 						'is_registration' => $is_registration,
 					)
 				);
@@ -103,6 +103,7 @@ if ( $this->total_entries() > 0 ) :
 
 					$entry_id    = $entries['id'];
 					$db_entry_id = isset( $entries['entry_id'] ) ? $entries['entry_id'] : '';
+					$draft_id 	 = isset( $entries['draft_id'] ) ? $entries['draft_id'] : '';
 
 					$summary       = $entries['summary'];
 					$summary_items = $summary['items'];
@@ -114,6 +115,9 @@ if ( $this->total_entries() > 0 ) :
 					// Open entry tab by received submission link.
 					if ( $url_entry_id === (int) $db_entry_id ) {
 						$accordion_classes .= ' sui-accordion-item--open';
+					}
+					if ( ! empty( $draft_id ) ) {
+						$accordion_classes .= ' sui-default draft-entry';
 					}
 
 					$pending_approval = ! empty( $entries['activation_key'] );
@@ -159,6 +163,10 @@ if ( $this->total_entries() > 0 ) :
 								echo '</label>';
 
 								echo esc_html( $db_entry_id );
+
+								if ( ! empty( $draft_id ) ) {
+									echo '<span class="sui-tag draft-tag">' . esc_html__( 'Draft', 'forminator' ) . '</span>';
+								}
 
 								if ( $pending_approval ) {
 									echo '&nbsp;&nbsp;<span class="sui-tooltip" data-tooltip="'
@@ -214,6 +222,17 @@ if ( $this->total_entries() > 0 ) :
 								<div class="sui-box-body">
 
 									<h2 class="fui-entry-title"><?php echo '#' . esc_attr( $db_entry_id ); ?></h2>
+
+									<?php if ( ! empty( $draft_id ) ) { ?>
+										<div class="sui-box-settings-slim-row sui-sm draft-id">
+											<div class="sui-box-settings-col-1">
+												<span class="sui-settings-label"><?php esc_html_e( "Draft ID", 'forminator' ); ?></span>
+											</div>
+											<div class="sui-box-settings-col-2">
+												<span class="sui-settings-label"><strong><?php echo esc_html( $draft_id ); ?></strong></span>
+											</div>
+										</div>
+									<?php } ?>
 
 									<?php foreach ( $detail_items as $detail_item ) { ?>
 
@@ -451,9 +470,22 @@ if ( $this->total_entries() > 0 ) :
 
 									<?php } ?>
 
-									<?php if ( ( isset( $entries['activation_method'] ) && 'email' === $entries['activation_method'] ) && isset( $entries['activation_key'] ) ) { ?>
+									<div class="sui-actions-right">
 
-										<div class="sui-actions-right">
+										<?php if ( empty( $entries['draft_id'] ) ) { ?>
+											<button
+												role="button"
+												class="sui-button sui-button-ghost forminator-resend-notification-email"
+												data-entry-id="<?php echo esc_attr( $db_entry_id ); ?>"
+												data-nonce="<?php echo esc_attr( wp_create_nonce( 'forminatorResendNotificationEmail' ) ); ?>"
+											>
+												<span class="sui-icon-send" aria-hidden="true"></span>
+												<?php esc_html_e( 'Resend Notification Email', 'forminator' ); ?>
+											</button>
+										<?php } ?>
+
+										<?php if ( ( isset( $entries['activation_method'] ) && 'email' === $entries['activation_method'] ) && isset( $entries['activation_key'] ) ) { ?>
+
 											<button
 												role="button"
 												class="sui-button sui-button-ghost resend-activation-btn"
@@ -463,9 +495,10 @@ if ( $this->total_entries() > 0 ) :
 												<span class="sui-icon-undo" aria-hidden="true"></span>
 												<?php esc_html_e( 'Resend activation link', 'forminator' ); ?>
 											</button>
-										</div>
 
-									<?php } ?>
+										<?php } ?>
+
+									</div>
 
 								</div>
 

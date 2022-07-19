@@ -181,7 +181,7 @@ abstract class Forminator_Field {
 
 		$property_value = $fallback;
 
-		if ( isset( $field[ $property ] ) ) {
+		if ( isset( $field[ $property ] ) && ! empty( $field[ $property ] ) ) {
 			$property_value = $field[ $property ];
 		}
 
@@ -232,7 +232,6 @@ abstract class Forminator_Field {
 	public static function get_description( $description, $get_id = '' ) {
 		$html         = '';
 		$allowed_html = array();
-
 		if ( ! empty( $description ) ) {
 			$allowed_html = apply_filters(
 				'forminator_field_description_allowed_html',
@@ -734,6 +733,11 @@ abstract class Forminator_Field {
 
 		$html .= '</div>';
 
+		// Check if description is not empty and append it.
+		if ( ! empty( $description ) ) {
+			$html .= self::get_description( $description, $id );
+		}
+
 		return apply_filters( 'forminator_field_create_file_upload', $html, $id, $name, $required );
 
 	}
@@ -751,7 +755,7 @@ abstract class Forminator_Field {
 		$data = array();
 
 		foreach ( $args as $key => $value ) {
-			$data[] = $key . '="' . $value . '"';
+			$data[] = $key . '="' . esc_attr( $value ) . '"';
 		}
 
 		return implode( ' ', $data );
@@ -764,9 +768,30 @@ abstract class Forminator_Field {
 	 *
 	 * @param array        $field
 	 * @param array|string $data - the data to be validated.
-	 * @param array        $post_data
 	 */
-	public function validate( $field, $data, $post_data = array() ) {
+	public function validate( $field, $data ) {
+	}
+
+	/**
+	 * Validate field data
+	 *
+	 * @param array        $field_array Field settings.
+	 * @param array|string $field_data - the data to be validated.
+	 * @return array       validated field data.
+	 */
+	public function validate_entry( $field_array, $field_data ) {
+		// Validate data when its available.
+		if ( $this->is_available( $field_array ) ) {
+
+			/**
+			 * @since 1.0.5
+			 * Mayble re autofill, when autofill not editable, it should return autofill value
+			 */
+			$field_data = $this->maybe_autofill( $field_array, $field_data, Forminator_CForm_Front_Action::$module_settings );
+			$this->validate( $field_array, $field_data );
+		}
+
+		return $field_data;
 	}
 
 	/**
@@ -778,6 +803,9 @@ abstract class Forminator_Field {
 	public function is_valid_entry() {
 		$this->is_valid = empty( $this->validation_message );
 		if ( ! $this->is_valid ) {
+			foreach ( $this->validation_message as $field_name => $error ) {
+				Forminator_CForm_Front_Action::$submit_errors[][ $field_name ] = $error;
+			}
 			return $this->validation_message;
 		}
 
@@ -821,17 +849,13 @@ abstract class Forminator_Field {
 	 * Check if Field is hidden based on conditions property and POST-ed data
 	 *
 	 * @since 1.0
-	 * @since 1.7 add $pseudo_submitted_data to get value of calculation and stripe etc
 	 *
 	 * @param $field
-	 * @param $form_data
-	 * @param $pseudo_submitted_data
-	 * @param $form_object
 	 * @param $extra_conditions payment plan conditions.
 	 *
 	 * @return bool
 	 */
-	public function is_hidden( $field, $form_data, $pseudo_submitted_data, $form_object = false, $hidden_fields = array(), $extra_conditions = array() ) {
+	public static function is_hidden( $field, $extra_conditions = array() ) {
 		if ( ! empty( $extra_conditions ) ) {
 			$conditions       = isset( $extra_conditions['conditions'] ) ? $extra_conditions['conditions'] : array();
 			$condition_rule   = isset( $extra_conditions['condition_rule'] ) ? $extra_conditions['condition_rule'] : 'all';
@@ -850,27 +874,33 @@ abstract class Forminator_Field {
 		$conditions_count    = 0;
 
 		foreach ( $conditions as $condition ) {
-			$element_id             = $condition['element_id'];
-			$is_condition_fulfilled = self::is_condition_matched( $condition, $form_data, $pseudo_submitted_data );
+			$element_id = $condition['element_id'];
+			// Increase conditions count.
+			$conditions_count ++;
 
-			if ( in_array( $element_id, $hidden_fields ) ) {
+			if ( in_array( $element_id, Forminator_CForm_Front_Action::$hidden_fields, true ) ) {
 				$is_condition_fulfilled = false;
+			} else {
+				$is_condition_fulfilled = self::is_condition_matched( $condition );
 			}
 
 			if ( $is_condition_fulfilled ) {
 				$condition_fulfilled ++;
+			} elseif ( 'all' === $condition_rule ) {
+				// if condition rule is ALL and at least one condition isn't matched - we don't need to check others.
+				break;
 			}
 
-			// Increase conditions count
-			$conditions_count ++;
-
 			// Check parent conditions only if the current condition is matched.
-			if ( $is_condition_fulfilled && $form_object ) {
-				$parent_field  = $form_object->get_field( $element_id );
-				$parent_hidden = self::is_hidden( $parent_field, $form_data, $pseudo_submitted_data, $form_object, $hidden_fields );
+			if ( $is_condition_fulfilled && Forminator_Front_Action::$module_object ) {
+				$parent_field  = Forminator_Front_Action::$module_object->get_field( $element_id );
+				$parent_hidden = self::is_hidden( $parent_field );
 
 				if ( $parent_hidden ) {
 					$condition_fulfilled--;
+					if ( 'all' === $condition_rule ) {
+						break;
+					}
 				}
 			}
 			// There is no sense to continue checking if at least 1 condition is matched for ANY condition rule.
@@ -879,20 +909,14 @@ abstract class Forminator_Field {
 			}
 		}
 
+		$all_matched = ( $condition_fulfilled > 0 && 'any' === $condition_rule ) || ( $conditions_count === $condition_fulfilled && 'all' === $condition_rule );
+
 		//initialized as hidden
 		if ( 'show' === $condition_action ) {
-			if ( ( $condition_fulfilled > 0 && 'any' === $condition_rule ) || ( $conditions_count === $condition_fulfilled && 'all' === $condition_rule ) ) {
-				return false;
-			}
-
-			return true;
+			return ! $all_matched;
 		} else {
 			//initialized as shown
-			if ( ( $condition_fulfilled > 0 && 'any' === $condition_rule ) || ( $conditions_count === $condition_fulfilled && 'all' === $condition_rule ) ) {
-				return true;
-			}
-
-			return false;
+			return $all_matched;
 		}
 	}
 
@@ -900,11 +924,11 @@ abstract class Forminator_Field {
 	 * Check if passed condition is matched
 	 *
 	 * @param array $condition Current condition.
-	 * @param array $form_data Module data.
-	 * @param array $pseudo_submitted_data Pseudo submitted data.
 	 * @return bool
 	 */
-	public static function is_condition_matched( $condition, $form_data, $pseudo_submitted_data ) {
+	public static function is_condition_matched( $condition ) {
+		$form_data = Forminator_CForm_Front_Action::$prepared_data;
+
 		$form_id = $form_data['form_id'];
 
 		// empty conditions.
@@ -951,9 +975,9 @@ abstract class Forminator_Field {
 			}
 		} elseif ( stripos( $element_id, 'calculation-' ) !== false || stripos( $element_id, 'stripe-' ) !== false ) {
 			$is_condition_fulfilled = false;
-			if ( isset( $pseudo_submitted_data[ $element_id ] ) ) {
+			if ( isset( Forminator_CForm_Front_Action::$prepared_data[ $element_id ] ) ) {
 				// Condition's value is saved as a string value.
-				$is_condition_fulfilled = self::is_condition_fulfilled( (string) $pseudo_submitted_data[ $element_id ], $condition );
+				$is_condition_fulfilled = self::is_condition_fulfilled( (string) Forminator_CForm_Front_Action::$prepared_data[ $element_id ], $condition );
 			}
 		} elseif ( stripos( $element_id, 'checkbox-' ) !== false || stripos( $element_id, 'radio-' ) !== false ) {
 			$is_condition_fulfilled = self::is_condition_fulfilled( $field_value, $condition );
@@ -976,98 +1000,103 @@ abstract class Forminator_Field {
 	 * @return bool
 	 */
 	public static function is_condition_fulfilled( $form_field_value, $condition, $form_id = null ) {
+		if ( is_array( $form_field_value ) ) {
+			$form_field_value = forminator_trim_array( $form_field_value );
+		} else {
+			$form_field_value = wp_unslash( trim( $form_field_value ) );
+		}
 
-		$form_field_value = wp_unslash( $form_field_value );
+		$condition_value  = trim( $condition['value'] );
 
 		switch ( $condition['rule'] ) {
 			case 'is':
 				if ( is_array( $form_field_value ) ) {
 					// possible input is "1" to be compared with 1
-					return in_array( $condition['value'], $form_field_value ); //phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict
+					return in_array( $condition_value, $form_field_value ); //phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict
 				}
-				if ( is_numeric( $condition['value'] ) ) {
-					return ( (int) $form_field_value === (int) $condition['value'] );
+				if ( is_numeric( $condition_value ) ) {
+					return ( (int) $form_field_value === (int) $condition_value );
 				}
 
-				return ( $form_field_value === $condition['value'] );
+				return ( $form_field_value === $condition_value );
 			case 'is_not':
 				if ( is_array( $form_field_value ) ) {
 					// possible input is "1" to be compared with 1
-					return ! in_array( $condition['value'], $form_field_value ); //phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict
+					return ! in_array( $condition_value, $form_field_value ); //phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict
 				}
 
-				return ( $form_field_value !== $condition['value'] );
+				return ( $form_field_value !== $condition_value );
 			case 'is_great':
-				if ( ! is_numeric( $condition['value'] ) ) {
+				if ( ! is_numeric( $condition_value ) ) {
 					return false;
 				}
 				if ( ! is_numeric( $form_field_value ) ) {
 					return false;
 				}
 
-				return $form_field_value > $condition['value'];
+				return $form_field_value > $condition_value;
 			case 'is_less':
-				if ( ! is_numeric( $condition['value'] ) ) {
+				if ( ! is_numeric( $condition_value ) ) {
 					return false;
 				}
 				if ( ! is_numeric( $form_field_value ) ) {
 					return false;
 				}
 
-				return $form_field_value < $condition['value'];
+				return $form_field_value < $condition_value;
 			case 'contains':
-				return ( stripos( $form_field_value, $condition['value'] ) === false ? false : true );
+				return ( stripos( $form_field_value, $condition_value ) === false ? false : true );
 			case 'starts':
-				return ( stripos( $form_field_value, $condition['value'] ) === 0 ? true : false );
+				return ( stripos( $form_field_value, $condition_value ) === 0 ? true : false );
 			case 'ends':
-				return ( substr( $form_field_value, - strlen( $condition['value'] ) ) === $condition['value'] );
+				return ( substr( $form_field_value, - strlen( $condition_value ) ) === $condition_value );
 
 			case 'day_is':
 				if ( null !== $form_id && ! empty( $form_field_value ) ) {
 					$day = self::get_day_or_month( $form_field_value, $condition['element_id'], $form_id, 'D' );
-					return $day === $condition['value'];
+					return $day === $condition_value;
 				}
 
 				return false;
 			case 'day_is_not':
 				if ( null !== $form_id && ! empty( $form_field_value ) ) {
 					$day = self::get_day_or_month( $form_field_value, $condition['element_id'], $form_id, 'D' );
-					return $day !== $condition['value'];
+					return $day !== $condition_value;
 				}
 
                 return false;
 			case 'month_is':
 				if ( null !== $form_id && ! empty( $form_field_value ) ) {
 					$month = self::get_day_or_month( $form_field_value, $condition['element_id'], $form_id, 'M' );
-					return $month === $condition['value'];
+					return $month === $condition_value;
 				}
 
                 return false;
 			case 'month_is_not':
 				if ( null !== $form_id && ! empty( $form_field_value ) ) {
 					$month = self::get_day_or_month( $form_field_value, $condition['element_id'], $form_id, 'M' );
-					return $month !== $condition['value'];
+					return $month !== $condition_value;
 				}
 
                 return false;
 			case 'is_before':
 				if ( null !== $form_id && ! empty( $form_field_value ) ) {
 					$date = self::get_day_or_month( $form_field_value, $condition['element_id'], $form_id, 'j F Y' );
-					return strtotime( $date ) < strtotime( $condition['value'] );
+					return strtotime( $date ) < strtotime( $condition_value );
 				}
 
                 return false;
 			case 'is_after':
 				if ( null !== $form_id && ! empty( $form_field_value ) ) {
 					$date = self::get_day_or_month( $form_field_value, $condition['element_id'], $form_id, 'j F Y' );
-					return strtotime( $date ) > strtotime( $condition['value'] );
+					return strtotime( $date ) > strtotime( $condition_value );
 				}
 
                 return false;
 			case 'is_before_n_or_more_days':
 				if ( null !== $form_id && ! empty( $form_field_value ) ) {
 					$date = self::get_day_or_month( $form_field_value, $condition['element_id'], $form_id, 'Y-m-d' );
-					return strtotime( $date ) <= strtotime( '-' . $condition['value'] . ' days' );
+					return strtotime( $date ) <= strtotime( '-' . $condition_value . ' days' );
 				}
 
 				return false;
@@ -1075,7 +1104,7 @@ abstract class Forminator_Field {
 			case 'is_before_less_than_n_days':
 				if ( null !== $form_id && ! empty( $form_field_value ) ) {
 					$date         = self::get_day_or_month( $form_field_value, $condition['element_id'], $form_id, 'Y-m-d' );
-					$rule_date    = strtotime( '-' . $condition['value'] . ' days' );
+					$rule_date    = strtotime( '-' . $condition_value . ' days' );
 					$current_date = strtotime( 'today' );
 					return $rule_date < strtotime( $date ) && strtotime( $date ) <= $current_date;
 				}
@@ -1084,7 +1113,7 @@ abstract class Forminator_Field {
 			case 'is_after_n_or_more_days':
 				if ( null !== $form_id && ! empty( $form_field_value ) ) {
 					$date = self::get_day_or_month( $form_field_value, $condition['element_id'], $form_id, 'Y-m-d' );
-					return strtotime( $date ) >= strtotime( '+' . $condition['value'] . ' days' );
+					return strtotime( $date ) >= strtotime( '+' . $condition_value . ' days' );
 				}
 
 				return false;
@@ -1092,7 +1121,7 @@ abstract class Forminator_Field {
 			case 'is_after_less_than_n_days':
 				if ( null !== $form_id && ! empty( $form_field_value ) ) {
 					$date         = self::get_day_or_month( $form_field_value, $condition['element_id'], $form_id, 'Y-m-d' );
-					$rule_date    = strtotime( '+' . $condition['value'] . ' days' );
+					$rule_date    = strtotime( '+' . $condition_value . ' days' );
 					$current_date = strtotime( 'today' );
 					return $rule_date > strtotime( $date ) && strtotime( $date ) >= $current_date;
 				}
@@ -1297,50 +1326,6 @@ abstract class Forminator_Field {
 		return $settings;
 	}
 
-
-	/**
-	 * Init available autofill providers
-	 * It will only init provider that ACTIVATED by user form on `fields-autofill` not all of the AVAILABLE
-	 * Call it just when it needed
-	 *
-	 * @since 1.0.5
-	 *
-	 * @example
-	 * @see   Forminator_Field::markup() : when its rendering
-	 * @see   Forminator_CForm_Front_Action::handle_form() : when form submitted
-	 *
-	 * @since 1.0.5
-	 *
-	 * @param $settings
-	 */
-	public function init_autofill( $settings ) {
-
-		// Lazy init providers
-		if ( self::is_autofill_enabled( $settings )
-			&& isset( $settings['fields-autofill'] )
-			&& ! empty( $settings['fields-autofill'] ) ) {
-
-			foreach ( $settings['fields-autofill'] as $fields_autofill ) {
-				if ( ! isset( $fields_autofill['provider'] ) || empty( $fields_autofill['provider'] ) ) {
-					continue;
-				}
-
-				$provider       = $fields_autofill['provider'];
-				$provider_parts = explode( '.', $provider );
-				if ( ! isset( $provider_parts[0] ) || empty( $provider_parts[0] ) ) {
-					continue;
-				}
-
-				$provider_slug     = $provider_parts[0];
-				$provider_instance = forminator_autofill_init_provider( $provider_slug );
-
-				if ( $provider_instance ) {
-					$this->activated_autofill_providers[ $provider ] = $provider_instance;
-				}
-			}
-		}
-	}
-
 	/**
 	 * Get Autofill setting as paired ['element_id' => $setting]
 	 *
@@ -1357,7 +1342,7 @@ abstract class Forminator_Field {
 			return array();
 		}
 
-		if ( isset( $settings['fields-autofill'] ) && ! empty( $settings['fields-autofill'] ) ) {
+		if ( ! empty( $settings['fields-autofill'] ) ) {
 			// build to array key
 			$fields_autofill      = $settings['fields-autofill'];
 			$fields_autofill_pair = array();
@@ -1366,7 +1351,7 @@ abstract class Forminator_Field {
 			}
 
 			foreach ( $fields_autofill as $field_autofill ) {
-				if ( ! isset( $field_autofill['element_id'] ) || empty( $field_autofill['element_id'] ) ) {
+				if ( empty( $field_autofill['element_id'] ) ) {
 					continue;
 				}
 				$fields_autofill_pair[ $field_autofill['element_id'] ] = $field_autofill;
@@ -1403,14 +1388,14 @@ abstract class Forminator_Field {
 	 *
 	 * @return array|mixed|string
 	 */
-	public function maybe_re_autofill( $field_array, $field_data, $settings ) {
-		$autofill_settings = self::get_autofill_setting( $settings );
-
-		if ( empty( $autofill_settings ) ) {
+	public function maybe_autofill( $field_array, $field_data, $settings ) {
+		if ( isset( $settings['form-type'] ) && in_array( $settings['form-type'], array( 'registration', 'login' ), true ) ) {
 			return $field_data;
 		}
 
-		if ( ! self::is_autofill_enabled( $settings ) ) {
+		$autofill_settings = self::get_autofill_setting( $settings );
+
+		if ( empty( $autofill_settings ) ) {
 			return $field_data;
 		}
 
@@ -1421,11 +1406,7 @@ abstract class Forminator_Field {
 				$element_autofill_settings = self::get_element_autofill_settings( $element_id, $autofill_settings );
 				if ( ! self::element_autofill_is_editable( $element_autofill_settings ) ) {
 					// refill with autofill provider.
-					$autofill_value = $this->maybe_get_element_autofill_value( $field_datum, $element_autofill_settings );
-					// only assign autofill value if autofill_value is not empty.
-					if ( ! empty( $autofill_value ) ) {
-						$field_data[ $element_id_suffix ] = $autofill_value;
-					}
+					$field_data[ $element_id_suffix ] = $this->maybe_replace_to_autofill_value( $field_datum, $element_autofill_settings );
 				}
 			}
 		} else {
@@ -1433,11 +1414,7 @@ abstract class Forminator_Field {
 
 			if ( ! self::element_autofill_is_editable( $element_autofill_settings ) ) {
 				// refill with autofill provider.
-				$autofill_value = $this->maybe_get_element_autofill_value( $field_data, $element_autofill_settings );
-				// only assign autofill value if autofill_value is not empty.
-				if ( ! empty( $autofill_value ) ) {
-					$field_data = $autofill_value;
-				}
+				$field_data = $this->maybe_replace_to_autofill_value( $field_data, $element_autofill_settings );
 			}
 		}
 
@@ -1456,11 +1433,11 @@ abstract class Forminator_Field {
 	 * }
 	 *
 	 * @param       $element_id
-	 * @param       $settings
 	 *
 	 * @return array
 	 */
-	public function get_element_autofill_markup_attr( $element_id, $settings ) {
+	public function get_element_autofill_markup_attr( $element_id ) {
+		$settings = $this->form_settings;
 		if ( ! self::is_autofill_enabled( $settings ) ) {
 			return array();
 		}
@@ -1472,7 +1449,7 @@ abstract class Forminator_Field {
 		}
 
 		$element_autofill_settings = self::get_element_autofill_settings( $element_id, $autofill_settings );
-		$value                     = $this->maybe_get_element_autofill_value( '', $element_autofill_settings );
+		$value                     = $this->maybe_replace_to_autofill_value( '', $element_autofill_settings );
 
 		// only return value when its autofilled.
 		if ( ! empty( $value ) ) {
@@ -1499,32 +1476,20 @@ abstract class Forminator_Field {
 	 *
 	 * @return mixed|string
 	 */
-	public function maybe_get_element_autofill_value( $element_value, $element_autofill_settings ) {
-		if ( isset( $element_autofill_settings['provider'] ) && ! empty( $element_autofill_settings['provider'] ) ) {
+	public function maybe_replace_to_autofill_value( $element_value, $element_autofill_settings ) {
+		if ( ! empty( $element_autofill_settings['provider'] ) ) {
 			$attribute_provider = $element_autofill_settings['provider'];
-			if ( isset( $this->activated_autofill_providers[ $attribute_provider ] ) ) {
-				$attribute_provider_parts = explode( '.', $attribute_provider );
-				if ( isset( $attribute_provider_parts[1] ) && ! empty( $attribute_provider_parts[1] ) ) {
-					$element_value = $this->activated_autofill_providers[ $attribute_provider ]->fill( $attribute_provider_parts[1] );
+			$provider_parts     = explode( '.', $attribute_provider );
+			if ( ! empty( $provider_parts[1] ) ) {
+				$provider_slug     = $provider_parts[0];
+				$provider_instance = forminator_autofill_init_provider( $provider_slug );
+				if ( $provider_instance ) {
+					$element_value = $provider_instance->fill( $provider_parts[1] );
 				}
 			}
 		}
 
 		return $element_value;
-	}
-
-	/**
-	 * Check if element has autofill
-	 *
-	 * @since 1.0.5
-	 *
-	 * @param $element_id
-	 * @param $autofill_settings
-	 *
-	 * @return bool
-	 */
-	public static function element_has_autofill( $element_id, $autofill_settings ) {
-		return in_array( $element_id, array_keys( $autofill_settings ), true );
 	}
 
 	/**
@@ -1539,9 +1504,6 @@ abstract class Forminator_Field {
 	 */
 	public static function get_element_autofill_settings( $element_id, $autofill_settings ) {
 		$autofill_element_settings = array();
-		if ( ! self::element_has_autofill( $element_id, $autofill_settings ) ) {
-			return array();
-		}
 
 		if ( isset( $autofill_settings[ $element_id ] ) && is_array( $autofill_settings[ $element_id ] ) ) {
 			$autofill_element_settings = $autofill_settings[ $element_id ];
@@ -1591,49 +1553,17 @@ abstract class Forminator_Field {
 	}
 
 	/**
-	 * Get dummy value for parsing formula
-	 *
-	 * @since 1.7
-	 *
-	 * @param array $field_settings
-	 *
-	 * @return float|string
-	 */
-	public function get_dummy_calculable_value( $field_settings = array() ) {
-		$dummy_value = 1.0;
-		$field_slug  = $this->slug;
-
-		if ( ! $this->is_calculable ) {
-			$dummy_value = self::FIELD_NOT_CALCULABLE;
-		}
-
-		/**
-		 * Filter Dummy calculable value
-		 *
-		 * @since 1.7
-		 *
-		 * @param float $dummy_value
-		 * @param array $field_settings
-		 *
-		 * @return float|int
-		 */
-		$dummy_value = apply_filters( "forminator_field_{$field_slug}_dummy_calculable_value", $dummy_value, $field_settings );
-
-		return $dummy_value;
-	}
-
-	/**
 	 * Get calculable value
 	 *
 	 * @since 1.7
 	 *
-	 * @param array|mixed $submitted_data
+	 * @param array|mixed $submitted_field_data
 	 * @param array       $field_settings
 	 *
 	 * @return float|string
 	 */
-	public function get_calculable_value( $submitted_data, $field_settings ) {
-		$field_slug       = $this->slug;
+	public static function get_calculable_value( $submitted_field_data, $field_settings ) {
+		$field_slug       = $field_settings['type'];
 		$calculable_value = 0.0;
 
 		/**
@@ -1643,12 +1573,12 @@ abstract class Forminator_Field {
 		 * @since 1.7
 		 *
 		 * @param float $calculable_value
-		 * @param array $submitted_data
+		 * @param array $submitted_field_data
 		 * @param array $field_settings
 		 *
 		 * @return string|int|float formula, or hardcoded value
 		 */
-		$calculable_value = apply_filters( "forminator_field_{$field_slug}_calculable_value", $calculable_value, $submitted_data, $field_settings );
+		$calculable_value = apply_filters( "forminator_field_{$field_slug}_calculable_value", $calculable_value, $submitted_field_data, $field_settings );
 
 		return $calculable_value;
 	}
@@ -1659,20 +1589,16 @@ abstract class Forminator_Field {
 	 *
 	 * @since 1.7
 	 *
-	 * @param $submitted_data
 	 * @param $field_settings
 	 *
 	 * @return int
 	 */
-	public function get_calculable_precision( $submitted_data, $field_settings ) {
-		$field_slug = $this->slug;
-		$precision  = 2;
+	public static function get_calculable_precision( $field_settings ) {
+		$precision = self::get_property( 'precision', $field_settings, 2, 'num' );
 
 		/**
 		 * Filter formula being used on calculable value on abstract level
 		 * this hook can be used on un-implemented calculation field
-		 *
-		 * @since 1.7
 		 *
 		 * @param int   $precision
 		 * @param array $submitted_data
@@ -1680,7 +1606,7 @@ abstract class Forminator_Field {
 		 *
 		 * @return string|int|float formula, or hardcoded value
 		 */
-		$precision = apply_filters( "forminator_field_{$field_slug}_calculable_precision", $precision, $submitted_data, $field_settings );
+		$precision = apply_filters( 'forminator_field_calculable_precision', $precision, Forminator_CForm_Front_Action::$prepared_data, $field_settings );
 
 		return $precision;
 	}
@@ -1723,9 +1649,16 @@ abstract class Forminator_Field {
 
 		$prefill = self::get_property( $prefix . 'prefill', $field, false );
 
-		$return = urldecode( Forminator_Core::sanitize_text_field( $prefill ) );
-		if ( $return ) {
-			return $return;
+		if ( isset( $_REQUEST[ $prefill ] ) ) {
+			if ( 'textarea' === $field['type'] ) {
+				$return = rawurldecode( wp_kses_post( wp_unslash( $_REQUEST[ $prefill ] ) ) );
+			} else {
+				$return = rawurldecode( esc_html( wp_unslash( $_REQUEST[ $prefill ] ) ) );
+			}
+
+			if ( $return ) {
+				return $return;
+			}
 		}
 
 		return $default;
@@ -1880,7 +1813,7 @@ abstract class Forminator_Field {
 		$precision  = self::get_property( 'precision', $field, $default_precision, 'num' );
 		$separator  = self::get_property( 'separators', $field, 'blank' );
 		$separators = self::forminator_separators( $separator, $field );
-		$data_value = str_replace( $separators['point'], '.', $number );
+		$data_value = (float) str_replace( $separators['point'], '.', $number );
 		$formatted  = number_format( $data_value, $precision, $separators['point'], $separators['separator'] );
 
 		if ( ! empty( $field['prefix'] ) || ! empty( $field['suffix'] ) ) {

@@ -30,6 +30,13 @@ class Forminator_Form_Entry_Model {
 	public $form_id;
 
 	/**
+	 * Draft id
+	 *
+	 * @var string
+	 */
+	public $draft_id;
+
+	/**
 	 * Spam flag
 	 *
 	 * @var bool
@@ -51,7 +58,7 @@ class Forminator_Form_Entry_Model {
 	public $date_created;
 
 	/**
-	 * Time created in sql format D M Y @ H:i A
+	 * Time created in sql format M D Y @ g:i A
 	 *
 	 * @var string
 	 */
@@ -97,6 +104,15 @@ class Forminator_Form_Entry_Model {
 	public function __construct( $entry_id = null ) {
 		$this->table_name      = Forminator_Database_Tables::get_table_name( Forminator_Database_Tables::FORM_ENTRY );
 		$this->table_meta_name = Forminator_Database_Tables::get_table_name( Forminator_Database_Tables::FORM_ENTRY_META );
+
+		/*
+		 * @since 1.17.0
+		 * draft_id could be used in place of the entry_id in the argument
+		 * but we still need to get the entry_id which is used as the key for object cache
+		*/
+		if ( ! is_numeric( $entry_id ) && ctype_alnum( $entry_id ) ) {
+			$entry_id = $this->get_entry_id_by_draft_id( $entry_id );
+		}
 
 		if ( is_numeric( $entry_id ) && $entry_id > 0 ) {
 			$this->get( $entry_id );
@@ -146,11 +162,12 @@ class Forminator_Form_Entry_Model {
 			$this->date_created     = $entry_object_cache->date_created;
 			$this->time_created     = $entry_object_cache->time_created;
 			$this->meta_data        = $entry_object_cache->meta_data;
+			$this->draft_id         = $entry_object_cache->draft_id;
 
 			return $entry_object_cache;
 		} else {
 			$table_name = Forminator_Database_Tables::get_table_name( Forminator_Database_Tables::FORM_ENTRY );
-			$sql        = "SELECT `entry_type`, `form_id`, `is_spam`, `date_created` FROM {$table_name} WHERE `entry_id` = %d";
+			$sql        = "SELECT `entry_type`, `form_id`, `is_spam`, `date_created`, `draft_id` FROM {$table_name} WHERE `entry_id` = %d";
 			$entry      = $wpdb->get_row( $wpdb->prepare( $sql, $entry_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			if ( $entry ) {
 				$this->entry_id         = $entry_id;
@@ -159,7 +176,8 @@ class Forminator_Form_Entry_Model {
 				$this->is_spam          = $entry->is_spam;
 				$this->date_created_sql = $entry->date_created;
 				$this->date_created     = date_i18n( 'j M Y', strtotime( $entry->date_created ) );
-				$this->time_created     = date_i18n( 'j M Y @ H:i A', strtotime( $entry->date_created ) );
+				$this->time_created     = date_i18n( 'M j, Y @ g:i A', strtotime( $entry->date_created ) );
+				$this->draft_id     	= $entry->draft_id;
 				$this->load_meta();
 				wp_cache_set( $entry_id, $this, $cache_key );
 			}
@@ -191,61 +209,48 @@ class Forminator_Form_Entry_Model {
 		}
 
 		// probably prevent_store enabled.
-		if ( ! $this->entry_id ) {
-			// set meta data here for future object reference.
+		$prevent_store = ! $this->entry_id;
 
-			foreach ( $meta_array as $meta ) {
-				if ( isset( $meta['name'] ) && isset( $meta['value'] ) ) {
-					$key                     = $meta['name'];
-					$value                   = $meta['value'];
-					$key                     = wp_unslash( $key );
-					$value                   = wp_unslash( $value );
-					$this->meta_data[ $key ] = array(
-						'id'    => $key,
-						'value' => $value,
-					);
-				}
-			}
-
-			return false;
+		if ( ! $prevent_store ) {
+			// clear cache first.
+			$cache_key = get_class( $this );
+			wp_cache_delete( $this->entry_id, $cache_key );
 		}
-
-		// clear cache first.
-		$cache_key = get_class( $this );
-		wp_cache_delete( $this->entry_id, $cache_key );
 		foreach ( $meta_array as $meta ) {
-			if ( isset( $meta['name'] ) && isset( $meta['value'] ) ) {
-				$key   = $meta['name'];
-				$value = $meta['value'];
-				$key   = wp_unslash( $key );
-				$value = wp_unslash( $value );
-				$value = maybe_serialize( $value );
+			if ( ! isset( $meta['name'] ) || ! isset( $meta['value'] ) ) {
+				continue;
+			}
+			$key   = wp_unslash( $meta['name'] );
+			$value = wp_unslash( $meta['value'] );
 
+			if ( ! $prevent_store ) {
 				$meta_id = $wpdb->insert(
 					$this->table_meta_name,
 					array(
 						'entry_id'     => $this->entry_id,
 						'meta_key'     => $key,
-						'meta_value'   => $value,
+						'meta_value'   => maybe_serialize( $value ),
 						'date_created' => ! empty( $entry_date ) ? $entry_date : date_i18n( 'Y-m-d H:i:s' ),
 					)
 				);
+			} else {
+				$meta_id = $key;
+			}
 
-				/**
-				 * Set Meta data for later usage
-				 *
-				 * @since 1.0.3
-				 */
-				if ( $meta_id ) {
-					$this->meta_data[ $key ] = array(
-						'id'    => $meta_id,
-						'value' => is_array( $value ) ? array_map( 'maybe_unserialize', $value ) : maybe_unserialize( $value ),
-					);
-				}
+			/**
+			 * Set Meta data for later usage
+			 *
+			 * @since 1.0.3
+			 */
+			if ( $meta_id ) {
+				$this->meta_data[ $key ] = array(
+					'id'    => $meta_id,
+					'value' => $value,
+				);
 			}
 		}
 
-		return true;
+		return ! $prevent_store;
 	}
 
 	/**
@@ -324,13 +329,14 @@ class Forminator_Form_Entry_Model {
 	 * @since 1.0
 	 * @since 1.6.1 add $data_created arg
 	 *
-	 * @param string|null $data_created optional custom date created.
-	 * @param int|null    $entry_id
+	 * @param string|null 	$data_created optional custom date created.
+	 * @param int|null    	$entry_id
 	 *
 	 * @return bool
 	 */
-	public function save( $data_created = null, $entry_id = null ) {
+	public function save( $data_created = null, $entry_id = null, $previous_draft = null ) {
 		global $wpdb;
+		$this->delete_previous_draft( $previous_draft );
 
 		if ( ! empty( $entry_id ) ) {
 			$this->entry_id = $entry_id;
@@ -341,6 +347,7 @@ class Forminator_Form_Entry_Model {
 		if ( empty( $data_created ) ) {
 			$data_created = date_i18n( 'Y-m-d H:i:s' );
 		}
+
 		$result = $wpdb->insert(
 			$this->table_name,
 			array(
@@ -348,6 +355,7 @@ class Forminator_Form_Entry_Model {
 				'form_id'      => $this->form_id,
 				'is_spam'      => $this->is_spam,
 				'date_created' => $data_created,
+				'draft_id' 	   => $this->draft_id,
 			)
 		);
 
@@ -695,19 +703,29 @@ class Forminator_Form_Entry_Model {
 	 *
 	 * @return int - total entries
 	 */
-	public static function count_entries( $form_id, $db = false ) {
+	public static function count_entries( $form_id, $db = false, $include_draft = false ) {
 		if ( ! $db ) {
 			global $wpdb;
 			$db = $wpdb;
 		}
 		$cache_key     = 'forminator_total_entries';
 		$entries_cache = wp_cache_get( $form_id, $cache_key );
+		$where 		   = '';
 
 		if ( $entries_cache ) {
 			return $entries_cache;
 		} else {
+			/*
+			 * On Submissions page we include drafts in the entries count
+			 * but in specific form submissions count (in admin.php?page=forminator-cform)
+			 * we dont count the drafts to prevent affecting conversion rate where we only count complete submissions
+			 */
+			if ( ! $include_draft ) {
+				$where = ' AND ( `draft_id` IS NULL OR `draft_id` = "" )';
+			}
+
 			$table_name = Forminator_Database_Tables::get_table_name( Forminator_Database_Tables::FORM_ENTRY );
-			$sql        = "SELECT count(`entry_id`) FROM {$table_name} WHERE `form_id` = %d AND `is_spam` = 0";
+			$sql        = "SELECT count(`entry_id`) FROM {$table_name} WHERE `form_id` = %d AND `is_spam` = 0 {$where}";
 			$entries    = $db->get_var( $db->prepare( $sql, $form_id ) );
 			if ( $entries ) {
 				wp_cache_set( $form_id, $entries, $cache_key );
@@ -1080,16 +1098,11 @@ class Forminator_Form_Entry_Model {
 			$db = $wpdb;
 		}
 
-		if ( empty( $form_id ) ) {
+		if ( empty( $form_id ) || empty( $entries ) ) {
 			return false;
 		}
 
 		$form_id = (int) $form_id;
-		// get connected addons since.
-		self::get_connected_addons( $form_id );
-		if ( ! $entries || empty( $entries ) ) {
-			return false;
-		}
 
 		$table_name      = Forminator_Database_Tables::get_table_name( Forminator_Database_Tables::FORM_ENTRY );
 		$table_meta_name = Forminator_Database_Tables::get_table_name( Forminator_Database_Tables::FORM_ENTRY_META );
@@ -1197,7 +1210,7 @@ class Forminator_Form_Entry_Model {
 	 * @param Forminator_Form_Entry_Model $entry_model
 	 */
 	public static function entry_delete_upload_files( $form_id, $entry_model ) {
-		$custom_form     = Forminator_Form_Model::model()->load( $form_id );
+		$custom_form     = Forminator_Base_Form_Model::get_model( $form_id );
 		$submission_file = 'delete';
 		if ( is_object( $custom_form ) ) {
 			$settings        = $custom_form->settings;
@@ -1235,190 +1248,7 @@ class Forminator_Form_Entry_Model {
 	public static function meta_value_to_string( $field_type, $meta_value, $allow_html = false, $truncate = PHP_INT_MAX ) {
 		switch ( $field_type ) {
 			case 'postdata':
-				if ( is_string( $meta_value ) ) {
-					$string_value = $meta_value;
-				} elseif ( ! isset( $meta_value['postdata'] ) || empty( $meta_value['postdata'] ) ) {
-					$string_value = '';
-				} else {
-					$post_id = $meta_value['postdata'];
-
-					// Title.
-					if ( current_user_can( 'edit_post', $post_id ) ) {
-						$url = get_edit_post_link( $post_id, 'link' );
-					} else {
-						// is not logged in.
-						$url = get_home_url();
-					}
-
-					if ( $allow_html ) {
-
-						// Title make link.
-						$title = get_the_title( $post_id );
-						$title = ! empty( $title ) ? $title : __( '(no title)', 'forminator' );
-						// truncate.
-						if ( strlen( $title ) > $truncate ) {
-							$title = substr( $title, 0, $truncate ) . '...';
-						}
-						$string_value  = '<b>' . esc_html__( 'Title', 'forminator' ) . ':</b> ';
-						$string_value .= '<a href="' . $url . '" target="_blank" rel="noopener noreferrer" title="' . esc_attr__( 'Edit Post', 'forminator' ) . '">' . $title . '</a>';
-
-						// Content.
-						if ( ! empty( $meta_value['value']['post-content'] ) ) {
-							$post_content = $meta_value['value']['post-content'];
-							// truncate.
-							if ( strlen( $post_content ) > $truncate ) {
-								$post_content = substr( $post_content, 0, $truncate ) . '...';
-							}
-							$string_value .= '<hr>';
-							$string_value .= '<b>' . esc_html__( 'Content', 'forminator' ) . ':</b><br>';
-							$string_value .= wp_kses( $post_content, 'post' );
-						}
-
-						// Excerpt.
-						if ( ! empty( $meta_value['value']['post-excerpt'] ) ) {
-							$post_excerpt = $meta_value['value']['post-excerpt'];
-							// truncate.
-							if ( strlen( $post_excerpt ) > $truncate ) {
-								$post_excerpt = substr( $post_excerpt, 0, $truncate ) . '...';
-							}
-							$string_value .= '<hr>';
-							$string_value .= '<b>' . esc_html__( 'Excerpt', 'forminator' ) . ':</b><br>';
-							$string_value .= wp_strip_all_tags( $post_excerpt );
-						}
-
-						// Category.
-						if ( ! empty( $meta_value['value']['category'] ) ) {
-							$post_category = $meta_value['value']['category'];
-							$post_category = get_the_category_by_ID( $post_category );
-							// In case of deleted categories.
-							if ( ! empty( $post_category ) ) {
-								$string_value .= '<hr>';
-								$string_value .= '<b>' . esc_html__( 'Category', 'forminator' ) . ':</b> ';
-								$string_value .= $post_category;
-							}
-						}
-
-						// Tags.
-						if ( ! empty( $meta_value['value']['post_tag'] ) ) {
-							$post_tag_id = $meta_value['value']['post_tag'];
-							$term_args   = array(
-								'taxonomy'         => 'post_tag',
-								'term_taxonomy_id' => $post_tag_id,
-								'hide_empty'       => false,
-								'fields'           => 'names',
-							);
-							$term_query  = new WP_Term_Query( $term_args );
-
-							// In case of deleted tags.
-							if ( ! empty( $tag = $term_query->terms ) ) {
-								$string_value .= '<hr>';
-								$string_value .= '<b>' . esc_html__( 'Tag', 'forminator' ) . ':</b> ';
-								$string_value .= $tag[0];
-							}
-						}
-
-						// Featured Image.
-						if ( ! empty( $meta_value['value']['post-image'] ) && ! empty( $meta_value['value']['post-image']['attachment_id'] ) ) {
-							$post_image_id = $meta_value['value']['post-image']['attachment_id'];
-							$string_value .= '<hr>';
-							$string_value .= '<b>' . esc_html__( 'Featured image', 'forminator' ) . ':</b><br>';
-							$string_value .= wp_get_attachment_image( $post_image_id, array( 100, 100 ) );
-						}
-
-						// Custom fields.
-						if ( ! empty( $meta_value['value']['post-custom'] ) ) {
-							$post_custom   = $meta_value['value']['post-custom'];
-							$string_value .= '<hr>';
-							$string_value .= '<b>' . esc_html__( 'Custom fields', 'forminator' ) . ':</b><br>';
-
-							$string_value .= '<ul class="' . esc_attr( 'bulleted' ) . '">';
-							foreach ( $post_custom as $field ) {
-								if ( ! empty( $field['value'] ) ) {
-									$string_value .= '<li>';
-									$string_value .= esc_html( $field['key'] ) . ': ';
-									$string_value .= esc_html( $field['value'] );
-									$string_value .= '</li>';
-								}
-							}
-							$string_value .= '</ul>';
-						}
-					} else {
-
-						// Title.
-						$title         = get_the_title( $post_id );
-						$title         = ! empty( $title ) ? $title : __( '(no title)', 'forminator' );
-						$string_value  = esc_html__( 'Title', 'forminator' ) . ': ';
-						$string_value .= $title . ' | ';
-
-						// Content.
-						if ( ! empty( $meta_value['value']['post-content'] ) ) {
-							$post_content  = strip_tags( $meta_value['value']['post-content'] );
-							$string_value .= esc_html__( 'Content', 'forminator' ) . ': ';
-							$string_value .= $post_content . ' | ';
-						}
-
-						// Excerpt.
-						if ( ! empty( $meta_value['value']['post-excerpt'] ) ) {
-							$post_excerpt  = strip_tags( $meta_value['value']['post-excerpt'] );
-							$string_value .= esc_html__( 'Excerpt', 'forminator' ) . ': ';
-							$string_value .= $post_excerpt . ' | ';
-						}
-
-						// Category.
-						if ( ! empty( $meta_value['value']['category'] ) ) {
-							$post_category = $meta_value['value']['category'];
-							$post_category = get_the_category_by_ID( $post_category );
-							// In case of deleted categories.
-							if ( ! empty( $post_category ) ) {
-								$string_value .= esc_html__( 'Category', 'forminator' ) . ': ';
-								$string_value .= $post_category . ' | ';
-							}
-						}
-
-						// Tags.
-						if ( ! empty( $meta_value['value']['post_tag'] ) ) {
-							$post_tag_id = $meta_value['value']['post_tag'];
-							$term_args   = array(
-								'taxonomy'         => 'post_tag',
-								'term_taxonomy_id' => $post_tag_id,
-								'hide_empty'       => false,
-								'fields'           => 'names',
-							);
-							$term_query  = new WP_Term_Query( $term_args );
-
-							// In case of deleted tags.
-							if ( ! empty( $tag = $term_query->terms ) ) {
-								$string_value .= esc_html__( 'Tag', 'forminator' ) . ': ';
-								$string_value .= $tag[0] . ' | ';
-							}
-						}
-
-						// Featured Image.
-						if ( ! empty( $meta_value['value']['post-image'] ) && ! empty( $meta_value['value']['post-image']['uploaded_file'] ) ) {
-							$post_image_url = $meta_value['value']['post-image']['uploaded_file'][0];
-							$string_value  .= esc_html__( 'Featured image', 'forminator' ) . ': ';
-							$string_value  .= $post_image_url;
-						}
-
-						// Custom fields.
-						if ( ! empty( $meta_value['value']['post-custom'] ) ) {
-							$post_custom   = $meta_value['value']['post-custom'];
-							$string_value .= esc_html__( 'Custom fields', 'forminator' ) . ': ';
-							foreach ( $post_custom as $index => $field ) {
-								if ( ! empty( $field['value'] ) ) {
-									0 === $index ?: $string_value .= ', ';
-									$string_value                 .= esc_html( $field['key'] ) . ' = ';
-									$string_value                 .= esc_html( $field['value'] );
-								}
-							}
-						}
-
-						// truncate.
-						if ( strlen( $string_value ) > $truncate ) {
-							$string_value = substr( $string_value, 0, $truncate ) . '...';
-						}
-					}
-				}
+				$string_value = self::postdata_to_string( $meta_value, $allow_html, $truncate );
 				break;
 			case 'time':
 				if ( ! isset( $meta_value['hours'] ) || ! isset( $meta_value['minutes'] ) ) {
@@ -1647,6 +1477,352 @@ class Forminator_Form_Entry_Model {
 	}
 
 	/**
+	 * Process postdata meta value
+	 *
+	 * @since 1.17.0
+	 *
+	 * @param array $meta_value
+	 *
+	 * @return string
+	 */
+	public static function postdata_to_string( $meta_value, $allow_html = false, $truncate = PHP_INT_MAX ) {
+		if ( empty( $meta_value ) ) {
+			$string_value = '';
+		} elseif ( is_string( $meta_value ) ) {
+			$string_value = $meta_value;
+		} elseif ( ! empty( $meta_value['postdata'] ) ) {
+			$post_id = $meta_value['postdata'];
+
+			// Title.
+			if ( current_user_can( 'edit_post', $post_id ) ) {
+				$url = get_edit_post_link( $post_id, 'link' );
+			} else {
+				// is not logged in.
+				$url = get_home_url();
+			}
+
+			// Title make link.
+			$title 	  	  = get_the_title( $post_id );
+			$post_content = isset( $meta_value['value']['post-content'] ) ? $meta_value['value']['post-content'] : '';
+			$post_excerpt = isset( $meta_value['value']['post-excerpt'] ) ? $meta_value['value']['post-excerpt'] : '';
+			$category 	  = isset( $meta_value['value']['category'] ) 	  ? $meta_value['value']['category'] : [];
+			$tags 	  	  = isset( $meta_value['value']['post_tag'] ) 	  ? $meta_value['value']['post_tag'] : [];
+			$post_custom  = isset( $meta_value['value']['post-custom'] )  ? $meta_value['value']['post-custom'] : '';
+
+			if ( $allow_html ) {
+				$post_image = ! empty( $meta_value['value']['post-image'] ) && ! empty( $meta_value['value']['post-image']['attachment_id'] )
+					? $meta_value['value']['post-image']['attachment_id']
+					: '';
+
+				$string_value = self::get_postdata_title( $title, 'allow_html', $truncate, $url  );
+				$string_value .= self::get_postdata_content( $post_content, true, $truncate );
+				$string_value .= self::get_postdata_excerpt( $post_excerpt, true, $truncate );
+				$string_value .= self::get_postdata_categories( $category, true );
+				$string_value .= self::get_postdata_tags( $tags, true );
+				$string_value .= self::get_postdata_image( $post_image, true );
+				$string_value .= self::get_postdata_customfields( $post_custom, true );
+
+			} else {
+				$post_image = ! empty( $meta_value['value']['post-image'] ) && ! empty( $meta_value['value']['post-image']['uploaded_file'] )
+					? $meta_value['value']['post-image']['uploaded_file'][0]
+					: '';
+
+				$string_value = self::get_postdata_title( $title, 'no_html', $truncate  );
+				$string_value .= self::get_postdata_content( $post_content, false, $truncate );
+				$string_value .= self::get_postdata_excerpt( $post_excerpt, false, $truncate );
+				$string_value .= self::get_postdata_categories( $category, false );
+				$string_value .= self::get_postdata_tags( $tags, false );
+				$string_value .= self::get_postdata_image( $post_image, false );
+				$string_value .= self::get_postdata_customfields( $post_custom, false, $truncate );
+
+				// truncate.
+				if ( strlen( $string_value ) > $truncate ) {
+					$string_value = substr( $string_value, 0, $truncate ) . '...';
+				}
+			}
+		} else {
+			//  Draft postdata values
+			$title 	  	  = isset( $meta_value['post-title'] ) 	 ? $meta_value['post-title'] : '';
+			$post_content = isset( $meta_value['post-content'] ) ? $meta_value['post-content'] : '';
+			$post_excerpt = isset( $meta_value['post-excerpt'] ) ? $meta_value['post-excerpt'] : '';
+			$category 	  = isset( $meta_value['category'] ) 	 ? $meta_value['category'] : [];
+			$tags 		  = isset( $meta_value['post_tag'] ) 	 ? $meta_value['post_tag'] : [];
+
+			$string_value = self::get_postdata_title( $title, 'draft', $truncate  );
+			$string_value .= self::get_postdata_content( $post_content, true, $truncate );
+			$string_value .= self::get_postdata_excerpt( $post_excerpt, true, $truncate );
+			$string_value .= self::get_postdata_categories( $category, true );
+			$string_value .= self::get_postdata_tags( $tags, true );
+			// Custom fields are not being saved in drafts but automatically created after full submission
+		}
+
+		return $string_value;
+	}
+
+	/**
+	 * Get the postdata title depending on context
+	 *
+	 * @since 1.17.0
+	 *
+	 * @param string	$value
+	 * @param string	$type		allow_html, no_html, draft
+	 * @param int		$truncate	PHP_INT_MAX
+	 * @param string	$url
+	 */
+	public static function get_postdata_title( $value, $type = 'allow_html', $truncate = PHP_INT_MAX, $url = '' ) {
+		if ( empty( $value ) ) {
+			return;
+		}
+
+		$title = ! empty( $value ) ? $value : __( '(no title)', 'forminator' );
+		$title = forminator_truncate_text( wp_kses_post( $title ), $truncate );
+		$label = esc_html__( 'Title', 'forminator' );
+
+		if ( 'no_html' !== $type ) {
+			$value  = '<b>' . $label . ':</b> ';
+		}
+
+		if ( 'allow_html' === $type ) {
+			$value .= '<a href="' . $url . '" target="_blank" rel="noopener noreferrer" title="' . esc_attr__( 'Edit Post', 'forminator' ) . '">' . $title . '</a>';
+		} elseif ( 'draft' === $type ) {
+			$value .= $title;
+		} else {
+			$value  = $label . ': ';
+			$value .= $title . ' | ';
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Get the postdata content depending on context
+	 *
+	 * @since 1.17.0
+	 *
+	 * @param string	$value
+	 * @param bool		$allow_html
+	 */
+	public static function get_postdata_content( $value = '', $allow_html = true, $truncate = PHP_INT_MAX ) {
+		if ( empty( $value ) ) {
+			return '';
+		}
+
+		$post_content = forminator_truncate_text( $value, $truncate );
+		$label = esc_html__( 'Content', 'forminator' );
+
+		if ( $allow_html ) {
+			$value = '<hr>';
+			$value .= '<b>' . $label . ':</b><br>';
+			$value .= wp_kses_post( $post_content, 'post' );
+		} else {
+			$post_content  = strip_tags( $post_content );
+			$value = $label . ': ';
+			$value .= $post_content . ' | ';
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Get the postdata excerpt depending on context
+	 *
+	 * @since 1.17.0
+	 *
+	 * @param string	$value
+	 * @param bool		$allow_html
+	 */
+	public static function get_postdata_excerpt( $value = '', $allow_html = true, $truncate = PHP_INT_MAX ) {
+		if ( empty( $value ) ) {
+			return;
+		}
+
+		$post_excerpt = forminator_truncate_text( $value, $truncate );
+		$label = esc_html__( 'Excerpt', 'forminator' );
+
+		if ( $allow_html ) {
+			$value = '<hr>';
+			$value .= '<b>' . $label . ':</b><br>';
+			$value .= wp_strip_all_tags( $post_excerpt );
+		} else {
+			$post_excerpt = strip_tags( $post_excerpt );
+			$value = $label . ': ';
+			$value .= $post_excerpt . ' | ';
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Get the postdata categories depending on context
+	 *
+	 * @since 1.17.0
+	 *
+	 * @param string/array	$value
+	 * @param bool			$allow_html
+	 */
+	public static function get_postdata_categories( $value = '', $allow_html = true ) {
+		if ( empty( $value ) ) {
+			return;
+		}
+
+		$post_category	= $value;
+		$the_categories = '';
+		$countegories	= 0;
+		$single_label	= esc_html__( 'Category', 'forminator' );
+
+		if ( is_array( $post_category ) ) {
+			foreach( $post_category as $category ) {
+				$categories[] = get_the_category_by_ID( $category );
+			}
+
+			$countegories  = count( $categories );
+			$the_categories = implode( ', ', $categories );
+		} else {
+			$the_categories = get_the_category_by_ID( $post_category );
+		}
+
+		if ( $allow_html ) {
+			$value = '<hr>';
+
+			if ( is_array( $post_category ) ) {
+				$value .= '<b>' . esc_html( _n( 'Category', 'Categories', $countegories, 'forminator' ) ) . ':</b> ';
+			} else {
+				$value .= '<b>' . $single_label . ':</b> ';
+			}
+
+			$value .= $the_categories;
+		} else {
+			$value .= $single_label . ': ';
+			$value .= $the_categories . ' | ';
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Get the postdata tags depending on context
+	 *
+	 * @since 1.17.0
+	 *
+	 * @param string/array	$value
+	 * @param bool			$allow_html
+	 */
+	public static function get_postdata_tags( $value = '', $allow_html = true ) {
+		if ( empty( $value ) ) {
+			return;
+		}
+
+		$post_tags	= $value;
+		$the_tags = '';
+		$tags_count	= 0;
+
+		$term_args   = array(
+			'taxonomy'         => 'post_tag',
+			'term_taxonomy_id' => $post_tags,
+			'hide_empty'       => false,
+			'fields'           => 'names',
+		);
+		$term_query  = new WP_Term_Query( $term_args );
+
+		if ( ! empty( $tags = $term_query->terms ) ) {
+			$tags_count = count( $tags );
+			$the_tags .= implode( ', ', $tags );
+		}
+
+		$label = esc_html( _n( 'Tag', 'Tags', $tags_count, 'forminator' ) );
+
+		if ( $allow_html ) {
+			$value = '<hr>';
+			$value .= '<b>' . $label . ':</b> ';
+
+			$value .= $the_tags;
+		} else {
+			$value .= $label;
+			$value .= $the_tags . ' | ';
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Get the postdata featured image depending on context
+	 *
+	 * @since 1.17.0
+	 *
+	 * @param string	$value
+	 * @param bool		$allow_html
+	 */
+	public static function get_postdata_image( $value = '', $allow_html = true ) {
+		if ( empty( $value ) ) {
+			return;
+		}
+
+		$label = esc_html__( 'Featured image', 'forminator' ) . ': ';
+
+		if ( $allow_html ) {
+			$post_image_id = $value;
+			$value = '<hr>';
+			$value .= '<b>' . $label . ':</b><br>';
+			$value .= wp_get_attachment_image( $post_image_id, array( 100, 100 ) );
+		} else {
+			$post_image_url = $value;
+			$value = $label . ': ';
+			$value .= $post_image_url;
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Get the postdata Custom fields depending on context
+	 *
+	 * @since 1.17.0
+	 *
+	 * @param string	$value
+	 * @param bool		$allow_html
+	 */
+	public static function get_postdata_customfields( $value = array(), $allow_html = true, $truncate = PHP_INT_MAX ) {
+		if ( empty( $value ) ) {
+			return '';
+		}
+
+		$post_custom = $value;
+		$label 		 = esc_html__( 'Custom fields', 'forminator' );
+
+		if ( $allow_html ) {
+			$value = '<hr>';
+			$value .= '<b>' . $label . ':</b><br>';
+
+			$value .= '<ul class="' . esc_attr( 'bulleted' ) . '">';
+
+			foreach ( $post_custom as $field ) {
+				if ( ! empty( $field['value'] ) ) {
+					$value .= '<li>';
+					$value .= esc_html( $field['key'] ) . ': ';
+					$value .= esc_html( $field['value'] );
+					$value .= '</li>';
+				}
+			}
+
+			$value .= '</ul>';
+		} else {
+			$value = $label . ': ';
+
+			foreach ( $post_custom as $index => $field ) {
+				if ( ! empty( $field['value'] ) ) {
+					0 === $index ?: $value .= ', ';
+					$value                 .= esc_html( $field['key'] ) . ' = ';
+					$value                 .= esc_html( $field['value'] );
+				}
+			}
+
+			$value = forminator_truncate_text( $value, $truncate );
+		}
+
+		return $value;
+	}
+
+	/**
 	 * Count all entries for all form_type
 	 */
 	public static function count_all_entries() {
@@ -1781,29 +1957,33 @@ class Forminator_Form_Entry_Model {
 	 *
 	 * @since 1.1
 	 *
-	 * @param $form_id
+	 * @param $module_id
 	 *
 	 * @return array|Forminator_Addon_Abstract[]
 	 */
-	public static function get_connected_addons( $form_id ) {
-		if ( ! isset( self::$connected_addons[ $form_id ] ) ) {
-			self::$connected_addons[ $form_id ] = array();
+	public static function get_connected_addons( $module_id, $module_slug = 'form' ) {
+		if ( ! isset( self::$connected_addons[ $module_id ] ) ) {
+			self::$connected_addons[ $module_id ] = array();
 
-			$connected_addons = forminator_get_addons_instance_connected_with_module( $form_id, 'form' );
+			$connected_addons = forminator_get_addons_instance_connected_with_module( $module_id, $module_slug );
 
 			foreach ( $connected_addons as $connected_addon ) {
 				try {
-					$form_hooks = $connected_addon->get_addon_form_hooks( $form_id );
-					if ( $form_hooks instanceof Forminator_Addon_Form_Hooks_Abstract ) {
-						self::$connected_addons[ $form_id ][] = $connected_addon;
+					$method = "get_addon_{$module_slug}_hooks";
+					if ( ! method_exists( $connected_addon, $method ) ) {
+						throw new Exception( 'Method ' . $method . ' doesn\'t exist.' );
+					}
+					$module_hooks = $connected_addon->$method( $module_id );
+					if ( $module_hooks instanceof Forminator_Addon_Hooks_Abstract ) {
+						self::$connected_addons[ $module_id ][] = $connected_addon;
 					}
 				} catch ( Exception $e ) {
-					forminator_addon_maybe_log( $connected_addon->get_slug(), 'failed to get_addon_form_hooks', $e->getMessage() );
+					forminator_addon_maybe_log( $connected_addon->get_slug(), 'failed to get_addon_module_hooks', $e->getMessage() );
 				}
 			}
 		}
 
-		return self::$connected_addons[ $form_id ];
+		return self::$connected_addons[ $module_id ];
 	}
 
 	/**
@@ -1815,14 +1995,23 @@ class Forminator_Form_Entry_Model {
 	 * @param Forminator_Form_Entry_Model $entry_model
 	 */
 	public static function attach_addons_on_before_delete_entry( $form_id, Forminator_Form_Entry_Model $entry_model ) {
-		// find is_form_connected.
-		$connected_addons = self::get_connected_addons( $form_id );
+		$module_slug = 'form';
+		if ( ! empty( $entry_model->entry_type ) && 'poll' === $entry_model->entry_type ) {
+			$module_slug = 'poll';
+		} elseif ( ! empty( $entry_model->entry_type ) && 'quizzes' === $entry_model->entry_type ) {
+			$module_slug = 'quiz';
+		}
+		$connected_addons = self::get_connected_addons( $form_id, $module_slug );
 
 		foreach ( $connected_addons as $connected_addon ) {
 			try {
-				$form_hooks      = $connected_addon->get_addon_form_hooks( $form_id );
+				$method = "get_addon_{$module_slug}_hooks";
+				if ( ! method_exists( $connected_addon, $method ) ) {
+					throw new Exception( 'Method ' . $method . ' doesn\'t exist.' );
+				}
+				$module_hooks    = $connected_addon->$method( $form_id );
 				$addon_meta_data = forminator_find_addon_meta_data_from_entry_model( $connected_addon, $entry_model );
-				$form_hooks->on_before_delete_entry( $entry_model, $addon_meta_data );
+				$module_hooks->on_before_delete_entry( $entry_model, $addon_meta_data );
 			} catch ( Exception $e ) {
 				forminator_addon_maybe_log( $connected_addon->get_slug(), 'failed to on_before_delete_entry', $e->getMessage() );
 			}
@@ -1869,7 +2058,7 @@ class Forminator_Form_Entry_Model {
 	 *
 	 * @return array
 	 */
-	public static function get_older_entry_ids( $date_created, $entry_type = '', $id = 0 ) {
+	public static function get_older_entry_ids( $date_created, $entry_type = '', $id = 0, $is_draft = false ) {
 		global $wpdb;
 		$where = '';
 		if ( $entry_type ) {
@@ -1878,6 +2067,14 @@ class Forminator_Form_Entry_Model {
 		if ( $id ) {
 			$where .= $wpdb->prepare( ' AND e.form_id = %d', $id );
 		}
+
+		// wpdb prepare needs something to substitute or else it will throw an error
+		if ( ! $is_draft ) {
+			$where .= $wpdb->prepare( ' AND ( e.draft_id IS NULL OR e.draft_id = %s )', '' );
+		} else {
+			$where .= $wpdb->prepare( ' AND e.draft_id IS NOT NULL AND e.draft_id != %s', '' );
+		}
+
 		$entry_table_name = Forminator_Database_Tables::get_table_name( Forminator_Database_Tables::FORM_ENTRY );
 		$sql              = "SELECT e.entry_id AS entry_id
 							FROM {$entry_table_name} e
@@ -2178,6 +2375,14 @@ class Forminator_Form_Entry_Model {
 			$where .= $wpdb->prepare( ' AND entries.entry_id <= %d', $args['max_id'] );
 		}
 
+		if ( isset( $args['entry_status'] ) && 'completed' === $args['entry_status'] ) {
+			$where .= $wpdb->prepare( ' AND ( entries.draft_id IS NULL OR entries.draft_id = %s )', '' );
+		}
+
+		if ( isset( $args['entry_status'] ) && 'draft' === $args['entry_status'] ) {
+			$where .= $wpdb->prepare( ' AND entries.draft_id IS NOT NULL AND entries.draft_id != %s', '' );
+		}
+
 		/**
 		 * Filter where query to be used on query-ing entries
 		 *
@@ -2313,6 +2518,7 @@ class Forminator_Form_Entry_Model {
 								WHERE e.`form_id` = %d
 								AND m.`meta_key` = '%s'
 								{$condition}
+								AND ( e.draft_id IS NULL OR e.draft_id = '' )
 								AND e.`is_spam` = 0";
 		$entries          = $wpdb->get_var( $wpdb->prepare( $sql, $form_id, $field_name ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
@@ -2321,5 +2527,39 @@ class Forminator_Form_Entry_Model {
 		}
 
 		return 0;
+	}
+
+	/**
+	 * Load entry by draft_id
+	 *
+	 * @since 1.17.0
+	 *
+	 * @param int $draft_id - the draft id.
+	 *
+	 * @return bool|mixed
+	 */
+	public function get_entry_id_by_draft_id( $draft_id ) {
+		global $wpdb;
+
+		$table_name = Forminator_Database_Tables::get_table_name( Forminator_Database_Tables::FORM_ENTRY );
+		$sql        = "SELECT `entry_id` FROM {$table_name} WHERE `draft_id` = %s";
+		$entry      = $wpdb->get_row( $wpdb->prepare( $sql, $draft_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		return is_object( $entry ) ? $entry->entry_id : null;
+	}
+
+	/**
+	 * Delete previous draft
+	 *
+	 * @since 1.17.0
+	 *
+	 * @param string $previous_draft - draft ID of previously saved draft.
+	 *
+	 */
+	public function delete_previous_draft( $previous_draft ) {
+		if ( ! is_null( $previous_draft ) ) {
+			$entry_id = $this->get_entry_id_by_draft_id( $previous_draft );
+			self::delete_by_entry( $entry_id );
+		}
 	}
 }

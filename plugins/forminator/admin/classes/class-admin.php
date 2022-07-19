@@ -26,10 +26,13 @@ class Forminator_Admin {
 		add_action( 'admin_notices', array( $this, 'show_stripe_updated_notice' ) );
 		add_action( 'admin_notices', array( $this, 'show_rating_notice' ) );
 		add_action( 'admin_notices', array( $this, 'show_pro_available_notice' ) );
+		add_action( 'admin_notices', array( $this, 'check_stripe_addon_version' ) );
 		add_action( 'admin_notices', array( $this, 'show_cf7_importer_notice' ) );
 		add_action( 'admin_notices', array( $this, 'show_addons_update_notice' ) );
-		add_action( 'admin_notices', array( $this, 'show_prelaunch_subscriptions_notice' ) );
+		// add_action( 'admin_notices', array( $this, 'show_wpmudev_giveaway' ) );
+		//add_action( 'admin_notices', array( $this, 'show_prelaunch_subscriptions_notice' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts_for_notices' ) );
+		add_action( 'admin_init', array( $this, 'init_notices' ), 1 );
 
 		// Add plugin action links.
 		add_filter( 'plugin_action_links_' . FORMINATOR_PLUGIN_BASENAME, array( $this, 'add_plugin_action_links' ) );
@@ -52,13 +55,55 @@ class Forminator_Admin {
 		 * Triggered when Admin is loaded
 		 */
 		do_action( 'forminator_admin_loaded' );
+
+        $this->forminator_in_plugin_update_message();
+	}
+
+	/**
+	 * Setup WPMUDEV Dashboard notifications.
+	 *
+	 * @return void
+	 */
+	public function init_notices() {
+		if ( FORMINATOR_PRO ) {
+			return;
+		}
+
+		$install_date = get_site_option( 'forminator_free_install_date', false );
+		if ( ! $install_date ) {
+			$install_date = time();
+		}
+
+		// Notice module file.
+		include_once forminator_plugin_dir() . 'library/lib/free-notices/module.php';
+
+		// Register plugin for notice.
+		do_action(
+			'wpmudev_register_notices',
+			'forminator',
+			array(
+				'basename'     => plugin_basename( FORMINATOR_PLUGIN_BASENAME ),
+				'title'        => 'Forminator',
+				'wp_slug'      => 'forminator',
+				'installed_on' => $install_date,
+				'screens'      => array(
+					'toplevel_page_forminator',
+					'forminator_page_forminator-cform',
+					'forminator_page_forminator-poll',
+					'forminator_page_forminator-quiz',
+					'forminator_page_forminator-entries',
+					'forminator_page_forminator-integrations',
+					'forminator_page_forminator-settings',
+				),
+			)
+		);
 	}
 
 	public function enqueue_scripts_for_notices() {
 		// Hide for Forminator Pro.
-		if ( FORMINATOR_PRO ) {
+		/* if ( FORMINATOR_PRO ) {
 			return;
-		}
+		} */
 
 		// Enable notifications for main site and super admins only.
 		if ( ! is_main_site() || ! current_user_can( 'update_core' ) ) {
@@ -73,17 +118,18 @@ class Forminator_Admin {
 		$dismissed_messages = get_user_meta( get_current_user_id(), 'frmt_dismissed_messages', true );
 
 		// Hide if already dismissed.
-		if ( isset( $dismissed_messages['forminator_prelaunch_subscriptions_notice_dismissed'] ) &&
+		/* if ( isset( $dismissed_messages['forminator_prelaunch_subscriptions_notice_dismissed'] ) &&
 			 $dismissed_messages['forminator_prelaunch_subscriptions_notice_dismissed'] ) {
 			return;
-		}
+		} */
 
 		$forminator_data = new Forminator_Admin_Data();
 		$forminator_l10n = new Forminator_Admin_L10n();
 
-		wp_register_script(
+		// Discount subscription notice
+		/* wp_register_script(
 			'forminator-admin-discount',
-			forminator_plugin_url() . 'assets/js/discount.js',
+			forminator_plugin_url() . 'build/discount.js',
 			array(
 				'jquery',
 				'wp-color-picker',
@@ -97,7 +143,26 @@ class Forminator_Admin {
 		wp_localize_script( 'forminator-admin-discount', 'forminatorData', $forminator_data->get_options_data() );
 		wp_localize_script( 'forminator-admin-discount', 'forminatorl10n', $forminator_l10n->get_l10n_strings() );
 
-		wp_enqueue_script( 'forminator-admin-discount' );
+		wp_enqueue_script( 'forminator-admin-discount' ); */
+
+		// Membership Giveaway
+		/* wp_register_script(
+			'forminator-admin-giveaway',
+			forminator_plugin_url() . 'assets/js/giveaway.js',
+			array(
+				'jquery',
+				'wp-color-picker',
+				'react',
+				'react-dom',
+			),
+			FORMINATOR_VERSION,
+			true
+		);
+
+		wp_localize_script( 'forminator-admin-giveaway', 'forminatorData', $forminator_data->get_options_data() );
+		wp_localize_script( 'forminator-admin-giveaway', 'forminatorl10n', $forminator_l10n->get_l10n_strings() );
+
+		wp_enqueue_script( 'forminator-admin-giveaway' ); */
 	}
 
 	/**
@@ -109,9 +174,9 @@ class Forminator_Admin {
 		$dismissed_messages = get_user_meta( get_current_user_id(), 'frmt_dismissed_messages', true );
 
 		// Hide for Forminator Pro.
-		if ( FORMINATOR_PRO ) {
+		/* if ( FORMINATOR_PRO ) {
 			return;
-		}
+		} */
 
 		// Enable notifications for main site and super admins only.
 		if ( ! is_main_site() || ! current_user_can( 'update_core' ) ) {
@@ -124,10 +189,10 @@ class Forminator_Admin {
 		}
 
 		// Hide if already dismissed.
-		if ( isset( $dismissed_messages['forminator_prelaunch_subscriptions_notice_dismissed'] ) &&
+		/* if ( isset( $dismissed_messages['forminator_prelaunch_subscriptions_notice_dismissed'] ) &&
 			 $dismissed_messages['forminator_prelaunch_subscriptions_notice_dismissed'] ) {
 			return;
-		}
+		} */
 
 		?>
 		<!-- Load shared module markup -->
@@ -418,6 +483,34 @@ class Forminator_Admin {
 		echo '<div class="forminator-grouped-notice notice notice-info is-dismissible"'
 			. ' data-notice-slug="forminator_pro_is_available"'
 			. ' data-nonce="' . esc_attr( wp_create_nonce( 'forminator_dismiss_notice' ) ) . '">';
+		echo wp_kses_post( $message );
+		echo '</div>';
+	}
+
+	/**
+	 * Displays an admin notice when Forminator version is 1.16.0 or higher and Stripe Addon version is less than 1.0.4
+	 * Shown in forminator pages. Per user notification.
+	 */
+	public function check_stripe_addon_version() {
+		// Show the notice only if Stripe Addon is active and its version is less than 1.0.4.
+		if ( ! defined( 'FORMINATOR_STRIPE_ADDON' ) || ! class_exists( 'Forminator_Stripe_Addon' )
+				|| version_compare( FORMINATOR_STRIPE_ADDON, '1.0.4', '>=' ) ) {
+			return;
+		}
+
+		// Show the notice only for administrators.
+		if ( ! current_user_can( 'administrator' ) ) {
+			return;
+		}
+
+		$message = '<p>';
+		/* translators: Forminator vesrion */
+		$message .= sprintf( esc_html__( 'We\'ve noticed you have updated to Forminator Pro version %s. Please ensure you also update your Forminator Stripe Subscriptions Add-on to version 1.0.4 or higher to ensure compatibility with the new submissions processes.', 'forminator' ), FORMINATOR_VERSION );
+		$message .= '</p>';
+
+		echo '<div class="forminator-grouped-notice notice notice-error"'
+			. ' data-notice-slug="forminator_pro_is_available"'
+			. '>';
 		echo wp_kses_post( $message );
 		echo '</div>';
 	}
@@ -901,5 +994,66 @@ class Forminator_Admin {
 			</div>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Forminator plugin update notice
+	 *
+	 * @return void
+	 */
+	public function forminator_in_plugin_update_message() {
+		if ( ! FORMINATOR_PRO ) {
+			add_action( 'in_plugin_update_message-forminator/forminator.php', array(
+				$this,
+				'show_plugin_update_notice'
+			), 10, 2 );
+		} else {
+			add_action(
+				'load-plugins.php',
+				function () {
+					add_action( 'after_plugin_row_forminator/forminator.php', array(
+						$this,
+						'show_plugin_update_notice'
+					), 10, 2 );
+				},
+				22
+			);
+		}
+	}
+
+	/**
+	 * Show plugin update notice
+	 *
+	 * @param $data
+	 * @param $response
+	 *
+	 * @return void
+	 */
+	public function show_plugin_update_notice( $data, $response ) {
+		$plugin_data = (object) $response;
+
+		if ( empty( $plugin_data->update ) || empty( $plugin_data->new_version ) || empty( $plugin_data->plugin ) ) {
+			return;
+		}
+
+		if ( '1.16.0' === $plugin_data->new_version || '1.16' === $plugin_data->new_version ) {
+			$notice = '<br/><strong>' . __( 'Upgrade Notice: ', 'forminator' ) . '</strong>';
+			$notice .= __( 'Forminator is getting a huge performance boost thanks to some form submission improvements.', 'forminator' );
+			$notice .= '<br/><br/>' . sprintf(
+					__( 'There\'s an extremely low chance these changes may affect you if any of your forms use a custom action or filter that we\'ve now removed or modified (forms using standard Forminator features won\'t be affected at all). If needed, refer to this list of the %1$sretired actions/filters%2$s, but we\'re confident that %3$s of users should remain unaffected.', 'forminator' ),
+					'<a href="https://wpmudev.com/docs/api-plugin-development/forminator-api-docs/#modified-or-deprecated-hooks" target="_blank">',
+					'</a>',
+					'99%'
+				);
+			$notice .= '<br/><br/>' . esc_html__( 'Any problems or issues? Don\'t hesitate to create a support ticket or contact support directly.', 'forminator' );
+
+			echo "<script type='text/javascript'>
+            (function ($) {
+               $( function (e) {
+                   $( '.wp-list-table tr[data-plugin=\"" . esc_attr( $plugin_data->plugin ) . "\"] .notice-warning' ).append( '" . addslashes( $notice ) . "' ).css('padding-bottom', '10px');
+               });
+            })(jQuery);
+           </script>";
+		}
 	}
 }

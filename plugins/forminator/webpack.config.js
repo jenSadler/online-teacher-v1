@@ -1,6 +1,6 @@
 var path    = require( 'path' ),
 	webpack = require( 'webpack' )
-	;
+;
 
 // As Webpack only understands JS, we'll use this plugin to extract the CSS to a file
 const ExtractTextPlugin = require( 'extract-text-webpack-plugin' );
@@ -19,16 +19,15 @@ config.source.scgen = './assets/scss/forminator-scgen.scss';
 config.source.js   = './assets/js/shared-ui.js';
 
 // Path where the scss & js should be compiled to
-config.output.scssDirectory = 'assets/css/';
-config.output.jsDirectory   = 'assets/js/';
+config.output.scssDirectory = 'build/css/';
+config.output.jsDirectory   = 'build/js/';
 
-// File names of the compiled scss & js
-config.output.scssFileName = 'shared-ui.min.css';
-config.output.jsFileName   = 'shared-ui.min.js';
+// File names of the compiled js
+config.output.jsFileName = 'shared-ui.min.js';
 
 // The path where the Shared UI fonts & images should be sent. (relative to config.output.jsFileName)
-config.output.imagesDirectory = '../images/';
-config.output.fontsDirectory  = '../fonts/';
+config.output.imagesDirectory = '../../assets/images/';
+config.output.fontsDirectory  = '../../assets/fonts/';
 
 var scssConfig = Object.assign( {}, {
 	entry: {
@@ -103,7 +102,7 @@ var jsConfig = Object.assign( {}, {
 		path: path.resolve( __dirname, config.output.jsDirectory )
 	},
 	module: {
-        rules: [{
+		rules: [{
 			test: /\.js$/,
 			exclude: /(node_modules|bower_components)/,
 			use: {
@@ -116,12 +115,7 @@ var jsConfig = Object.assign( {}, {
 	},
 	devtool: 'source-map',
 	plugins: [
-		new SystemBellPlugin(),
-		// Automatically load modules instead of having to import or require them everywhere.
-		new webpack.ProvidePlugin({
-			A11yDialog:  '@wpmudev/shared-ui/js/a11y-dialog.js', // Vendor script in Shared UI.
-			Select2: '@wpmudev/shared-ui/js/select2.full.js'
-		})
+		new SystemBellPlugin()
 	]
 } );
 

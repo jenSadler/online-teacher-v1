@@ -280,7 +280,7 @@ class Forminator_API {
 		}
 
 		// Load form model.
-		$model = Forminator_Form_Model::model()->load( $id );
+		$model = Forminator_Base_Form_Model::get_model( $id );
 
 		if ( ! is_object( $model ) ) {
 			return new WP_Error( 'missing_object', __( "Form model doesn't exist", 'forminator' ) );
@@ -319,7 +319,7 @@ class Forminator_API {
 		}
 
 		// Load form model.
-		$model = Forminator_Form_Model::model()->load( $form_id );
+		$model = Forminator_Base_Form_Model::get_model( $form_id );
 
 		if ( ! is_object( $model ) ) {
 			return new WP_Error( 'missing_object', __( "Form model doesn't exist", 'forminator' ) );
@@ -439,7 +439,7 @@ class Forminator_API {
 		}
 
 		// Load form model.
-		$model = Forminator_Form_Model::model()->load( $form_id );
+		$model = Forminator_Base_Form_Model::get_model( $form_id );
 
 		if ( ! is_object( $model ) ) {
 			return new WP_Error( 'missing_object', __( "Form model doesn't exist", 'forminator' ) );
@@ -481,7 +481,7 @@ class Forminator_API {
 		}
 
 		// Load form model.
-		$model = Forminator_Form_Model::model()->load( $id );
+		$model = Forminator_Base_Form_Model::get_model( $id );
 
 		if ( ! is_object( $model ) ) {
 			return new WP_Error( 'missing_object', __( "Form model doesn't exist", 'forminator' ) );
@@ -516,7 +516,7 @@ class Forminator_API {
 		}
 
 		// Load form model.
-		$model = Forminator_Form_Model::model()->load( $id );
+		$model = Forminator_Base_Form_Model::get_model( $id );
 
 		if ( ! is_object( $model ) ) {
 			return new WP_Error( 'missing_object', __( "Form model doesn't exist", 'forminator' ) );
@@ -556,7 +556,7 @@ class Forminator_API {
 		}
 
 		// Load form model.
-		$model = Forminator_Form_Model::model()->load( $form_id );
+		$model = Forminator_Base_Form_Model::get_model( $form_id );
 
 		if ( ! is_object( $model ) ) {
 			return new WP_Error( 'missing_object', __( "Form model doesn't exist", 'forminator' ) );
@@ -600,7 +600,7 @@ class Forminator_API {
 		}
 
 		// Load form model.
-		$model = Forminator_Form_Model::model()->load( $form_id );
+		$model = Forminator_Base_Form_Model::get_model( $form_id );
 
 		if ( ! is_object( $model ) ) {
 			return new WP_Error( 'missing_object', __( "Form model doesn't exist", 'forminator' ) );
@@ -680,7 +680,7 @@ class Forminator_API {
 		}
 
 		// Load form model.
-		$model = Forminator_Form_Model::model()->load( $form_id );
+		$model = Forminator_Base_Form_Model::get_model( $form_id );
 
 		if ( ! is_object( $model ) ) {
 			return new WP_Error( 'missing_object', __( "Form model doesn't exist", 'forminator' ) );
@@ -953,7 +953,7 @@ class Forminator_API {
 	 */
 	public static function delete_form_field( $form_id, $id ) {
 		// Load form model.
-		$model = Forminator_Form_Model::model()->load( $form_id );
+		$model = Forminator_Base_Form_Model::get_model( $form_id );
 
 		$wrapper = $model->delete_field( $id );
 
@@ -998,7 +998,7 @@ class Forminator_API {
 		}
 
 		// Load form model.
-		$model = Forminator_Form_Model::model()->load( $form_id );
+		$model = Forminator_Base_Form_Model::get_model( $form_id );
 
 		if ( ! is_object( $model ) ) {
 			return new WP_Error( 'missing_object', __( "Form model doesn't exist", 'forminator' ) );
@@ -1037,7 +1037,7 @@ class Forminator_API {
 		}
 
 		// Load form model.
-		$model = Forminator_Form_Model::model()->load( $form_id );
+		$model = Forminator_Base_Form_Model::get_model( $form_id );
 
 		if ( ! is_object( $model ) ) {
 			return new WP_Error( 'missing_object', __( "Form model doesn't exist", 'forminator' ) );

@@ -76,7 +76,7 @@
 
 		handle_submit_custom_form: function () {
 			var self = this,
-				form = $(this.element);
+				saveDraftBtn = self.$el.find( '.forminator-save-draft-link' );
 
 			var success_available = self.$el.find('.forminator-response-message').find('.forminator-label--success').not(':hidden');
 			if (success_available.length) {
@@ -116,16 +116,24 @@
 				FUI.closeAuthentication();
 			});
 
-			$('body').on('submit.frontSubmit', this.settings.forminator_selector, function (e) {
+			if ( 0 !== saveDraftBtn.length ) {
+				this.handle_submit_form_draft();
+			}
+
+			$('body').on('submit.frontSubmit', this.settings.forminator_selector, function ( e, submitter ) {
+                if ( 0 !== self.$el.find( 'input[type="hidden"][value="forminator_submit_preview_form_custom-forms"]' ).length ) {
+                    return false;
+                }
 				var $this = $(this),
 				    thisForm = this,
 				    submitEvent = e,
 					formData = new FormData( this ),
 					$target_message = $this.find('.forminator-response-message'),
-					$captcha_field = self.$el.find('.forminator-g-recaptcha, .forminator-hcaptcha')
+					$captcha_field = self.$el.find('.forminator-g-recaptcha, .forminator-hcaptcha'),
+					$saveDraft = 'true' === self.$el.find( 'input[name="save_draft"]' ).val() ? true : false
 					;
 
-				if( self.settings.inline_validation && self.$el.find('.forminator-uploaded-files').length > 0 ) {
+				if( self.settings.inline_validation && self.$el.find('.forminator-uploaded-files').length > 0 && ! $saveDraft ) {
 					var file_error = self.$el.find('.forminator-uploaded-files li.forminator-has_error');
 					if( file_error.length > 0 ) {
 						return false;
@@ -140,7 +148,9 @@
 					}
 				}
 
-				if ( self.$el.data( 'forminatorFrontPayment' ) ) {
+				if ( self.$el.data( 'forminatorFrontPayment' ) && ! $saveDraft ) {
+					// Disable submit button right away to prevent multiple submissions
+					$this.find( 'button' ).attr( 'disabled', true );
 					if ( false === self.processCaptcha( self, $captcha_field, $target_message ) ) {
 						return false;
 					}
@@ -149,15 +159,25 @@
 				self.multi_upload_disable( $this, true );
 
 				var submitCallback = function() {
+					var pagination 	  = self.$el.find( '.forminator-pagination:visible' ),
+						hasPagination = !! pagination.length,
+						formStep	  = pagination.index( '.forminator-pagination' )
+						;
+
 					formData = new FormData(this); // reinit values
 
-					if ( ! self.$el.data( 'forminatorFrontPayment' ) ) {
+					if ( $saveDraft && hasPagination ) {
+						formData.append( 'draft_page', formStep );
+					}
+
+					if ( ! self.$el.data( 'forminatorFrontPayment' ) && ! $saveDraft ) {
 						if ( false === self.processCaptcha( self, $captcha_field, $target_message ) ) {
 							return false;
 						}
 					}
 
-					if (self.$el.hasClass('forminator_ajax')) {
+					// Should check if submitted thru save draft button
+					if ( self.$el.hasClass('forminator_ajax') || $saveDraft ) {
 						$target_message.html('');
 						self.$el.find('.forminator-button-submit').addClass('forminator-button-onload');
 
@@ -177,14 +197,14 @@
 							// Disable form fields
 							form_type = self.$el.find('input[name="form_type"]').val();
 							if( 'login' !== form_type ) {
-								form.addClass('forminator-fields-disabled');
+								self.$el.addClass('forminator-fields-disabled');
 							}
 							$target_message.html('<p>' + self.settings.loader_label + '</p>');
 							self.focus_to_element( $target_message );
 
 							$target_message.removeAttr("aria-hidden")
 								.prop("tabindex", "-1")
-								.removeClass('forminator-success forminator-error')
+								.removeClass('forminator-success forminator-error forminator-accessible')
 								.addClass('forminator-loading forminator-show');
 						}
 
@@ -210,6 +230,12 @@
 									return false;
 								}
 
+								// Process Save Draft's response
+								if ( data.success && undefined !== data.data.type && 'save_draft' === data.data.type ) {
+									self.showDraftLink( data.data );
+									return false;
+								}
+
 								// Hide validation errors
 								$this.find( '.forminator-error-message' ).not('.forminator-uploaded-files .forminator-error-message').remove();
 								$this.find( '.forminator-field' ).removeClass( 'forminator-has_error' );
@@ -217,7 +243,7 @@
 								$this.find( 'button' ).removeAttr( 'disabled' );
 								$target_message.html( '' ).removeClass( 'forminator-accessible forminator-error forminator-success' );
 								if( self.settings.hasLeads && 'undefined' !== typeof data.data.entry_id ) {
-									self.showQuiz( form );
+									self.showQuiz( self.$el );
 									$('#forminator-module-' + self.settings.quiz_id + ' input[name=entry_id]' ).val( data.data.entry_id );
 									if( 'end' === self.settings.form_placement ) {
 										$('#forminator-module-' + self.settings.quiz_id).submit();
@@ -232,13 +258,26 @@
 									var moduleId  = self.$el.attr( 'id' ),
 										authId    = moduleId + '-authentication',
 										authField = $( '#' + authId ),
-										authInput = $( '#' + authId + '-input' )
+										authInput = $( '#' + authId + '-input' ),
+										authToken = $( '#' + authId + '-token' )
 									;
 									authField.find('.forminator-authentication-notice').removeClass('error');
 									authField.find('.lost-device-url').attr('href', data.data.lost_url);
 
 									if( 'show' === data.data.authentication ) {
-										authInput.removeAttr( 'disabled' );
+										self.$el.find('.forminator-authentication-nav').html('').append( data.data.auth_nav );
+										self.$el.find('.forminator-authentication-box').hide();
+										if ( 'fallback-email' === data.data.auth_method ) {
+											self.$el.find('.wpdef-2fa-email-resend input').click();
+											self.$el.find('.notification').hide();
+										}
+										self.$el.find( '#forminator-2fa-' + data.data.auth_method ).show();
+										self.$el.find('.forminator-authentication-box input').attr( 'disabled', true );
+										self.$el.find( '#forminator-2fa-' + data.data.auth_method + ' input' ).attr( 'disabled', false );
+										self.$el.find('.forminator-2fa-link').show();
+										self.$el.find('#forminator-2fa-link-' + data.data.auth_method).hide();
+										authInput.removeAttr( 'disabled' ).val(data.data.auth_method);
+										authToken.val( data.data.auth_token );
 										FUI.openAuthentication( authId, moduleId, authId + '-input' );
 									}
 									if ( 'invalid' === data.data.authentication ) {
@@ -420,6 +459,11 @@
 								}
 							},
 							error: function (err) {
+								if ( 0 !== saveDraftBtn.length ) {
+									self.$el.find( 'input[name="save_draft"]' ).val( 'false' );
+									saveDraftBtn.addClass( 'disabled' );
+								}
+
 								$this.find('button').removeAttr('disabled');
 								$target_message.html('');
 								var $message = err.status === 400 ? window.ForminatorFront.cform.upload_error : window.ForminatorFront.cform.error;
@@ -436,9 +480,14 @@
 						}).always(function () {
 							if( typeof self.settings.has_loader !== "undefined" && self.settings.has_loader ) {
 								// Enable form fields
-								form.removeClass('forminator-fields-disabled forminator-partial-disabled');
+								self.$el.removeClass('forminator-fields-disabled forminator-partial-disabled');
 
 								$target_message.removeClass('forminator-loading');
+							}
+
+							if ( 0 !== saveDraftBtn.length ) {
+								self.$el.find( 'input[name="save_draft"]' ).val( 'false' );
+								saveDraftBtn.addClass( 'disabled' );
 							}
 
 							$this.trigger('after:forminator:form:submit', formData);
@@ -446,13 +495,13 @@
 					} else {
 						if( typeof self.settings.has_loader !== "undefined" && self.settings.has_loader ) {
 							// Disable form fields
-							form.addClass('forminator-fields-disabled');
+							self.$el.addClass('forminator-fields-disabled');
 
 							$target_message.html('<p>' + self.settings.loader_label + '</p>');
 
 							$target_message.removeAttr("aria-hidden")
 								.prop("tabindex", "-1")
-								.removeClass('forminator-success forminator-error')
+								.removeClass('forminator-success forminator-error forminator-accessible')
 								.addClass('forminator-loading forminator-show');
 						}
 
@@ -463,7 +512,7 @@
 				// payment setup
 				var paymentIsHidden = self.$el.find('div[data-is-payment="true"]')
 					.closest('.forminator-row').hasClass('forminator-hidden');
-				if (self.$el.data('forminatorFrontPayment') && !paymentIsHidden) {
+				if ( self.$el.data('forminatorFrontPayment') && !paymentIsHidden && ! $saveDraft ) {
 					self.$el.trigger('payment.before.submit.forminator', [formData, function () {
 						submitCallback.apply(thisForm);
 					}]);
@@ -474,6 +523,136 @@
 				return false;
 			});
 
+		},
+
+		handle_submit_form_draft: function () {
+			var self = this;
+
+			$('body').on( 'click', '.forminator-save-draft-link', function (e) {
+				e.preventDefault();
+				e.stopPropagation();
+
+				var thisForm  = $( this ).closest( 'form' ),
+					saveDraft = thisForm.find( 'input[name="save_draft"]' )
+					;
+
+				// prevent double clicks and clicking without any changes
+				if (
+					thisForm.closest( '#forminator-modal' ).hasClass( 'preview' ) ||
+					'true' === saveDraft.val() ||
+					$( this ).hasClass( 'disabled' )
+				) {
+					return;
+				}
+
+				saveDraft.val( 'true' );
+				thisForm.trigger( 'submit.frontSubmit', 'draft_submit' );
+			});
+
+		},
+
+		showDraftLink: function( data ) {
+			var $form = this.$el;
+			$form.trigger( 'forminator:form:draft:success', data );
+			$form.find( '.forminator-response-message' ).html('');
+			$form.hide();
+
+			$( data.message ).insertBefore( $form );
+			this.sendDraftLink( data );
+		},
+
+		sendDraftLink: function( data ) {
+			var self = this,
+				sendDraftForm = '#send-draft-link-form-' + data.draft_id;
+				;
+
+			$( 'body' ).on( 'submit', sendDraftForm, function(e) {
+				var form 		  = $( this ),
+					draftData 	  = new FormData(this),
+					emailWrap 	  = form.find( '#email-1' ),
+					emailField 	  = emailWrap.find( '.forminator-field' ),
+					submit		  = form.find( '.forminator-button-submit' ),
+					targetMessage = form.find( '.forminator-response-message' ),
+					emailResponse = form.prev( '.forminator-draft-email-response' );
+
+				if (
+					$( this ).hasClass( 'submitting' ) ||
+					( $( this ).hasClass( 'forminator-has_error' ) && '' === emailWrap.find( 'input[name="email-1"]' ).val() )
+				) {
+					return false;
+				}
+
+				// Add submitting class and disable prop to prevent multi submissions
+				form.addClass( 'submitting' );
+				submit.attr( 'disabled', true );
+
+				// Reset if there's error
+				form.removeClass( 'forminator-has_error' );
+				emailField.removeClass( 'forminator-has_error' );
+				emailField.find( '.forminator-error-message' ).remove();
+
+				e.preventDefault();
+				$.ajax({
+					type: 'POST',
+					url: window.ForminatorFront.ajaxUrl,
+					data: draftData,
+					cache: false,
+					contentType: false,
+					processData: false,
+					beforeSend: function () {
+						form.trigger( 'before:forminator:draft:email:submit', draftData );
+					},
+					success: function( data ) {
+						var res = data.data;
+						if( ( ! data && 'undefined' !== typeof data ) || 'object' !== typeof res ) {
+							submit.removeAttr( 'disabled' );
+							targetMessage
+								.addClass( 'forminator-error' )
+								.html( '<p>' + window.ForminatorFront.cform.error + '<br>(' + res + ')</p>');
+							self.focus_to_element( targetMessage );
+
+							return false;
+						}
+
+						if (
+							! data.success &&
+							undefined !== res.field &&
+							'email-1' === res.field &&
+							! emailField.hasClass( 'forminator-has_error' )
+						) {
+							form.addClass( 'forminator-has_error' );
+							emailField.addClass( 'forminator-has_error' );
+							emailField.append( '<span class="forminator-error-message" aria-hidden="true">' + res.message + '</span>' );
+						}
+
+						if ( data.success ) {
+							if ( res.draft_mail_sent ) {
+								emailResponse.removeClass( 'draft-error' ).addClass( 'draft-success' );
+							} else {
+								emailResponse.removeClass( 'draft-success' ).addClass( 'draft-error' );
+							}
+
+							emailResponse.html( res.draft_mail_message );
+							emailResponse.show();
+							form.hide();
+						}
+					},
+					error: function( error ) {
+						form.removeClass( 'submitting' );
+						submit.removeAttr( 'disabled' );
+					}
+				}).always( function() {
+					form.removeClass( 'submitting' );
+					submit.removeAttr( 'disabled' );
+				});
+
+				emailResponse.on( 'click', '.draft-resend-mail', function( e ) {
+					e.preventDefault();
+
+					emailResponse.slideUp( 50 );
+					form.show();
+				});
+			} );
 		},
 
 		processCaptcha: function( self, $captcha_field, $target_message ) {
@@ -601,7 +780,9 @@
 				quiz_id = 'undefined' !== typeof self.settings.quiz_id ? self.settings.quiz_id : 0;
 
 			$( 'body' ).on( 'submit.frontSubmit', this.settings.forminator_selector, function( e ) {
-
+				if ( 0 !== self.$el.find( 'input[type="hidden"][value="forminator_submit_preview_form_quizzes"]' ).length ) {
+					return false;
+				}
 				var form      = $(this),
 					ajaxData  = [],
 					formData  = new FormData( this ),
@@ -822,6 +1003,9 @@
 			}
 
 			$( 'body' ).on( 'submit.frontSubmit', this.settings.forminator_selector, function (e) {
+				if ( 0 !== self.$el.find( 'input[type="hidden"][value="forminator_submit_preview_form_poll"]' ).length ) {
+					return false;
+				}
 				var $this    = $( this ),
 					formData  = new FormData( this ),
 					ajaxData  = $this.serialize()

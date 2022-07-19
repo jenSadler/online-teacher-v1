@@ -1,7 +1,7 @@
 <?php
 $current_user = wp_get_current_user();
-$banner_1x    = forminator_plugin_url() . 'assets/images/new-feature.png';
-$banner_2x    = forminator_plugin_url() . 'assets/images/new-feature@2x.png';
+$banner_1x    = forminator_plugin_url() . 'assets/images/Feature_highlight_17.png';
+$banner_2x    = forminator_plugin_url() . 'assets/images/Feature_highlight_17@2x.png';
 ?>
 
 <div class="sui-modal sui-modal-md">
@@ -15,7 +15,7 @@ $banner_2x    = forminator_plugin_url() . 'assets/images/new-feature@2x.png';
 		aria-labelledby="forminator-new-feature__title"
 	>
 
-		<div class="sui-box forminator-feature-modal" data-prop="forminator_dismiss_feature_11511" data-nonce="<?php echo esc_attr( wp_create_nonce( 'forminator_dismiss_notification' ) ); ?>">
+		<div class="sui-box forminator-feature-modal" data-prop="forminator_dismiss_feature_1170" data-nonce="<?php echo esc_attr( wp_create_nonce( 'forminator_dismiss_notification' ) ); ?>">
 
 			<div class="sui-box-header sui-flatten sui-content-center">
 
@@ -32,9 +32,9 @@ $banner_2x    = forminator_plugin_url() . 'assets/images/new-feature@2x.png';
 					<span class="sui-screen-reader-text">Close this dialog.</span>
 				</button>
 
-				<h3 class="sui-box-title sui-lg" style="overflow: initial; white-space: initial; text-overflow: initial;"><?php esc_html_e( 'New! Global Appearance Presets', 'forminator' ); ?></h3>
+				<h3 class="sui-box-title sui-lg" style="overflow: initial; white-space: initial; text-overflow: initial;"><?php esc_html_e( 'Introducing! Save form as Draft', 'forminator' ); ?></h3>
 
-				<p class="sui-description"><?php printf( esc_html__( 'Hey, %s! Global appearance presets are here. You can now create appearance presets in the Forminator settings and apply them to forms on your site. You can also bulk apply presets to multiple forms with just a click.', 'forminator' ), esc_html( ucfirst( $current_user->display_name ) ) ); ?></p>
+				<p class="sui-description"><?php printf( esc_html__( 'Hey! %s, Do you have a multi-page or lengthy form? If you do, you\'ve probably already received complaints from visitors about how long it takes them to fill it out. Now, with the latest version of Forminator, your visitors can save a form as a draft and come back later to finish and submit it.', 'forminator' ), esc_html( ucfirst( $current_user->display_name ) ) ); ?></p>
 
 			</div>
 
@@ -58,7 +58,7 @@ $banner_2x    = forminator_plugin_url() . 'assets/images/new-feature@2x.png';
 
 			<div class="sui-box-footer sui-flatten sui-content-center">
 
-				<button class="sui-button forminator-dismiss-new-feature" data-modal-close><?php esc_html_e( 'Got It', 'forminator' ); ?></button>
+				<button class="sui-button forminator-dismiss-new-feature" data-modal-close><?php esc_html_e( 'Ok, Got it!', 'forminator' ); ?></button>
 
 			</div>
 

@@ -294,63 +294,43 @@ class Forminator_Form_Model extends Forminator_Base_Form_Model {
 	}
 
 	/**
-	 * Get first captcha field in form if available
+	 * Return Form Settings
 	 *
-	 * @since 1.5.3
+	 * @since 1.1
 	 *
-	 * @return bool|Forminator_Form_Field_Model
+	 * @return mixed
 	 */
-	public function get_captcha_field() {
-		$captcha_field = false;
-		$form_id       = (int) $this->id;
-		$fields        = $this->fields;
-		foreach ( $fields as $field ) {
-			$field_array = $field->to_formatted_array();
-			if ( isset( $field_array['type'] ) && 'captcha' === $field_array['type'] ) {
-				$captcha_field = $field;
-				break;
+	public function get_form_settings() {
+		// If not using the new "submission-behaviour" setting, set it according to the previous settings
+		if ( ! isset( $this->settings['submission-behaviour'] ) ) {
+			$redirect = ( isset( $this->settings['redirect'] ) && filter_var( $this->settings['redirect'], FILTER_VALIDATE_BOOLEAN ) );
+
+			if ( $redirect ) {
+				$this->settings['submission-behaviour'] = 'behaviour-redirect';
+			} else {
+				$this->settings['submission-behaviour'] = 'behaviour-thankyou';
 			}
 		}
 
-		$captcha_field = apply_filters( 'forminator_custom_form_get_captcha_field', $captcha_field, $form_id, $fields );
-
-		return $captcha_field;
-	}
-
-	/**
-	 * Get submission behavior
-	 *
-	 * @since 1.6
-	 *
-	 * @return string
-	 */
-	public function get_submission_behaviour( $behavior_options ) {
-		$form_id              = (int) $this->id;
-		$submission_behaviour = 'behaviour-thankyou';
-
-		if ( isset( $behavior_options['submission-behaviour'] ) ) {
-			$submission_behaviour = $behavior_options['submission-behaviour'];
+		if ( $this->has_stripe_or_paypal() && $this->is_ajax_submit() ) {
+			if ( isset( $this->settings['submission-behaviour'] ) && 'behaviour-thankyou' === $this->settings['submission-behaviour'] ) {
+				$this->settings['submission-behaviour'] = 'behaviour-hide';
+			}
 		}
 
-		// If Stripe field exist & submit is AJAX we fall back to hide to force page reload when form submitted.
-		if ( self::has_stripe_or_paypal( $this ) && $this->is_ajax_submit() ) {
-			$submission_behaviour = 'behaviour-hide';
-		}
+		$this->settings = apply_filters( 'forminator_form_settings', $this->settings, $this );
 
-		$submission_behaviour = apply_filters( 'forminator_custom_form_get_submission_behaviour', $submission_behaviour, $form_id, $behavior_options );
-
-		return $submission_behaviour;
+		return $this->settings;
 	}
 
 	/**
 	 * Return behaviors options.
 	 *
-	 * @param object $module Module obkect.
-	 * @param array  $settings Module settings.
 	 * @return array
 	 */
-	public static function get_behavior_array( $module, $settings ) {
-		if ( ! isset( $module ) || empty( $module->behaviors ) ) {
+	public function get_behavior_array() {
+		if ( empty( $this->behaviors ) ) {
+			$settings = $this->get_form_settings();
 			// Backward compatibility | Default.
 			return array(
 				array(
@@ -368,7 +348,7 @@ class Forminator_Form_Model extends Forminator_Base_Form_Model {
 			);
 		}
 
-		return $module->behaviors;
+		return $this->behaviors;
 	}
 
 	/**
@@ -379,7 +359,6 @@ class Forminator_Form_Model extends Forminator_Base_Form_Model {
 	 * @return bool
 	 */
 	public function is_ajax_submit() {
-		$form_id       = (int) $this->id;
 		$form_settings = $this->settings;
 
 		// Force AJAX submit if form contains Stripe payment field.
@@ -387,7 +366,7 @@ class Forminator_Form_Model extends Forminator_Base_Form_Model {
 			return true;
 		}
 
-		if ( ! isset( $form_settings['enable-ajax'] ) || empty( $form_settings['enable-ajax'] ) ) {
+		if ( empty( $form_settings['enable-ajax'] ) ) {
 			return false;
 		}
 
@@ -450,35 +429,17 @@ class Forminator_Form_Model extends Forminator_Base_Form_Model {
 	}
 
 	/**
-	 * Check if Custom form has calculation field
-	 *
-	 * @since 1.7
-	 * @return bool
-	 */
-	public function has_calculation_field() {
-		$fields = $this->fields;
-		foreach ( $fields as $field ) {
-			$field = $field->to_formatted_array();
-			if ( isset( $field['type'] ) && 'calculation' === $field['type'] ) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
 	 * Check if Custom form has stripe field
 	 *
 	 * @since 1.7
-	 * @return bool
+	 * @return object|false
 	 */
 	public function has_stripe_field() {
-		$fields = $this->fields;
+		$fields = $this->get_real_fields();
 		foreach ( $fields as $field ) {
-			$field = $field->to_formatted_array();
-			if ( isset( $field['type'] ) && 'stripe' === $field['type'] ) {
-				return true;
+			$field_array = $field->to_formatted_array();
+			if ( isset( $field_array['type'] ) && 'stripe' === $field_array['type'] ) {
+				return $field;
 			}
 		}
 
@@ -491,30 +452,11 @@ class Forminator_Form_Model extends Forminator_Base_Form_Model {
 	 * @since 1.9.3
 	 * @return bool
 	 */
-	public static function has_stripe_or_paypal( $form ) {
-		$fields = isset( $form->fields ) ? $form->fields : array();
-
+	public function has_stripe_or_paypal() {
+		$fields = $this->get_real_fields();
 		foreach ( $fields as $field ) {
 			$field = $field->to_formatted_array();
-			if ( isset( $field['type'] ) && ( 'stripe' === $field['type'] || 'paypal' === $field['type'] ) ) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Check if Custom form has paypal field
-	 *
-	 * @since 1.7
-	 * @return bool
-	 */
-	public function has_paypal_field() {
-		$fields = $this->fields;
-		foreach ( $fields as $field ) {
-			$field = $field->to_formatted_array();
-			if ( isset( $field['type'] ) && 'paypal' === $field['type'] ) {
+			if ( isset( $field['type'] ) && in_array( $field['type'], array( 'paypal', 'stripe' ), true ) ) {
 				return true;
 			}
 		}

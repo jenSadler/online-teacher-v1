@@ -53,13 +53,11 @@ class Forminator_CForm_Front_User_Login extends Forminator_User {
 	/**
 	 * Is "Remember Me" submitted?
 	 *
-	 * @param array $submitted_data
-	 *
 	 * @return bool
 	 */
-	private function is_submitted_remember_me( $submitted_data ) {
+	private function is_submitted_remember_me() {
 		$submitted_remember_me = false;
-		foreach ( $submitted_data as $field_key => $field_val ) {
+		foreach ( Forminator_CForm_Front_Action::$prepared_data as $field_key => $field_val ) {
 			if ( false !== stripos( $field_key, 'checkbox-' ) && 'remember-me' === $field_val[0] ) {
 				$submitted_remember_me = true;
 				break;
@@ -73,13 +71,12 @@ class Forminator_CForm_Front_User_Login extends Forminator_User {
 	 * Process login
 	 *
 	 * @param $custom_form
-	 * @param $submitted_data
 	 * @param Forminator_Form_Entry_Model $entry
 	 * @param $field_data_array
 	 *
 	 * @return array
 	 */
-	public function process_login( $custom_form, $submitted_data, Forminator_Form_Entry_Model $entry, $field_data_array ) {
+	public function process_login( $custom_form, Forminator_Form_Entry_Model $entry, $field_data_array ) {
 		$settings       = $custom_form->settings;
 		$this->settings = $settings;
 
@@ -89,15 +86,15 @@ class Forminator_CForm_Front_User_Login extends Forminator_User {
 		if ( isset( $settings['login-username-field'] ) && ! empty( $settings['login-username-field'] ) ) {
 			$username = $this->replace_value( $field_data_array, $settings['login-username-field'] );
 		}
-		$username = apply_filters( 'forminator_custom_form_login_username_before_signon', $username, $custom_form, $submitted_data, $entry );
+		$username = apply_filters( 'forminator_custom_form_login_username_before_signon', $username, $custom_form, Forminator_CForm_Front_Action::$prepared_data, $entry );
 
 		// Field password.
 		$password = '';
 		if ( isset( $settings['login-password-field'] ) && ! empty( $settings['login-password-field'] ) ) {
 			$password = $this->replace_value( $field_data_array, $settings['login-password-field'] );
 		}
-		$password              = apply_filters( 'forminator_custom_form_login_password_before_signon', $password, $custom_form, $submitted_data, $entry );
-		$submitted_remember_me = $this->is_submitted_remember_me( $submitted_data );
+		$password              = apply_filters( 'forminator_custom_form_login_password_before_signon', $password, $custom_form, Forminator_CForm_Front_Action::$prepared_data, $entry );
+		$submitted_remember_me = $this->is_submitted_remember_me();
 
 		if ( $submitted_remember_me && isset( $settings['remember-me'] ) && 'true' === $settings['remember-me'] ) {
 			$remember = true;
@@ -136,52 +133,41 @@ class Forminator_CForm_Front_User_Login extends Forminator_User {
 		$defender_data = forminator_defender_compatibility();
 		if ( $defender_data['is_activated'] ) {
 			$sign_on = wp_authenticate( $username, $password );
-			if ( 'old' === $defender_data['structure'] ) {
+			$two_fa_component = new $defender_data['two_fa_component']();
+			if ( ! is_wp_error( $sign_on ) ) {
+				$available_providers = $two_fa_component->get_available_providers_for_user( $sign_on );
 				$token = uniqid();
 				// create and store a login token so we can query this user again.
-				update_user_meta( $sign_on->ID, 'defOTPLoginToken', $token );
-				$response['lost_url'] = admin_url( 'admin-ajax.php?action=defRetrieveOTP&token=' . $token . '&nonce=' . wp_create_nonce( 'defRetrieveOTP' ) );
-			} else {
-				$response['lost_url'] = $defender_data['lost_url'];
-			}
+				update_user_meta( $sign_on->ID, 'defender_two_fa_token', $token );
+				$enable_otp       = $two_fa_component->is_user_enabled_otp( $sign_on->ID );
+				if ( $enable_otp && ! empty( $available_providers ) ) {
+					$auth_method = isset( Forminator_CForm_Front_Action::$prepared_data['auth_method'] ) ? Forminator_CForm_Front_Action::$prepared_data['auth_method'] : '';
+					if ( empty( $auth_method ) ) {
+						$auth_method = $two_fa_component->get_default_provider_slug_for_user( $sign_on->ID );
+					}
+					if ( ! isset( Forminator_CForm_Front_Action::$prepared_data['auth_method'] ) ) {
+						$response['authentication'] = 'show';
+						$response['user']           = $sign_on;
+						$response['auth_token']     = $token;
+						$response['auth_method']    = $auth_method;
+						$response['auth_nav']       = $this->forminator_show_2fa_nav( $available_providers );
 
-			$enable_otp = false;
-			$valid      = false;
-			if ( ! isset( $submitted_data['auth-code'] ) ) {
-				if ( 'old' === $defender_data['structure'] ) {
-					$enable_otp = call_user_func_array(
-						array( $defender_data['two_fa_component'], 'isUserEnableOTP' ),
-						array( $sign_on->ID )
-					);
-				} else {
-					$two_fa_component = new $defender_data['two_fa_component']();
-					$enable_otp       = $two_fa_component->is_user_enabled_otp( $sign_on->ID );
-				}
+						return $response;
+					} else {
+						$provider = $two_fa_component->get_provider_by_slug( $auth_method );
+						if ( ! is_wp_error( $provider ) ) {
+							$result = $provider->validate_authentication( $sign_on );
+							if ( ! empty( $result ) && ! is_wp_error( $result ) ) {
+								delete_user_meta( $sign_on->ID, 'defender_two_fa_token' );
+								$response['authentication'] = 'valid';
+							} else {
+								$response['authentication'] = 'invalid';
+								$response['user']           = $sign_on;
 
-				if ( ! is_wp_error( $sign_on ) && $enable_otp ) {
-					$response['authentication'] = 'show';
-					$response['user']           = $sign_on;
-
-					return $response;
-				}
-			}
-			if ( isset( $submitted_data['auth-code'] ) ) {
-				if ( 'old' === $defender_data['structure'] ) {
-					$secret = call_user_func_array( array( $defender_data['two_fa_component'], 'getUserSecret' ), array( $sign_on->ID ) );
-					$valid  = call_user_func_array( array( $defender_data['two_fa_component'], 'compare' ), array( $secret, $submitted_data['auth-code'] ) );
-				} else {
-					$user             = get_user_by( 'id', $sign_on->ID );
-					$two_fa_component = new $defender_data['two_fa_component']();
-					$valid            = $two_fa_component->verify_otp( $submitted_data['auth-code'], $user );
-				}
-
-				if ( $valid ) {
-					$response['authentication'] = 'valid';
-				} else {
-					$response['authentication'] = 'invalid';
-					$response['user']           = $sign_on;
-
-					return $response;
+								return $response;
+							}
+						}
+					}
 				}
 			}
 		}
@@ -253,7 +239,7 @@ class Forminator_CForm_Front_User_Login extends Forminator_User {
 	 * @return array
 	 */
 	public static function render_fields( $wrappers, $id ) {
-		$custom_form = Forminator_Form_Model::model()->load( $id );
+		$custom_form = Forminator_Base_Form_Model::get_model( $id );
 
 		if ( isset( $custom_form->settings['form-type'] )
 			 && 'login' === $custom_form->settings['form-type']
@@ -296,5 +282,25 @@ class Forminator_CForm_Front_User_Login extends Forminator_User {
 		}
 
 		return $wrappers;
+	}
+
+	/**
+	 * Show 2FA Nav
+	 *
+	 * @param $providers
+	 *
+	 * @return string
+	 */
+	public function forminator_show_2fa_nav( $providers ) {
+		$html = '';
+		if ( ! empty( $providers ) ) {
+			foreach ( $providers as $slug => $provider ) {
+				$html .= '<li class="forminator-2fa-link" id="forminator-2fa-link-' . esc_attr( $slug ) . '" data-slug="' . esc_attr( $slug ) . '">';
+				$html .= $provider->get_login_label();
+				$html .= '</li>';
+			}
+		}
+
+		return $html;
 	}
 }

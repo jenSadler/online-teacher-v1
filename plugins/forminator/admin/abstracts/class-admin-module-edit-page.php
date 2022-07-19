@@ -661,7 +661,7 @@ abstract class Forminator_Admin_Module_Edit_Page extends Forminator_Admin_Page {
 			// For Quizzes with Leads.
 			if ( isset( $model->settings['hasLeads'] ) && isset( $model->settings['leadsId'] ) && $model->settings['hasLeads'] ) {
 				$leads_id    = $model->settings['leadsId'];
-				$leads_model = Forminator_Form_Model::model()->load( $leads_id );
+				$leads_model = Forminator_Base_Form_Model::get_model( $leads_id );
 
 				if ( is_object( $leads_model ) ) {
 					wp_delete_post( $leads_id );

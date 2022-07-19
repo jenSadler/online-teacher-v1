@@ -170,23 +170,22 @@ abstract class Forminator_Mail {
 	 * Get Recipients of admin emails
 	 *
 	 * @since 1.0.3
-	 * @since 1.6.2 add $data,$custom_form model, and entry
+	 * @since 1.6.2 add $custom_form model, and entry
 	 *
 	 * @param array                       $notification
-	 * @param array                       $data
 	 * @param Forminator_Base_Form_Model  $module
 	 * @param Forminator_Form_Entry_Model $entry
 	 * @param                             $lead_model
 	 *
 	 * @return array
 	 */
-	public function get_admin_email_recipients( $notification, $data = array(), $module = null, $entry = null, $pseudo_submitted_data = array(), $lead_model = array() ) {
+	public function get_admin_email_recipients( $notification, $module = null, $entry = null, $lead_model = array() ) {
 
 		$email = array();
 		if ( isset( $notification['email-recipients'] ) && 'routing' === $notification['email-recipients'] ) {
 			if ( ! empty( $notification['routing'] ) ) {
 				foreach ( $notification['routing'] as $routing ) {
-					if ( $this->is_routing( $routing, $data, $module, $pseudo_submitted_data ) ) {
+					if ( $this->is_routing( $routing, $module ) ) {
 						$recipients = array_map( 'trim', explode( ',', $routing['email'] ) );
 					}
 				}
@@ -196,14 +195,14 @@ abstract class Forminator_Mail {
 		}
 		if ( ! empty( $recipients ) ) {
 			foreach ( $recipients as $key => $recipient ) {
-				$recipient = $this->get_recipient( $recipient, $module, $data, $entry, $lead_model );
+				$recipient = $this->get_recipient( $recipient, $module, $entry, $lead_model );
 				if ( is_email( $recipient ) ) {
 					$email[] = $recipient;
 				}
 			}
 		}
 
-		return apply_filters( 'forminator_' . static::$module_slug . '_get_admin_email_recipients', $email, $notification, $data, $module, $entry );
+		return apply_filters( 'forminator_' . static::$module_slug . '_get_admin_email_recipients', $email, $notification, Forminator_CForm_Front_Action::$prepared_data, $module, $entry );
 	}
 
 	/**

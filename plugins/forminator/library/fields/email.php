@@ -105,12 +105,10 @@ class Forminator_Email extends Forminator_Field {
 	 *
 	 * @return mixed
 	 */
-	public function markup( $field, $settings = array() ) {
+	public function markup( $field, $settings = array(), $draft_value = null ) {
 
 		$this->field         = $field;
 		$this->form_settings = $settings;
-
-		$this->init_autofill( $settings );
 
 		$html        = '';
 		$id          = self::get_property( 'element_id', $field );
@@ -129,8 +127,12 @@ class Forminator_Email extends Forminator_Field {
 			$ariareq = 'true';
 		}
 
-		// Check if Pre-fill parameter used.
-		if ( $this->has_prefill( $field ) ) {
+		if ( isset( $draft_value['value'] ) ) {
+
+			$value = esc_attr( $draft_value['value'] );
+
+		} elseif ( $this->has_prefill( $field ) ) {
+
 			// We have pre-fill parameter, use its value or $value.
 			$value = $this->get_prefill( $field, $value );
 		}
@@ -146,7 +148,7 @@ class Forminator_Email extends Forminator_Field {
 			'aria-required' => $ariareq,
 		);
 
-		$autofill_markup = $this->get_element_autofill_markup_attr( self::get_property( 'element_id', $field ), $this->form_settings );
+		$autofill_markup = $this->get_element_autofill_markup_attr( self::get_property( 'element_id', $field ) );
 
 		$email_attr = array_merge( $email_attr, $autofill_markup );
 
@@ -217,17 +219,6 @@ class Forminator_Email extends Forminator_Field {
 			$messages                      .= '"required": "' . forminator_addcslashes( $default_required_error_message ) . '",' . "\n";
 		}
 
-		$validation_message = apply_filters_deprecated(
-			'forminator_email_field_custom_validation_message',
-			array(
-				$validation_message,
-				$id,
-				$field,
-				$validation_message,
-			),
-			'1.6'
-		);
-
 		if ( $is_validate ) {
 			$messages .= '"emailWP": "' . forminator_addcslashes( $validation_message ) . '",' . "\n";
 			$messages .= '"email": "' . forminator_addcslashes( $validation_message ) . '",' . "\n";
@@ -253,11 +244,10 @@ class Forminator_Email extends Forminator_Field {
 	 *
 	 * @param array        $field
 	 * @param array|string $data
-	 * @param array        $post_data
 	 *
 	 * @return bool
 	 */
-	public function validate( $field, $data, $post_data = array() ) {
+	public function validate( $field, $data ) {
 		$id                 = self::get_property( 'element_id', $field );
 		$is_validate        = self::get_property( 'validation', $field );
 		$validation_message = self::get_property( 'validation_message', $field, __( 'This is not a valid email.', 'forminator' ) );

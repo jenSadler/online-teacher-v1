@@ -114,7 +114,7 @@ if ( is_array( $res->features ) && ! empty( $res->features ) ) {
 								target="_blank"
 								class="sui-button sui-button-purple"
 							>
-								<?php esc_html_e( 'Try Pro For 35% Off', 'forminator' ); ?>
+								<?php esc_html_e( 'Try Pro For 10% Off', 'forminator' ); ?>
 							</a>
 						<?php } ?>
 
