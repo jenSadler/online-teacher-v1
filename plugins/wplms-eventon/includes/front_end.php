@@ -25,14 +25,17 @@ class Wplms_EventOn_Front_End{
     }
 
 	private function __construct(){ 
-		add_filter('wplms_course_creation_tabs',array($this,'event_creation'),9);
-		add_action('wplms_front_end_generate_fields_default',array($this,'events_handle'),10,2);
-		add_action('wplms_front_end_generate_fields_default',array($this,'evcal_date'),10,2);
-		add_action('wp_ajax_save_course_events',array($this,'save_course_events'));
-		add_filter('wplms_front_end_element_taxonomy',array($this,'event_taxonomies'),10,3);
-		add_filter('wplms_front_end_metaboxes',array($this,'event_settings'),10,3);
-		add_filter('wp_ajax_save_event',array($this,'save_event'));
-		add_filter('wplms_front_end_new_tax_cap',array($this,'remove_new'),10,2);
+
+		if(!defined('WPLMS_PLUGIN_VERSION')){
+			add_filter('wplms_course_creation_tabs',array($this,'event_creation'),9);
+			add_action('wplms_front_end_generate_fields_default',array($this,'events_handle'),10,2);
+			add_action('wplms_front_end_generate_fields_default',array($this,'evcal_date'),10,2);
+			add_action('wp_ajax_save_course_events',array($this,'save_course_events'));
+			add_filter('wplms_front_end_element_taxonomy',array($this,'event_taxonomies'),10,3);
+			add_filter('wplms_front_end_metaboxes',array($this,'event_settings'),10,3);
+			add_filter('wp_ajax_save_event',array($this,'save_event'));
+			add_filter('wplms_front_end_new_tax_cap',array($this,'remove_new'),10,2);
+		}
 	}
 
 
@@ -766,7 +769,7 @@ class Wplms_EventOn_Front_End{
 						var id = jQuery(this).attr("data-id");
 						var datetime = jQuery(".ev_date_box[data-id=\'"+id+"\']").val()+" "+jQuery(".ev_time_box[data-id=\'"+id+"\']").val(); 
 						var myDate = new Date(datetime);
-						var timestamp = myDate.getTime()/1000;
+						var timestamp = ((myDate.getTime()/1000) - (new Date().getTimezoneOffset()*60));
 						jQuery("#"+id+"").val(timestamp)
 					});
                 });</script></div>';

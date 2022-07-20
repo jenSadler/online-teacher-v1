@@ -37,7 +37,7 @@ $classes = apply_filters( 'tribe_default_events_template_classes', [ 'tribe-even
 $eventDisplay = isset( $eventDisplay ) ? $eventDisplay : '';
 
 
-get_header();
+get_header(vibe_get_header());
 /**
  * Provides an action that allows for the injection of HTML at the top of the template after the header.
  *

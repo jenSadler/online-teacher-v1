@@ -3,9 +3,9 @@
 Plugin Name: WPLMS EventOn
 Plugin URI: http://www.VibeThemes.com
 Description: WPLMS EventOn integration by VibeThemes
-Version: 3.9.9
-Requires at least: WP 3.8, BuddyPress 1.9 
-Tested up to: 2.0.1
+Version: 4.0
+Requires at least: WP 5.6, BuddyPress 1.9 
+Tested up to: 5.6.2
 License: (Themeforest License : http://themeforest.net/licenses)
 Author: Mr.Vibe 
 Author URI: http://www.VibeThemes.com
@@ -16,8 +16,11 @@ Domain Path: /languages/
 
 
  if ( ! defined( 'ABSPATH' ) ) exit;
-define( 'WPLMS_EVENTON_VERSION', '1.2' );
+define( 'WPLMS_EVENTON_VERSION', '4.0' );
+define( 'VIBE_EVENTON_API_NAMESPACE', 'vibeeventon/v1'  );
+define( 'WPLMS_EVENTON_V4',1);
 
+include_once 'includes/class.api.php';
 
 function wplms_eventon_init() {
 	global $wpdb;
@@ -62,7 +65,7 @@ function wplms_eventon_update() {
 	$config = array(
 		'base'      => plugin_basename( __FILE__ ), //required
 		'dashboard' => true,
-		'repo_uri'  => 'https://vibethemes.com/',  //required
+		'repo_uri'  => 'http://www.vibethemes.com/',  //required
 		'repo_slug' => 'wplms-eventon',  //required
 	);
 

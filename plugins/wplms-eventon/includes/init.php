@@ -48,8 +48,20 @@ class Wplms_EventOn_Init{
 		add_filter('wplms_eventons_course_events_shortcode',array($this,'events_shortcode'));
 
 		add_filter('eventon_shortcode_default_values',array($this,'add_wplms_course_default'));
-	}
 
+		//4.0
+        add_action('wp_enqueue_scripts',array($this,'enqueue_script'));
+        add_action( 'bp_setup_nav', array($this,'add_eventon_tab'), 101 );
+
+        add_shortcode('wplms_eventon_events',array($this,'wplms_eventon_events'));
+	}
+	
+	function wplms_eventon_events($atts,$content){
+		$id = apply_filters('elementor_course_block_id','');
+	    
+		$shortcode = apply_filters('wplms_eventon_events_shortcode','[add_eventon wplms_course="'.$id.'" hide_empty_months="yes"]',$id);
+		return do_shortcode($shortcode);
+	}
 
 	function add_wplms_course($args){
 		global $bp;
@@ -97,13 +109,16 @@ class Wplms_EventOn_Init{
     	if(empty($ecv)){
     		return $args;
     	}
-    	
+
     	$wplms_course = $ecv['wplms_course'];
+
     	
     	if (defined('DOING_AJAX') && DOING_AJAX) {
     		$evodata = $_POST['evodata'];
-    		$wplms_course = $evodata['course'];
+    		//$wplms_course = $evodata['course'];
     	}
+
+    	
 
     	if(!is_numeric($wplms_course)){
     		if(strpos($wplms_course, ',') !== false){
@@ -119,13 +134,31 @@ class Wplms_EventOn_Init{
     	}else if($wplms_course > 1 && get_post_type($wplms_course) == 'course'){
     		$course_ids = array($wplms_course);
     	}else if($wplms_course == 1){
-    		if($post->post_type == 'course'){$course_ids = array($post->ID);}
-			if(empty($course_id) && get_post_type($bp->current_item) == 'course'){$course_ids = array($bp->current_item);}			
+
+    		if($post->post_type == 'course'){
+    			$course_ids = array($post->ID);
+    		}else{
+    			if(class_exists('WPLMS_4_Init') && $wplms_course ==1){
+		    		$init = WPLMS_4_Init::init();
+
+			        if(!empty($init->course_id)){
+			            $course_ids = array($init->course_id);
+			        }else{
+			        	$id = apply_filters('elementor_course_block_id','');
+				        if(!empty($id)){
+				            $course_ids = array($id);
+		        		}
+				    }
+			        print_r($course_ids);
+		    	}elseif(empty($course_id) && get_post_type($bp->current_item) == 'course'){$course_ids = array($bp->current_item);}
+    		}
+						
 
     	}else{
+
     		return $args;
     	}
-	    
+    	
     	if( !empty($course_ids)) {
     		
     		$args['meta_query'][]=array(
@@ -349,6 +382,52 @@ class Wplms_EventOn_Init{
 		}
 		return $shortcode;
 	}
+
+	function add_eventon_tab(){
+        global $bp;
+        if(function_exists('is_wplms_4_0') && is_wplms_4_0()){
+            if (  apply_filters('show_vibeeventon_vibecalendar',true)) {
+                bp_core_new_subnav_item( array(
+                    'name' 		  => __('EventON Events','wplms-eventon'),
+                    'slug' 		  => 'vibe_eventon_meeting',
+                    'parent_slug' => 'calendar',
+                    'parent_url' => $bp->displayed_user->domain.$slug.'/',
+                    'screen_function' => array($this,'show_screen'),
+                    'user_has_access' => (bp_is_my_profile() || current_user_can('manage_options'))
+                ) );
+            }
+        }
+	}
+
+	function enqueue_script(){
+        $blog_id = '';
+        if(function_exists('get_current_blog_id')){
+            $blog_id = get_current_blog_id();
+        }
+		$eventon=apply_filters('wplms-eventon_script_args',array(
+			'api'=>array(
+				'url'=>get_rest_url($blog_id,VIBE_EVENTON_API_NAMESPACE),
+            ),
+            'translations'=>array(
+                'today'=>__('Today','wplms-eventon'),
+                'month'=>__('Month','wplms-eventon'),
+                'week'=>__('Week','wplms-eventon'),
+                'day'=>__('Day','wplms-eventon'),
+                'list'=>__('List','wplms-eventon'),
+                'starts'=>__('Starts','wplms-eventon'),
+                'ends'=>__('Ends','wplms-eventon'),
+				'cancel'=>__('Cancel','wplms-eventon'),
+				'more_details'=>__('More Details','wplms-eventon'),
+            )
+        ));
+        if(function_exists('bp_is_user') && bp_is_user() || apply_filters('vibebp_enqueue_profile_script',false)){
+            wp_enqueue_script('eventon_calendar',plugins_url('../assets/js/eventon_calendar.js',__FILE__),array('wp-element','wp-data'),WPLMS_EVENTON_VERSION);
+            wp_localize_script('eventon_calendar','vibeeventon',$eventon);
+            wp_enqueue_style('eventon_calendar',plugins_url('../assets/css/create_eventon.css',__FILE__),array(),WPLMS_EVENTON_VERSION);
+        }
+
+	}
+
 }
 
 Wplms_EventOn_Init::init();

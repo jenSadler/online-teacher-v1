@@ -76,3 +76,80 @@ color: #4f2683;
 .main_unit_content thead th {
 	color:#4f2683;
 }
+a.button, button, input[type="submit"]{
+	border:3px solid transparent;
+}
+a.button:focus, button:focus,input:focus[type="submit"]{
+	border:3px solid #807f83;
+	color:white;
+}
+
+a.button:hover, button:hover, input:hover[type="submit"]{
+	background-color:#807f83;
+}
+
+nav > .menu > li > a, .sleek .topmenu > li > a , .sleek nav > .menu > li  > a{
+  border-bottom: 3px solid transparent;
+	
+}
+
+
+nav > .menu > li > a:hover, .sleek .topmenu > li > a:hover, .sleek nav > .menu > li > a:hover {
+  border-bottom: 3px solid white;
+}
+
+#content #buddypress div.item-list-tabs,#content #buddypress div.item-list-tabs#object-nav, #content #buddypress div.item-list-tabs{
+  background-color: #FAFAFA;
+  border-bottom: 3px solid #4f2683;
+}
+
+
+.bp-user.p4 #item-body .item-list-tabs#subnav{
+	border:none;
+}
+
+#content #buddypress div.item-list-tabs#subnav ul li.current a{
+background-color: #444;
+	color:white;
+	margin-bottom:0;
+}
+#content #buddypress div.item-list-tabs#subnav ul li a{
+	padding:8px;
+}
+#content #buddypress div.item-list-tabs#subnav{
+	background-color:transparent;
+}
+#content #buddypress .item-list-tabs#subnav.subnav-sidebar{
+	padding: 0;
+}
+#content #buddypress .extra-filters .item-list-tabs#subnav{
+	padding:0;
+}
+ #content #buddypress .extra-filters .item-list-tabs#subnav ul li, #content #buddypress .item-list-tabs#subnav.subnav-sidebar ul li{
+	width:100%;
+	margin:0;
+	
+}
+
+section#title {
+background-color: #FAFAFA;
+margin: 0;
+}
+style.min.css
+.directory.d5 section#content {
+	
+	padding: 0;
+}
+#global .pusher #title {
+padding-bottom: 60px;
+margin-bottom: 0;
+padding-top: 30px;
+margin-top:0;
+}
+
+#global .pusher section#content {
+  padding-bottom: 60px;
+margin-bottom: 0;
+margin-top:0;
+}
+
