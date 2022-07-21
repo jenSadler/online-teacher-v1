@@ -17,7 +17,12 @@ vibe_include_template("profile/top$profile_layout.php");
 <div id="item-body">
 
 	<?php do_action( 'bp_before_member_body' ); ?>
-	<div class="item-list-tabs no-ajax" id="subnav">
+	
+	<div class="row">
+		<div class="col-md-3">
+			
+		
+	<div class="item-list-tabs no-ajax subnav-sidebar" id="subnav">
 		<ul>
 
 			<?php bp_get_options_nav(); ?>
@@ -26,7 +31,10 @@ vibe_include_template("profile/top$profile_layout.php");
 
 		</ul>
 	</div><!-- .item-list-tabs -->
-
+</div>
+		<div class="col-md-9">
+			
+		
 	<h3><?php _e( 'Capabilities', 'vibe' ); ?></h3>
 	<?php do_action('bp_before_member_settings_template'); ?>
 	<form action="<?php echo bp_displayed_user_domain() . bp_get_settings_slug() . '/capabilities/'; ?>" name="account-capabilities-form" id="account-capabilities-form" class="standard-form" method="post">
@@ -53,7 +61,7 @@ vibe_include_template("profile/top$profile_layout.php");
 </div><!-- #item-body -->
 
 <?php do_action( 'bp_after_member_settings_template' ); ?>
-
+</div></div>
 
 <?php
 

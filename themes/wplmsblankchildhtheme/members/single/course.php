@@ -20,6 +20,10 @@ if ( !defined( 'ABSPATH' ) ) exit;
 		?>
 	</ul>
 </div><!-- .item-list-tabs -->
+		
+		</div>
+	<div class="col-md-9">
+		
 		<div class="extra-filters">
 			
 		
@@ -27,8 +31,6 @@ if ( !defined( 'ABSPATH' ) ) exit;
 		do_action( 'bp_before_member_course_content' ); 
 		?>
 	</div>
-		</div>
-	<div class="col-md-9">
 <?php
 	
 	

@@ -32,7 +32,7 @@ $id= vibe_get_bp_page_id('course');
 </section>
 <section id="content">
 	<div id="buddypress" class="directory5">
-		<div class="item-list-tabs" role="navigation">
+		<?php /*<div class="item-list-tabs" role="navigation">
 						<ul>
 							<li class="selected" id="course-all"><a href="<?php echo trailingslashit( bp_get_root_domain() . '/' . bp_get_course_root_slug() ); ?>"><?php printf( __( 'All Courses <span>%s</span>', 'vibe' ), bp_course_get_total_course_count( ) ); ?></a></li>
 							<?php if ( is_user_logged_in() ) : ?>
@@ -43,7 +43,7 @@ $id= vibe_get_bp_page_id('course');
 							<?php endif; ?>
 							<?php do_action( 'bp_course_directory_filter' ); ?>
 						</ul>
-					</div><!-- .item-list-tabs -->
+					</div> */?><!-- .item-list-tabs -->
     <div class="<?php echo vibe_get_container(); ?>">
 
 	<?php do_action( 'bp_before_directory_course_page' ); ?>

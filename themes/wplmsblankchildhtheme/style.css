@@ -125,10 +125,32 @@ background-color: #444;
 #content #buddypress .extra-filters .item-list-tabs#subnav{
 	padding:0;
 }
- #content #buddypress .extra-filters .item-list-tabs#subnav ul li, #content #buddypress .item-list-tabs#subnav.subnav-sidebar ul li{
+
+#content #buddypress .extra-filters .item-list-tabs#subnav.subnav-sidebar {
+	border-right: 2px solid #444;
+}
+ #content #buddypress .extra-filters .item-list-tabs#subnav.subnav-sidebar ul li, #content #buddypress .item-list-tabs#subnav.subnav-sidebar ul li{
 	width:100%;
 	margin:0;
 	
+}
+
+ #content #buddypress .extra-filters .item-list-tabs#subnav.subnav-sidebar, #content #buddypress .item-list-tabs#subnav.subnav-sidebar{
+	 border-right:2px solid #444;
+}
+
+ #content #buddypress .extra-filters .item-list-tabs#subnav.subnav-sidebar ul li a:hover, #content #buddypress .item-list-tabs#subnav.subnav-sidebar ul li a:hover{
+	 background-color:#888;
+	 color:white;
+}
+
+
+ #content #buddypress .extra-filters .item-list-tabs#subnav.subnav-sidebar ul li a, #content #buddypress .item-list-tabs#subnav.subnav-sidebar ul li a{
+	 background-color:#FAFAFA;
+}
+
+ #content #buddypress .extra-filters .item-list-tabs#subnav.subnav-sidebar ul li.current.selected a:hover, #content #buddypress .item-list-tabs#subnav.subnav-sidebar ul li.current.selected a:hover{
+	 background-color:#444;
 }
 
 .directory.d5 #content #buddypress.directory5 .item-list-tabs#subnav {
@@ -147,13 +169,23 @@ style.min.css
 body.home-page #global .pusher #title {
 	padding:0;
 	margin:0;
+	display:none;
+}
+
+body.course.directory #global .pusher #title{
+	padding:30px 0 90px 0;
+}
+
+body.course #global .pusher .single-course.c2 .course_header{
+	background-color:transparent;
 }
 
 #global .pusher #title {
-padding-bottom: 60px;
+
 margin-bottom: 0;
-padding-top: 30px;
+
 margin-top:0;
+	border-bottom: 3px solid #4f2683;
 }
 
 #global .pusher section#content {
@@ -162,3 +194,13 @@ margin-bottom: 0;
 margin-top:0;
 }
 
+#global .pusher section#title #item-nav, #global .pusher section#title div.course_header{
+	background-color:transparent !important;
+}
+.profile-settings thead {
+border-bottom: 1px solid black;
+
+}
+table.profile-settings {
+margin-bottom: 40px;
+}

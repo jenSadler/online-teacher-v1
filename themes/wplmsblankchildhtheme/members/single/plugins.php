@@ -20,8 +20,11 @@ vibe_include_template("profile/top$profile_layout.php");
 <div id="item-body" role="main">
 
 	<?php do_action( 'bp_before_member_body' ); ?>
-
-	<div class="item-list-tabs no-ajax" id="subnav">
+<div class="row">
+	<div class="col-md-3">
+		
+	
+	<div class="item-list-tabs no-ajax subnav-sidebar" id="subnav">
 		<ul>
 
 			<?php bp_get_options_nav(); ?>
@@ -30,6 +33,8 @@ vibe_include_template("profile/top$profile_layout.php");
 
 		</ul>
 	</div><!-- .item-list-tabs -->
+		</div>
+	<div class="col-md-9">
 	<?php do_action('wplms_after_single_item_list_tabs'); ?>
 	<h3><?php do_action( 'bp_template_title' ); ?></h3>
 
@@ -38,7 +43,8 @@ vibe_include_template("profile/top$profile_layout.php");
 	<?php do_action( 'bp_after_member_body' ); ?>
 
 </div><!-- #item-body -->
-
+</div>
+	</div>
 
 <?php do_action( 'bp_after_member_plugin_template' ); ?>
 <?php

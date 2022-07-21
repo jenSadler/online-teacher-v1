@@ -10,6 +10,7 @@ if ( !defined( 'ABSPATH' ) ) exit;
 ?>
 <div class="row">
 	<div class="col-md-3">
+		Hello!
 <div class="item-list-tabs no-ajax subnav-sidebar" id="subnav" role="navigation">
 	<ul>
 		<?php if ( bp_core_can_edit_settings() ) : ?>

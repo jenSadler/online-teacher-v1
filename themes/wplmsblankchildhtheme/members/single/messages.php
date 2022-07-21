@@ -17,15 +17,16 @@ if ( !defined( 'ABSPATH' ) ) exit;
 
 	</ul>
 	
-	<?php if ( bp_is_messages_inbox() || bp_is_messages_sentbox() ) : ?>
-
-		<div class="message-search"><?php bp_message_search_form(); ?></div>
-
-	<?php endif; ?>
+	
 
 </div><!-- .item-list-tabs -->
 	</div>
 	<div class="col-md-9">
+		<?php if ( bp_is_messages_inbox() || bp_is_messages_sentbox() ) : ?>
+
+		<div class="message-search"><?php bp_message_search_form(); ?></div>
+
+	<?php endif; ?>
 <?php
 do_action('wplms_after_single_item_list_tabs');
 	if ( bp_is_current_action( 'compose' ) ) :

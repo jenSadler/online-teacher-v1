@@ -15,7 +15,11 @@ if ( !defined( 'ABSPATH' ) ) exit;
 	<ul>
 
 		<?php bp_get_options_nav(); ?>
-
+	</ul>
+		</div><!-- .item-list-tabs -->
+	</div>
+	<div class="col-md-9">
+<ul>
 		<li id="activity-filter-select" class="last">
 			<label for="activity-filter-by"><?php _e( 'Show:', 'vibe' ); ?></label>
 			<select id="activity-filter-by">
@@ -59,9 +63,7 @@ if ( !defined( 'ABSPATH' ) ) exit;
 			</select>
 		</li>
 	</ul>
-</div><!-- .item-list-tabs -->
-	</div>
-	<div class="col-md-9">
+
 <?php 
 do_action('wplms_after_single_item_list_tabs');
 do_action( 'bp_before_member_activity_post_form' ); ?>

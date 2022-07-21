@@ -13,14 +13,19 @@ if ( !defined( 'ABSPATH' ) ) exit;
 <div class="item-list-tabs no-ajax subnav-sidebar" id="subnav" role="navigation">
 	<ul>
 		<?php bp_get_options_nav(); ?>
+	</ul>
+	</div>
+</div>
+	<div class="col-md-9">
+	
+	<ul>
 
 		<li id="members-order-select" class="last filter">
 			<?php bp_notifications_sort_order_form(); ?>
 		</li>
 	</ul>
-</div>
-		</div>
-	<div class="col-md-9">
+
+		
 	
 <?php
 do_action('wplms_after_single_item_list_tabs'); 
