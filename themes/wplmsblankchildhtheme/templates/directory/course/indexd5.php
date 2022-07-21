@@ -107,3 +107,4 @@ $id= vibe_get_bp_page_id('course');
 </div><!-- #content -->
 </div>
 </section>
+

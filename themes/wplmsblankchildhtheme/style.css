@@ -131,6 +131,10 @@ background-color: #444;
 	
 }
 
+.directory.d5 #content #buddypress.directory5 .item-list-tabs#subnav {
+	border:none;
+}
+
 section#title {
 background-color: #FAFAFA;
 margin: 0;
@@ -140,6 +144,11 @@ style.min.css
 	
 	padding: 0;
 }
+body.home-page #global .pusher #title {
+	padding:0;
+	margin:0;
+}
+
 #global .pusher #title {
 padding-bottom: 60px;
 margin-bottom: 0;
