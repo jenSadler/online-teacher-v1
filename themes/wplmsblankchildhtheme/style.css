@@ -213,11 +213,7 @@ border-bottom: 1px solid black;
 table.profile-settings {
 margin-bottom: 40px;
 }
-.label-tribe-bar-search{
-	width:1px;
-	height:1px;
-	visibility:hidden;
-}
+
 
 
 #global .pagetitle .dir-search input[type="text"] {
@@ -252,4 +248,11 @@ margin-bottom: 40px;
 
 #global .pusher section#title .pagetitle .dir-search label{
 	display:unset;
+}
+.tribe-events-calendar-list-nav.tribe-events-c-nav {
+  float: unset;
+}
+
+.tribe-events-calendar-list__event-header{
+	position:unset;
 }
