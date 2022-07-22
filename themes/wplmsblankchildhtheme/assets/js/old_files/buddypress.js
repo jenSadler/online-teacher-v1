@@ -1563,7 +1563,7 @@ function bp_filter_request( object, filter, scope, target, search_terms, page, e
 
 	/* Set the correct selected nav and filter */
 	jq('.item-list-tabs li').each( function() {
-		if(jq(this).getElementId() !="course-all"){
+		if(jq(this).id != "course-all"){
 		jq(this).removeClass('selected');
 		}
 	});

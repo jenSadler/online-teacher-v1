@@ -1,0 +1,129 @@
+2022-07-22T13:03:43+00:00 CRITICAL syntax error, unexpected '?' in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 21
+
+2022-07-22T13:04:16+00:00 CRITICAL syntax error, unexpected '$blogInfoURL' (T_VARIABLE) in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 21
+
+2022-07-22T13:04:38+00:00 CRITICAL syntax error, unexpected ''" onblur="this.placeholder = ' (T_CONSTANT_ENCAPSED_STRING), expecting ';' or ',' in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 55
+
+2022-07-22T13:05:37+00:00 CRITICAL syntax error, unexpected ''" onblur="this.placeholder = ' (T_CONSTANT_ENCAPSED_STRING), expecting ';' or ',' in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 55
+
+2022-07-22T13:06:30+00:00 CRITICAL syntax error, unexpected ''" value="" id="tribe-bar-sear' (T_CONSTANT_ENCAPSED_STRING), expecting ';' or ',' in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 59
+
+2022-07-22T13:06:30+00:00 CRITICAL syntax error, unexpected ''" value="" id="tribe-bar-sear' (T_CONSTANT_ENCAPSED_STRING), expecting ';' or ',' in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 59
+
+2022-07-22T13:11:00+00:00 CRITICAL Uncaught Error: Call to undefined function getbloginfo() in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php:54
+Stack trace:
+#0 /srv/www/online-teacher/public_html/wp-includes/class-wp-hook.php(307): {closure}()
+#1 /srv/www/online-teacher/public_html/wp-includes/class-wp-hook.php(331): WP_Hook->apply_filters()
+#2 /srv/www/online-teacher/public_html/wp-includes/plugin.php(476): WP_Hook->do_action()
+#3 /srv/www/online-teacher/public_html/wp-content/plugins/the-events-calendar/common/src/Tribe/Template.php(1436): do_action()
+#4 /srv/www/online-teacher/public_html/wp-content/plugins/the-events-calendar/common/src/Tribe/Template.php(907): Tribe__Template->actions_before_template()
+#5 /srv/www/online-teacher/public_html/wp-content/plugins/the-events-calendar/src/Tribe/Views/V2/Template.php(71): Tribe__Template->template()
+#6 /srv/www/online-teacher/public_html/wp-content/plugins/the-events-calendar/src/Tribe/Views/V2/View.php(642): Tribe\Events\Views\V2\Template->render()
+#7 in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 54
+
+2022-07-22T14:50:35+00:00 CRITICAL syntax error, unexpected ',' in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 19
+
+2022-07-22T14:53:38+00:00 CRITICAL syntax error, unexpected 'return' (T_RETURN) in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 20
+
+2022-07-22T14:54:08+00:00 CRITICAL syntax error, unexpected 'echo' (T_ECHO) in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 20
+
+2022-07-22T14:54:08+00:00 CRITICAL syntax error, unexpected 'echo' (T_ECHO) in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 20
+
+2022-07-22T14:54:17+00:00 CRITICAL syntax error, unexpected 'echo' (T_ECHO) in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 20
+
+2022-07-22T14:54:21+00:00 CRITICAL syntax error, unexpected 'echo' (T_ECHO) in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 20
+
+2022-07-22T14:55:15+00:00 CRITICAL Uncaught Error: Call to undefined function apply_filter() in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php:18
+Stack trace:
+#0 /srv/www/online-teacher/public_html/wp-settings.php(566): include()
+#1 /srv/www/online-teacher/public_html/wp-config.php(107): require_once('/srv/www/online...')
+#2 /srv/www/online-teacher/public_html/wp-load.php(50): require_once('/srv/www/online...')
+#3 /srv/www/online-teacher/public_html/wp-cron.php(44): require_once('/srv/www/online...')
+#4 {main}
+  thrown in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 18
+
+2022-07-22T14:55:15+00:00 CRITICAL Uncaught Error: Call to undefined function apply_filter() in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php:18
+Stack trace:
+#0 /srv/www/online-teacher/public_html/wp-settings.php(566): include()
+#1 /srv/www/online-teacher/public_html/wp-config.php(107): require_once('/srv/www/online...')
+#2 /srv/www/online-teacher/public_html/wp-load.php(50): require_once('/srv/www/online...')
+#3 /srv/www/online-teacher/public_html/wp-admin/admin.php(34): require_once('/srv/www/online...')
+#4 /srv/www/online-teacher/public_html/wp-admin/theme-editor.php(10): require_once('/srv/www/online...')
+#5 {main}
+  thrown in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 18
+
+2022-07-22T15:00:33+00:00 CRITICAL syntax error, unexpected end of file in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/templates/directory/course/indexd5.php on line 114
+
+2022-07-22T15:01:00+00:00 CRITICAL Uncaught Error: Object of class Closure could not be converted to string in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/templates/directory/course/indexd5.php:28
+Stack trace:
+#0 /srv/www/online-teacher/public_html/wp-content/themes/wplms/includes/init.php(1026): include_once()
+#1 /srv/www/online-teacher/public_html/wp-content/themes/wplms/course/index.php(19): vibe_include_template()
+#2 /srv/www/online-teacher/public_html/wp-includes/template.php(770): require_once('/srv/www/online...')
+#3 /srv/www/online-teacher/public_html/wp-content/plugins/buddypress/bp-core/bp-core-catchuri.php(500): load_template()
+#4 /srv/www/online-teacher/public_html/wp-content/plugins/vibe-course-module/includes/bp-course-screens.php(29): bp_core_load_template()
+#5 /srv/www/online-teacher/public_html/wp-includes/class-wp-hook.php(307): bp_course_directory_setup()
+#6 /srv/www/online-teacher/public_html/wp-includes/class-wp-hook.php(331): WP_Hook->apply_filters()
+#7 /srv/www/online-teacher/public_html/w in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/templates/directory/course/indexd5.php on line 28
+
+2022-07-22T15:06:13+00:00 CRITICAL syntax error, unexpected '}', expecting ';' or ',' in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/templates/directory/course/indexd5.php on line 30
+
+2022-07-22T16:47:14+00:00 CRITICAL syntax error, unexpected 'wplms_customizer_enqueue_scrip' (T_STRING) in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 14
+
+2022-07-22T17:50:22+00:00 CRITICAL syntax error, unexpected '<', expecting end of file in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 73
+
+2022-07-22T17:50:45+00:00 CRITICAL syntax error, unexpected '<', expecting end of file in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 73
+
+2022-07-22T17:51:44+00:00 CRITICAL syntax error, unexpected '<', expecting end of file in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 73
+
+2022-07-22T17:58:14+00:00 CRITICAL syntax error, unexpected '', function( $file, $name, $te' (T_CONSTANT_ENCAPSED_STRING), expecting ')' in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 75
+
+2022-07-22T17:58:14+00:00 CRITICAL syntax error, unexpected '', function( $file, $name, $te' (T_CONSTANT_ENCAPSED_STRING), expecting ')' in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 75
+
+2022-07-22T18:07:21+00:00 CRITICAL Uncaught Error: Object of class Tribe\Events\Views\V2\Template could not be converted to string in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php:78
+Stack trace:
+#0 /srv/www/online-teacher/public_html/wp-includes/class-wp-hook.php(307): {closure}()
+#1 /srv/www/online-teacher/public_html/wp-includes/class-wp-hook.php(331): WP_Hook->apply_filters()
+#2 /srv/www/online-teacher/public_html/wp-includes/plugin.php(476): WP_Hook->do_action()
+#3 /srv/www/online-teacher/public_html/wp-content/plugins/the-events-calendar/common/src/Tribe/Template.php(1436): do_action()
+#4 /srv/www/online-teacher/public_html/wp-content/plugins/the-events-calendar/common/src/Tribe/Template.php(907): Tribe__Template->actions_before_template()
+#5 /srv/www/online-teacher/public_html/wp-content/plugins/the-events-calendar/src/Tribe/Views/V2/Template.php(71): Tribe__Template->template()
+#6 /srv/www/online-teacher/public_html/wp-content/plugins/the-events-calendar/src/Tribe/Views/V2/View.php(642): Trib in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/functions.php on line 78
+
+2022-07-22T18:22:18+00:00 CRITICAL syntax error, unexpected '?>', expecting ':' in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/header-sleek.php on line 116
+
+2022-07-22T18:26:15+00:00 CRITICAL syntax error, unexpected '?', expecting end of file in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/header-sleek.php on line 130
+
+2022-07-22T18:33:13+00:00 CRITICAL syntax error, unexpected '||' (T_BOOLEAN_OR) in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/header-sleek.php on line 98
+
+2022-07-22T18:57:08+00:00 CRITICAL syntax error, unexpected ':' in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/header-sleek.php on line 98
+
+2022-07-22T18:57:09+00:00 CRITICAL syntax error, unexpected ':' in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/header-sleek.php on line 98
+
+2022-07-22T19:01:55+00:00 CRITICAL syntax error, unexpected ')' in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/header-sleek.php on line 119
+
+2022-07-22T19:18:08+00:00 CRITICAL Uncaught Error: Call to undefined function is_directory() in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/header-sleek.php:99
+Stack trace:
+#0 /srv/www/online-teacher/public_html/wp-includes/template.php(770): require_once()
+#1 /srv/www/online-teacher/public_html/wp-includes/template.php(716): load_template()
+#2 /srv/www/online-teacher/public_html/wp-includes/general-template.php(48): locate_template()
+#3 /srv/www/online-teacher/public_html/wp-content/themes/wplms/page.php(3): get_header()
+#4 /srv/www/online-teacher/public_html/wp-includes/template-loader.php(106): include('/srv/www/online...')
+#5 /srv/www/online-teacher/public_html/wp-blog-header.php(19): require_once('/srv/www/online...')
+#6 /srv/www/online-teacher/public_html/index.php(17): require('/srv/www/online...')
+#7 {main}
+  thrown in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/header-sleek.php on line 99
+
+2022-07-22T19:31:58+00:00 CRITICAL syntax error, unexpected 'endif' (T_ENDIF), expecting end of file in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/templates/directory/course/indexd5.php on line 36
+
+2022-07-22T20:02:25+00:00 CRITICAL syntax error, unexpected '<', expecting end of file in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/tribe/events/v2/default-template.php on line 40
+
+2022-07-22T20:02:43+00:00 CRITICAL Uncaught Error: Using $this when not in object context in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/tribe/events/v2/default-template.php:26
+Stack trace:
+#0 /srv/www/online-teacher/public_html/wp-includes/template-loader.php(106): include()
+#1 /srv/www/online-teacher/public_html/wp-blog-header.php(19): require_once('/srv/www/online...')
+#2 /srv/www/online-teacher/public_html/index.php(17): require('/srv/www/online...')
+#3 {main}
+  thrown in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/tribe/events/v2/default-template.php on line 26
+
+2022-07-22T20:05:26+00:00 CRITICAL syntax error, unexpected ',' in /srv/www/online-teacher/public_html/wp-content/themes/wplmsblankchildhtheme/tribe/events/v2/default-template.php on line 27
+

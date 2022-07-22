@@ -14,36 +14,28 @@ $id= vibe_get_bp_page_id('course');
                 	<?php 
                 		if(is_tax()){
                 			echo '<h1>';
-                			single_cat_title();
+                			the_title();
                 			echo '</h1>';
-                			echo do_shortcode(category_description());
+                			
                 		}else{
 	                		echo '<h1>'.vibe_get_title($id).'</h1>';
-	                		the_sub_title($id);
+	                		
                 		} 
                 	?>
                     <div class="dir-search" role="search">
+						
 						<?php bp_directory_course_search_form(); ?>
+						
+					
 					</div><!-- #group-dir-search -->
                 </div>
             </div>
         </div>
     </div>
 </section>
+
 <section id="content">
 	<div id="buddypress" class="directory5">
-		<?php /*<div class="item-list-tabs" role="navigation">
-						<ul>
-							<li class="selected" id="course-all"><a href="<?php echo trailingslashit( bp_get_root_domain() . '/' . bp_get_course_root_slug() ); ?>"><?php printf( __( 'All Courses <span>%s</span>', 'vibe' ), bp_course_get_total_course_count( ) ); ?></a></li>
-							<?php if ( is_user_logged_in() ) : ?>
-								<li id="course-personal"><a href="<?php echo trailingslashit( bp_loggedin_user_domain() . bp_get_course_slug()); ?>"><?php printf( __( 'My Courses <span>%s</span>', 'vibe' ), bp_course_get_total_course_count_for_user( bp_loggedin_user_id() ) ); ?></a></li>
-								<?php if(is_user_instructor()): ?>
-									<li id="course-instructor"><a href="<?php echo trailingslashit( bp_loggedin_user_domain() . bp_get_course_slug()); ?>"><?php printf( __( 'Instructing Courses <span>%s</span>', 'vibe' ), bp_course_get_instructor_course_count_for_user( bp_loggedin_user_id() ) ); ?></a></li>
-								<?php endif; ?>		
-							<?php endif; ?>
-							<?php do_action( 'bp_course_directory_filter' ); ?>
-						</ul>
-					</div> */?><!-- .item-list-tabs -->
     <div class="<?php echo vibe_get_container(); ?>">
 
 	<?php do_action( 'bp_before_directory_course_page' ); ?>
@@ -58,8 +50,19 @@ $id= vibe_get_bp_page_id('course');
 					<?php do_action( 'bp_before_directory_course_content' ); ?>
 
 					<?php do_action( 'template_notices' ); ?>
-
-					
+<?php /*
+					<div class="item-list-tabs" role="navigation">
+						<ul>
+							<li class="selected" id="course-all"><a href="<?php echo trailingslashit( bp_get_root_domain() . '/' . bp_get_course_root_slug() ); ?>"><?php printf( __( 'All Courses <span>%s</span>', 'vibe' ), bp_course_get_total_course_count( ) ); ?></a></li>
+							<?php if ( is_user_logged_in() ) : ?>
+								<li id="course-personal"><a href="<?php echo trailingslashit( bp_loggedin_user_domain() . bp_get_course_slug()); ?>"><?php printf( __( 'My Courses <span>%s</span>', 'vibe' ), bp_course_get_total_course_count_for_user( bp_loggedin_user_id() ) ); ?></a></li>
+								<?php if(is_user_instructor()): ?>
+									<li id="course-instructor"><a href="<?php echo trailingslashit( bp_loggedin_user_domain() . bp_get_course_slug()); ?>"><?php printf( __( 'Instructing Courses <span>%s</span>', 'vibe' ), bp_course_get_instructor_course_count_for_user( bp_loggedin_user_id() ) ); ?></a></li>
+								<?php endif; ?>		
+							<?php endif; ?>
+							<?php do_action( 'bp_course_directory_filter' ); ?>
+						</ul>
+					</div><!-- .item-list-tabs --> */?>
 					<div class="item-list-tabs" id="subnav" role="navigation">
 						<ul>
 							<?php do_action( 'bp_course_directory_course_types' ); ?>
@@ -89,7 +92,7 @@ $id= vibe_get_bp_page_id('course');
 					<div id="course-dir-list" class="course dir-list">
 					<?php locate_template( array( 'course/course-loop.php' ), true ); ?>
 					</div><!-- #courses-dir-list -->
-					
+
 					<?php do_action( 'bp_directory_course_content' ); ?>
 
 					<?php wp_nonce_field( 'directory_course', '_wpnonce-course-filter' ); ?>
@@ -107,4 +110,3 @@ $id= vibe_get_bp_page_id('course');
 </div><!-- #content -->
 </div>
 </section>
-

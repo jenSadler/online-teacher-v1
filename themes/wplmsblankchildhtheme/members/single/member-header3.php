@@ -11,19 +11,27 @@ if ( !defined( 'ABSPATH' ) ) exit;
 
 <?php do_action( 'bp_before_member_header' ); ?>
 <div class="<?php echo vibe_get_container(); ?>">
+	<div class="titlePadding">
+		
+	
 	<div class="row">
 		<div class="col-md-2 col-md-offset-5">
 			<div id="item-header-avatar">
+				<div class="pagetitle">
+					
+				
+				<h1>
+				<?php bp_displayed_user_fullname(); ?>
+				</h1>
+					</div>
 				<a href="<?php bp_displayed_user_link(); ?>">
 					<?php bp_displayed_user_avatar( 'type=full' ); ?>
-				</a>
+				</a> 
 			</div><!-- #item-header-avatar -->
 		</div>
-		<div class="col-md-12">
+		<?php /* <div class="col-md-12">
 			<div id="item-header-content">
-				<h3>
-					<a href="<?php bp_displayed_user_link(); ?>"><?php bp_displayed_user_fullname(); ?></a>
-				</h3>
+				
 				<div class="location">
 				<?php
 					$user_id=bp_displayed_user_id();
@@ -78,10 +86,10 @@ if ( !defined( 'ABSPATH' ) ) exit;
 					</div><!-- #item-buttons -->
 
 					<?php
-					/***
-					 * If you'd like to show specific profile fields here use:
-					 * bp_member_profile_data( 'field=About Me' ); -- Pass the name of the field
-					 */
+					//
+					 // If you'd like to show specific profile fields here use:
+					 // bp_member_profile_data( 'field=About Me' ); -- Pass the name of the field
+					 //
 					 do_action( 'bp_profile_header_meta' );
 
 					 ?>
@@ -96,9 +104,9 @@ if ( !defined( 'ABSPATH' ) ) exit;
 
 			 ?>
 			</div>
-		</div>
+		</div> */?>
 	</div>
 </div><!-- #item-header-content -->
-
+</div>
 <?php do_action( 'bp_after_member_header' ); ?>
 
