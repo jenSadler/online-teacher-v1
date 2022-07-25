@@ -5,7 +5,7 @@
 <?php do_action( 'bp_before_profile_field_content' ); ?>
 
 	<div class="bp-widget wp-profile">
-		<h4><?php bp_is_my_profile() ? _e( 'My Profile', 'vibe' ) : printf( __( "%s's Profile", 'vibe' ), bp_get_displayed_user_fullname() ); ?></h4>
+		<h2><?php bp_is_my_profile() ? _e( 'My Profile', 'vibe' ) : printf( __( "%s's Profile", 'vibe' ), bp_get_displayed_user_fullname() ); ?></h2>
 
 		<table class="wp-profile-fields">
 

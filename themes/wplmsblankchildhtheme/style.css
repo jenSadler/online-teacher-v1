@@ -127,7 +127,7 @@ background-color: #444;
 }
 
 #content #buddypress .extra-filters .item-list-tabs#subnav.subnav-sidebar {
-	border-right: 2px solid #444;
+	border-left: 2px solid #444;
 }
  #content #buddypress .extra-filters .item-list-tabs#subnav.subnav-sidebar ul li, #content #buddypress .item-list-tabs#subnav.subnav-sidebar ul li{
 	width:100%;
@@ -136,7 +136,9 @@ background-color: #444;
 }
 
  #content #buddypress .extra-filters .item-list-tabs#subnav.subnav-sidebar, #content #buddypress .item-list-tabs#subnav.subnav-sidebar{
-	 border-right:2px solid #444;
+	 border-left:2px solid #444;
+	 min-height: 400px;
+	 background-color:#FAFAFA;
 }
 
  #content #buddypress .extra-filters .item-list-tabs#subnav.subnav-sidebar ul li a:hover, #content #buddypress .item-list-tabs#subnav.subnav-sidebar ul li a:hover{
@@ -226,7 +228,7 @@ margin-bottom: 40px;
 
 #global .pagetitle .dir-search button{
 	position:absolute;
-	right: 115px;
+	right: 10%;
 	margin:0.5rem;
 	border-radius:50%;
 	padding:0;
@@ -255,4 +257,72 @@ margin-bottom: 40px;
 
 .tribe-events-calendar-list__event-header{
 	position:unset;
+}
+
+.wplms-dashboard {
+  padding: 30px;
+}
+
+#course-personal-li {
+  display: none;
+}
+
+.bp-user.p4 #item-body .item-list-tabs#subnav ul li#starred-personal-li{
+	display:none;
+}
+
+
+#whats-new-options {
+float: left;
+	width:auto;
+	overflow:hidden;
+}
+
+#whats-new-textarea {
+float: left;
+	width:70%;
+	
+}
+
+#buddypress form#whats-new-form textarea {
+
+width: auto;
+border: 1px solid rgba(0,0,0,.08);
+height: 42px;
+line-height: 1.6;
+	width:100%;
+}
+#buddypress form#whats-new-form #aw-whats-new-submit, #buddypress form#whats-new-form #buddydrive-btn {
+float: unset;
+height: auto;
+padding: 5px 10px;
+}
+#buddypress form#whats-new-form #whats-new-submit {
+float: unset;
+	margin-top:0px;
+}
+
+.bp-screen-reader-text{
+	visibility:hidden;
+	width:0px;
+	height:0px;
+	overflow:hidden;
+}
+
+#buddypress h2{
+	margin: 0 0 15px;
+padding: 0 0 15px;
+border-bottom: 1px solid rgba(0,0,0,.08);
+font-weight: 600;
+text-transform: uppercase;
+	font-size: 1.6rem;
+}
+
+#buddypress div.message-search {
+  float: left;
+}
+
+#buddypress .standard-form label, #buddypress .standard-form span.label {
+	font-weight:normal;
+	margin-top:30px;
 }

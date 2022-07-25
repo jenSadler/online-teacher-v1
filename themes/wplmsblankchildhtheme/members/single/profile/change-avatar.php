@@ -1,4 +1,4 @@
-<h4><?php _e( 'Change Avatar', 'vibe' ); ?></h4>
+<h2><?php _e( 'Change Avatar', 'vibe' ); ?></h2>
 
 <?php do_action( 'bp_before_profile_avatar_upload_content' ); ?>
 

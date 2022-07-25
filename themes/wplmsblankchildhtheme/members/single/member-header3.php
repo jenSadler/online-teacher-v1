@@ -24,9 +24,7 @@ if ( !defined( 'ABSPATH' ) ) exit;
 				<?php bp_displayed_user_fullname(); ?>
 				</h1>
 					</div>
-				<a href="<?php bp_displayed_user_link(); ?>">
-					<?php bp_displayed_user_avatar( 'type=full' ); ?>
-				</a> 
+				
 			</div><!-- #item-header-avatar -->
 		</div>
 		<?php /* <div class="col-md-12">

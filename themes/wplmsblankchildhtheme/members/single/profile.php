@@ -10,13 +10,7 @@ if ( !defined( 'ABSPATH' ) ) exit;
 ?>
 
 <div class="row">
-	<div class="col-md-3">
-<div class="item-list-tabs no-ajax subnav-sidebar" id="subnav" role="navigation">
-	<ul>
-		<?php bp_get_options_nav(); ?>
-	</ul>
-</div><!-- .item-list-tabs -->
-	</div>
+	
 	
 	<div class="col-md-9">
 <?php
@@ -66,6 +60,13 @@ do_action( 'bp_before_profile_content' ); ?>
 		break;
 endswitch; ?>
 </div><!-- .profile -->
+	</div>
+	<div class="col-md-3">
+<div class="item-list-tabs no-ajax subnav-sidebar" id="subnav" role="navigation">
+	<ul>
+		<?php bp_get_options_nav(); ?>
+	</ul>
+</div><!-- .item-list-tabs -->
 	</div>
 </div>
 <?php

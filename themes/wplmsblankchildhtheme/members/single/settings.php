@@ -9,20 +9,7 @@
 if ( !defined( 'ABSPATH' ) ) exit;
 ?>
 <div class="row">
-	<div class="col-md-3">
-		Hello!
-<div class="item-list-tabs no-ajax subnav-sidebar" id="subnav" role="navigation">
-	<ul>
-		<?php if ( bp_core_can_edit_settings() ) : ?>
-
-			<?php bp_get_options_nav(); ?>
-
-		<?php  endif; ?>
-	</ul>
-	<?php
-do_action('wplms_after_single_item_list_tabs');?>
-</div>
-	</div>
+	
 	<div class="col-md-9">
 <?php
 switch ( bp_current_action() ) :
@@ -46,4 +33,20 @@ switch ( bp_current_action() ) :
 		break;
 endswitch;
 ?>
-	</div></div>
+	</div>
+	</div>
+
+<div class="col-md-3">
+		Hello!
+<div class="item-list-tabs no-ajax subnav-sidebar" id="subnav" role="navigation">
+	<ul>
+		<?php if ( bp_core_can_edit_settings() ) : ?>
+
+			<?php bp_get_options_nav(); ?>
+
+		<?php  endif; ?>
+	</ul>
+	<?php
+do_action('wplms_after_single_item_list_tabs');?>
+
+	</div>
