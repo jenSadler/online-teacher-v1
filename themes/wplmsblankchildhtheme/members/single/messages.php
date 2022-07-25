@@ -19,7 +19,7 @@ if ( !defined( 'ABSPATH' ) ) exit;
 
 		<div class="message-search"><?php bp_message_search_form(); ?></div>
 
-	<?php endif; ?>
+		<?php endif; ?>
 <?php
 do_action('wplms_after_single_item_list_tabs');
 	if ( bp_is_current_action( 'compose' ) ) :
@@ -30,17 +30,20 @@ do_action('wplms_after_single_item_list_tabs');
 
 	else :
 		do_action( 'bp_before_member_messages_content' ); ?>
-
+<?php endif; ?>
 	<div class="messages" role="main">
 		<?php
 		
-			if ( bp_is_current_action( 'notices' ) )
+			if ( bp_is_current_action( 'notices' ) ){
 				locate_template( array( 'members/single/messages/notices-loop.php' ), true );
-			else
+			}
+			else{
 				locate_template( array( 'members/single/messages/messages-loop.php' ), true );
+			}
 		?>
 
 	</div><!-- .messages -->
+	
 	</div>
 <div class="col-md-3">
 <div class="item-list-tabs no-ajax subnav-sidebar" id="subnav" role="navigation">
@@ -56,4 +59,4 @@ do_action('wplms_after_single_item_list_tabs');
 	</div></div>
 	<?php do_action( 'bp_after_member_messages_content' ); ?>
 
-<?php endif; ?>
+

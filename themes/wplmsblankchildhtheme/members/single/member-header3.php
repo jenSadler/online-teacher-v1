@@ -15,14 +15,14 @@ if ( !defined( 'ABSPATH' ) ) exit;
 		
 	
 	<div class="row">
-		<div class="col-md-2 col-md-offset-5">
+		<div class="col-12">
 			<div id="item-header-avatar">
 				<div class="pagetitle">
 					
 				
-				<h1>
-				<?php bp_displayed_user_fullname(); ?>
-				</h1>
+					<h1>My Account</h1>
+					<div class="smallAvatar"><?php bp_displayed_user_avatar( 'type=full' ); ?></div>
+						<p class="profileName"><?php bp_displayed_user_fullname(); ?></p>
 					</div>
 				
 			</div><!-- #item-header-avatar -->

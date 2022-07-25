@@ -36,4 +36,4 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 	    <div class="<?php echo vibe_get_container(); ?>">
 	    	<?php do_action( 'bp_before_course_home_content' ); ?>
 	        <div class="row">
-				<div class="col-md-9">	
+				<div class="col-md-9">

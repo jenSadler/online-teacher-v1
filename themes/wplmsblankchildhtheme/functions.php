@@ -70,35 +70,7 @@ add_action( 'wp_enqueue_scripts', 'tribehome_enqueue_front_page_scripts' );
 
 add_action( 'wp_enqueue_scripts', 'your_theme_js' );
 
-/*add_action( 'wplms_before_course_main_conten', function( ) {
-	$viewToShow ="";
-	 $blogInfoURL = get_bloginfo('url');
-// if ( count( $views ) == 1 ) { $viewToShow = 'class="tribe-bar-collapse-toggle-full-width"';} 
-					
 
-	
- echo '<section id="title">
-	    <div class="container">
-        <div class="row">
-             <div class="col-md-12">
-                <div class="pagetitle center">
-                	<h1>Events</h1>
-					<div class="dir-search" role="search">
-				
-   <form action="'.$blogInfoURL.'/events/" method="get" id="search-course-form">
-		<label><input type="text" name="s" id="course_search" placeholder="Lunch and Learn, Seminar"></label>
-		<input type="submit" id="course_search_submit" name="course_search_submit" value="Search">
-		<button class="search-icon" type="submit" id="course_search_submit" name="course_search_submit"><i class="fa fa-search"></i></button>
-	</form>
-	</div>
-
-		             </div>
-            </div>
-        </div>
-    </div>
-</section>';
-
-}, 10, 3 ); */
 
 add_action('wplms_course_start_after_timeline',function($course_id){
 
