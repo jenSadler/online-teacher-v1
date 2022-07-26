@@ -1,1 +1,0 @@
-&lt;?php if ( ! defined( \\\\\\\\&#039;ABSPATH\\\\\\\\&#039; ) ) exit; if ( ! defined( \\\\\\\\&#039;BWS_GLOBAL\\\\\\\\&#039; ) ) exit; /* Start your code here */
