@@ -156,8 +156,26 @@ background-color: #444;
 	 background-color:#444;
 }
 
+#buddypress .item-list-tabs#subnav ul li a{
+	border: 1px solid rgba(0,0,0,.08);
+}
+
 .directory.d5 #content #buddypress.directory5 .item-list-tabs#subnav {
 	border:none;
+}
+
+ #content #buddypress .activity-type-tabs.item-list-tabs#subnav ul li.selected a{
+	background-color:#444;
+}
+
+
+#content #buddypress .activity-type-tabs.item-list-tabs#subnav{
+	border-bottom:2px solid #444;
+}
+#content #buddypress div.item-list-tabs#subnav ul li#activity-filter-select{
+	
+	margin:5px 0;
+	
 }
 
 section#title {
