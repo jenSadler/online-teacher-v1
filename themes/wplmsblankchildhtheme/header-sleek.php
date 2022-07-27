@@ -20,27 +20,24 @@ wp_head();
             $fix=vibe_get_option('header_fix');
         ?>
         <header class="sleek <?php if(isset($fix) && $fix){echo 'fix';} ?>">
+		
             <div class="<?php echo vibe_get_container(); ?>">
                 <div class="row">
+					
                     <div class="col-md-9 col-sm-4 col-xs-4">
+						<div id="logo">
                         <?php
-
-                            if(is_front_page()){
-                                echo '<h1 id="logo">';
-                            }else{
-                                echo '<h2 id="logo">';
-                            }
+							
+                           
                             $url = apply_filters('wplms_logo_url',VIBE_URL.'/assets/images/logo.png','header');
                             if(!empty($url)){
                         ?>
-                            <a href="<?php echo vibe_site_url('','logo'); ?>"><img src="<?php  echo vibe_sanitizer($url,'url'); ?>" alt="<?php echo get_bloginfo('name'); ?>" /></a>
+                            <a href="<?php echo vibe_site_url('','logo'); ?>"><img src="<?php  echo vibe_sanitizer($url,'url'); ?>"  /></a>
                         <?php
                             }
-                            if(is_front_page()){
-                                echo '</h1>';
-                            }else{
-                                echo '</h2>';
-                            }
+                          ?>
+							</div>
+							<?php
 
                             $args = apply_filters('wplms-main-menu',array(
                                  'theme_location'  => 'main-menu',
@@ -54,6 +51,7 @@ wp_head();
                         ?>
                     </div>
                     <div class="col-md-3 col-sm-8 col-xs-8">
+						
                         <ul class="topmenu">
                             <?php
                             if ( function_exists('bp_loggedin_user_link') && is_user_logged_in() ) :
@@ -66,15 +64,10 @@ wp_head();
                                     <?php
                             endif;        
                             
-                            if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) )  || (function_exists('vibe_check_plugin_installed') && vibe_check_plugin_installed( 'woocommerce/woocommerce.php'))) { global $woocommerce;
-                                    ?>
-                                    <li><a class="vbpcart"><span class="fa fa-shopping-basket"><?php echo (($woocommerce->cart->cart_contents_count)?'<em>'.$woocommerce->cart->cart_contents_count.'</em>':''); ?></span></a>
-                                    <div class="woocart"><div class="widget_shopping_cart_content"><?php woocommerce_mini_cart(); ?></div></div>
-                                    </li>
-                            <?php
-                            }
+                           
                             ?>
                         </ul>
+						
                         <?php
                             $style = vibe_get_login_style();
                             if(empty($style)){
@@ -86,14 +79,18 @@ wp_head();
                             vibe_include_template("login/$style.php");
                          ?>
                        </div>
+							
                     </div>
                     <a id="trigger">
                         <span class="lines"></span>
                     </a>
+	
                 </div>
+					
             </div>
-        </header>
 		
+        </header>
+	
 
    
 		

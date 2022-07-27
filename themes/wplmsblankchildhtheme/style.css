@@ -10,6 +10,11 @@ Version: 1.0
 
 @import url("../wplms/style.css");
 
+
+nav.main-nav{
+	float:unset;
+}
+
 .tribe-common-l-container.tribe-events-l-container header{
 	background-color: transparent;
 }
@@ -450,3 +455,17 @@ html body {
 #buddypress ul.item-list li div.item-title > a {
   font-size: 1.25rem;
 }
+
+.course_curriculum.accordion tr.course_lesson {
+     display:table;
+	width:100%;
+}
+div.course_curriculum .course_section > td {
+  padding: 40px 0 20px;
+}
+
+.course_curriculum h3.heading {
+ margin: 0;
+	padding:5px 0;
+}
+
