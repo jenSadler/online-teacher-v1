@@ -12,9 +12,7 @@ wp_head();
 </head>
 <body <?php body_class(); ?>>
 <div id="global" class="global">
-    <?php
-        get_template_part('mobile','sidebar');
-    ?> 
+    
     <div class="pusher">
         <?php
             $fix=vibe_get_option('header_fix');
@@ -43,7 +41,7 @@ wp_head();
                                  'theme_location'  => 'main-menu',
                                  'container'       => 'nav',
                                  'menu_class'      => 'menu',
-                                 'items_wrap' => '<ul id="%1$s" class="%2$s">%3$s<li><a id="new_searchicon"><i class="fa fa-search"></i></a></li></ul>',
+                                 'items_wrap' => '<ul id="%1$s" class="%2$s">%3$s<li><a id="new_searchicon" title="Search"><i aria-hidden="true" class="fa fa-search" ></i><span class="screen-reader-only">Search</span></a></li></ul>',
                                  'walker'          => new vibe_walker,
                                  'fallback_cb'     => 'vibe_set_menu'
                              ));
@@ -81,13 +79,22 @@ wp_head();
                        </div>
 							
                     </div>
-                    <a id="trigger">
-                        <span class="lines"></span>
-                    </a>
-	
-                </div>
+					</div>
+				</div>
+						
+						<nav role="navigation" aria-label="Main menu">
+					  <button aria-expanded="true" id="trigger" class="mobile-button">
+						<span class="lines"></span>
+					  </button>
+					 <div class="mobile-hidden">
+						<?php get_template_part('mobile','sidebar');   ?> 
+						  </div>
+					</nav>
 					
-            </div>
+                
+					
+					
+            
 		
         </header>
 	

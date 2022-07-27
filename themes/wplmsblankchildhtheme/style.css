@@ -355,11 +355,12 @@ float: unset;
 	margin-top:0px;
 }
 
-.bp-screen-reader-text{
+.bp-screen-reader-text, .screen-reader-only{
 	visibility:hidden;
 	width:0px;
 	height:0px;
 	overflow:hidden;
+	display:block;
 }
 
 #buddypress h2{

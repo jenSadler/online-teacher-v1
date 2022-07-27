@@ -795,7 +795,7 @@ add_filter('wplms_logo_url','vibe_logo_url',10,2);
 function vibe_logo_url($url='/',$location = null){
     
     $logo=vibe_get_option('logo'); 
-    $alt = "Western Education: ".get_bloginfo('name');
+    $alt = "Western Education: " . get_bloginfo('name');
     
     if(empty($logo)){
         $url = VIBE_URL.'/assets/images/logo.png';
