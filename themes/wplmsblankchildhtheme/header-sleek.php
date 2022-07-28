@@ -45,7 +45,7 @@ wp_head();
 							<div id="hold-main-menu-list">
 								
 							
-							<ul id="menu-main-menu-1" class="menu hidden">
+							<ul id="menu-main-menu-1" class="menu gone">
 								
 					<?php
 

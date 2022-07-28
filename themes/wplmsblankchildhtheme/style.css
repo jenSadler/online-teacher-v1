@@ -22,6 +22,9 @@ display: flex;
 nav .menu li {
 float: unset;
 }
+nav .menu li:hover > a{
+	border-bottom:2px solid white;
+}
 
 header nav.menu-main-menu-container{
 	display:flex;
@@ -41,7 +44,9 @@ header.sleek #trigger {
 	position:relative;
 }
 
-
+div#hold-main-menu-list ul#menu-main-menu-1.gone{
+		display:flex;
+	}
 
 @media(max-width: 991px){
 	header nav.menu-main-menu-container{
@@ -54,7 +59,7 @@ header.sleek #trigger {
 		flex-direction:column;
 	}
 	
-	div#hold-main-menu-list ul#menu-main-menu-1.hidden{
+	div#hold-main-menu-list ul#menu-main-menu-1.gone{
 		display:none;
 	}
 	

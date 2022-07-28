@@ -48,12 +48,12 @@ function hideMobileMenu(){
 	
 	var windowWidth = document.getElementById('global');
 	if(windowWidth.offsetWidth > 991 ){
-		listToHide.classList.remove('hidden');
+		listToHide.classList.remove('gone');
 		listToHide.setAttribute('aria-hidden', false);
 	}
 	else{
 	setTimeout(function () {
-      listToHide.classList.add('hidden');
+      listToHide.classList.add('gone');
 		listToHide.setAttribute('aria-hidden', true);
     }, 1000);
 	}
@@ -74,11 +74,11 @@ function showMobileMenu(){
 	
 	
 	
-	toggleButton.setAttribute("aria-expanded", false);
+	toggleButton.setAttribute("aria-expanded", true);
 	
 	var windowWidth = document.getElementById('global');
 		if(windowWidth.offsetWidth < 991 ){
-			listToHide.classList.remove('hidden');
+			listToHide.classList.remove('gone');
 			listToHide.setAttribute('aria-hidden',false);
 		}
 	
