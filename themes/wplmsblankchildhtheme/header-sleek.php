@@ -13,7 +13,7 @@ wp_head();
 <body <?php body_class(); ?>>
 <div id="global" class="global">
     
-    <div class="pusher">
+    <div id="pusher" class="pusher ">
         <?php
             $fix=vibe_get_option('header_fix');
         ?>
@@ -22,7 +22,7 @@ wp_head();
             <div class="<?php echo vibe_get_container(); ?>">
                 <div class="row">
 					
-                    <div class="col-md-9 col-sm-4 col-xs-4">
+                    <div class="col-md-3 col-sm-3 col-xs-4">
 						<div id="logo">
                         <?php
 							
@@ -35,36 +35,50 @@ wp_head();
                             }
                           ?>
 							</div>
-							<?php
-
-                            $args = apply_filters('wplms-main-menu',array(
-                                 'theme_location'  => 'main-menu',
-                                 'container'       => 'nav',
-                                 'menu_class'      => 'menu',
-                                 'items_wrap' => '<ul id="%1$s" class="%2$s">%3$s<li><a id="new_searchicon" title="Search"><i aria-hidden="true" class="fa fa-search" ></i><span class="screen-reader-only">Search</span></a></li></ul>',
-                                 'walker'          => new vibe_walker,
-                                 'fallback_cb'     => 'vibe_set_menu'
-                             ));
-                            wp_nav_menu( $args ); 
-                        ?>
-                    </div>
-                    <div class="col-md-3 col-sm-8 col-xs-8">
+					</div>
+					<div class="col-md-9 col-sm-9 col-xs-8">
+						<nav id="main-nav"class="menu-main-menu-container" role="navigation" aria-label="Main menu">
+							<button name="menu-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="menu-main-menu-1" class="mobile-button" id="trigger" onClick="toggleMobileMenu()">
 						
-                        <ul class="topmenu">
+						<span class="lines"></span>
+					  </button>
+							<div id="hold-main-menu-list">
+								
+							
+							<ul id="menu-main-menu-1" class="menu hidden">
+								
+					<?php
+
+            $args = apply_filters('wplms-main-menu',array(
+                'theme_location'  => 'mobile-menu',
+                'container'       => '',
+                'menu_class'      => '',
+                'items_wrap' => '%3$s<li><a id="mobile_searchicon" title="Search"><i aria-hidden="true" class="fa fa-search" ></i><span class="screen-reader-only">Search</span></a></li>',
+                'fallback_cb'     => 'vibe_set_menu',
+            ));
+
+            wp_nav_menu( $args );
+     
+					
+								?></ul>
+								</div>
+								<ul id="login-menu" class="menu topmenu">
+                    
                             <?php
                             if ( function_exists('bp_loggedin_user_link') && is_user_logged_in() ) :
                                 ?>
-                                    <li><a href="<?php bp_loggedin_user_link(); ?>" class="smallimg vbplogin"><?php $n=vbp_current_user_notification_count(); echo ((isset($n) && $n)?'<em></em>':''); bp_loggedin_user_avatar( 'type=full' ); ?><span><?php bp_loggedin_user_fullname(); ?></span></a></li>
+                                    <li ><a href="<?php bp_loggedin_user_link(); ?>" class="smallimg vbplogin"><?php $n=vbp_current_user_notification_count(); echo ((isset($n) && $n)?'<em></em>':''); bp_loggedin_user_avatar( 'type=full' ); ?><?php bp_loggedin_user_fullname(); ?></a></li>
                             <?php
                             else :
                                 ?>  
-                                <li><a href="#login" rel="nofollow" class=" vbplogin"><span><?php _e('LOGIN','vibe'); ?></span></a></li>          
+                                <li class="login-link"><a href="#login" rel="nofollow" class=" vbplogin"><?php _e('LOGIN','vibe'); ?></a></li>          
                                     <?php
                             endif;        
                             
                            
                             ?>
                         </ul>
+							
 						
                         <?php
                             $style = vibe_get_login_style();
@@ -76,22 +90,14 @@ wp_head();
                         <?php
                             vibe_include_template("login/$style.php");
                          ?>
-                       </div>
 							
+                       </div>
+						
+						</nav>
                     </div>
 					</div>
 				</div>
 						
-						<nav role="navigation" aria-label="Main menu">
-					  <button aria-expanded="true" id="trigger" class="mobile-button">
-						<span class="lines"></span>
-					  </button>
-					 <div class="mobile-hidden">
-						<?php get_template_part('mobile','sidebar');   ?> 
-						  </div>
-					</nav>
-					
-                
 					
 					
             
