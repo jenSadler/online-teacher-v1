@@ -62,23 +62,25 @@ wp_head();
 					
 								?></ul>
 								</div>
-								<ul id="login-menu" class="menu topmenu">
-                    
-                            <?php
+						<div class="topmenu menu">
+							
+							<?php
                             if ( function_exists('bp_loggedin_user_link') && is_user_logged_in() ) :
                                 ?>
-                                    <li ><a href="<?php bp_loggedin_user_link(); ?>" class="smallimg vbplogin"><?php $n=vbp_current_user_notification_count(); echo ((isset($n) && $n)?'<em></em>':''); bp_loggedin_user_avatar( 'type=full' ); ?><?php bp_loggedin_user_fullname(); ?></a></li>
+                                    <a href="<?php bp_loggedin_user_link(); ?>" class="smallimg vbplogin"><?php $n=vbp_current_user_notification_count(); echo ((isset($n) && $n)?'<em></em>':''); bp_loggedin_user_avatar( 'type=full' ); ?><?php bp_loggedin_user_fullname(); ?></a>
                             <?php
                             else :
                                 ?>  
-                                <li class="login-link"><a href="#login" rel="nofollow" class=" vbplogin"><?php _e('LOGIN','vibe'); ?></a></li>          
+                                <a href="<?php echo get_site_url(); ?>/wp-admin.php" rel="nofollow" class=" vbplogin">Login</a>         
                                     <?php
                             endif;        
                             
                            
                             ?>
-                        </ul>
-							
+                      
+							</div>
+                    
+                            
 						
                         <?php
                             $style = vibe_get_login_style();
