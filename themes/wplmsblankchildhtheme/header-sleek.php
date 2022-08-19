@@ -38,9 +38,9 @@ wp_head();
 					</div>
 					<div class="col-md-9 col-sm-9 col-xs-8">
 						<nav id="main-nav"class="menu-main-menu-container" role="navigation" aria-label="Main menu">
-							<button name="menu-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="menu-main-menu-1" class="mobile-button" id="trigger" onClick="toggleMobileMenu()">
+							<button name="menu-open" aria-haspopup="true" aria-expanded="false" aria-controls="menu-main-menu-1" class="mobile-button" id="menu-open" onClick="showMobileMenu();">
 						
-						<span class="lines"></span>
+						&#9776;
 					  </button>
 							<div id="hold-main-menu-list">
 								
@@ -61,6 +61,10 @@ wp_head();
      
 					
 								?></ul>
+								<button name="menu-close" aria-haspopup="true" aria-expanded="false" aria-controls="menu-main-menu-1" class="mobile-button" id="menu-close" onClick="hideMobileMenu();">
+						
+						&#215;
+					  </button>
 								</div>
 						<div class="topmenu menu">
 							

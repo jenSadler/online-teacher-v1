@@ -34,6 +34,11 @@ display: flex;
 nav .menu li.current_page_item{
 	border-bottom:2px solid white;
 }
+
+nav .menu li.current-menu-item{
+	border-bottom:2px solid white;
+}
+
 #global{
 	overflow:hidden;
 	width:100vw;
@@ -41,7 +46,9 @@ nav .menu li.current_page_item{
 nav .menu li {
 float: unset;
 }
-
+#menu-close.mobile-button,#menu-open.mobile-button{
+	display:none;
+}
 header nav.menu-main-menu-container{
 	display:flex;
 	
@@ -49,10 +56,10 @@ header nav.menu-main-menu-container{
 	width:100%;
 	justify-content: space-around;
 }
-
+/*
 .mobile-button{
 	display:none;
-}
+}*/
 
 
 header.sleek #trigger {
@@ -65,6 +72,26 @@ div#hold-main-menu-list ul#menu-main-menu-1.gone{
 	}
 
 @media(max-width: 991px){
+	
+header nav button#menu-close.mobile-button.show-close-button, header nav button#menu-open.mobile-button{
+		display:block;
+		font-size:25px;
+	margin-top: -6px;
+	background-color:transparent;
+	
+	}
+	
+	header nav button#menu-close.mobile-button.show-close-button{
+		width:100%;
+		font-size:40px;
+		text-align:center;
+		margin-top: 30px;
+	}
+	
+	header nav button#menu-close.mobile-button.show-close-button:hover, header nav button#menu-open.mobile-button:hover{
+		background-color:transparent;
+	}
+	
 	header nav.menu-main-menu-container{
 		display:flex;
 		flex-direction:row-reverse;
@@ -75,9 +102,10 @@ div#hold-main-menu-list ul#menu-main-menu-1.gone{
 		flex-direction:column;
 	}
 	
+	/*
 	div#hold-main-menu-list ul#menu-main-menu-1.gone{
 		display:none;
-	}
+	}*/
 	
 	div#hold-main-menu-list.show-mobile-menu ul#menu-main-menu-1{
 		display:flex;
@@ -124,9 +152,9 @@ div#hold-main-menu-list ul#menu-main-menu-1.gone{
 		overflow:hidden;
 	}
 	
-	 ul.hide-on-mobile{
+	/* ul.hide-on-mobile{
 		display:none;
-	}
+	}*/
 	
 	.mobile-button{
 		display:inline;
@@ -303,6 +331,10 @@ style.min.css
 .directory.d5 section#content {
 	
 	padding: 0;
+}
+
+body{
+	margin:0;
 }
 body.home-page #global .pusher #title {
 	padding:0;

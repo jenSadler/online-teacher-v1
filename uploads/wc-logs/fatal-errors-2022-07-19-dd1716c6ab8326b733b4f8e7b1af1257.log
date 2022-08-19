@@ -1,4 +1,0 @@
-2022-07-19T15:08:03+00:00 CRITICAL syntax error, unexpected 'echo' (T_ECHO), expecting ';' or ',' in /srv/www/online-teacher/public_html/wp-content/plugins/vibe-course-module/includes/bp-course-ajax.php on line 2661
-
-2022-07-19T15:08:03+00:00 CRITICAL syntax error, unexpected 'echo' (T_ECHO), expecting ';' or ',' in /srv/www/online-teacher/public_html/wp-content/plugins/vibe-course-module/includes/bp-course-ajax.php on line 2661
-
