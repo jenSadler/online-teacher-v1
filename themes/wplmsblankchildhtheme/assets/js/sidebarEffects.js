@@ -1,10 +1,29 @@
+const specifiedElement= document.getElementById("hold-main-menu-list");
 document.addEventListener("DOMContentLoaded", function() {
 	console.log("in ready");
   checkWidthandHideMobile();
+  
 });
+
+
+
+
+document.addEventListener("click", (event) => {
+	console.log("in add eventlistener");
+  if(specifiedElement.classList.contains("show-mobile-menu")){
+		const isClickInside = specifiedElement.contains(event.target);
+		console.log("Inside classlist so right");
+		if (!isClickInside) {
+			hideMobileMenu();
+			console.log("in add event, in NOT inside in classlist good");
+		}
+	}
+});
+
 
 window.addEventListener("resize", () => {
 		checkWidthandHideMobile();
+		
 });
 
 function checkWidthandHideMobile(){
@@ -18,16 +37,18 @@ function checkWidthandHideMobile(){
 	
 }
 
-document.onReady()
 
-body.addEventListener(
+
+window.addEventListener(
   'keyup', 
   function(e) {
+
 	  var mobileMenu = document.getElementById('hold-main-menu-list');
   
-    if ( e.keyCode == 27 ) {
+    if ( e.key=="Escape" ) {
       e.preventDefault();
       hideMobileMenu();
+
       return false;
     }
   }
@@ -103,6 +124,8 @@ function showMobileMenu(){
 			
 			document.getElementById("menu-main-menu-1").focus();
 		}
+
+	
 	
 }
 						 

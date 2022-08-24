@@ -62,6 +62,8 @@ nav .menu li {
 	display: none;
 }
 
+
+
 header nav.menu-main-menu-container {
 	display: flex;
 
@@ -168,6 +170,7 @@ div#hold-main-menu-list ul#menu-main-menu-1.gone {
 
 		right: 0;
 		transition: right 1s;
+		padding-left:0px;
 
 	}
 

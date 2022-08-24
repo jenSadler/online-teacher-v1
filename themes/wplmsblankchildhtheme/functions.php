@@ -11,13 +11,13 @@ $admin_role->add_cap( 'unfiltered_html', true );
 
 function custom_enqueue_scripts() {
 	
-    wp_enqueue_script( 'custom', get_theme_file_uri('/assets/js/custom.js'), array(), false, false );
+    wp_enqueue_script( 'custom', get_theme_file_uri('/assets/js/custom.js'), array(), false, true );
 	
-	wp_enqueue_script( 'rating', get_theme_file_uri('/assets/js/js/rating.js'), array(), false, false );
+	wp_enqueue_script( 'rating', get_theme_file_uri('/assets/js/js/rating.js'), array(), false, true );
 	
-	wp_enqueue_script( 'wplms.min', get_theme_file_uri('/assets/js/wplms.min.js'), array(), false, false );
+	wp_enqueue_script( 'wplms.min', get_theme_file_uri('/assets/js/wplms.min.js'), array(), false, true );
 	
-	wp_enqueue_script( 'sidebarEffects', get_theme_file_uri('/assets/js/sidebarEffects.js'), array(), false, false );
+	wp_enqueue_script( 'sidebarEffects', get_theme_file_uri('/assets/js/sidebarEffects.js'), array(), false, true );
 	
 }
 
