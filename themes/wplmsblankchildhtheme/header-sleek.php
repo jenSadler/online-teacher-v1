@@ -38,7 +38,8 @@ if (!defined('ABSPATH')) exit;
                             <nav id="main-nav" class="menu-main-menu-container" role="navigation" aria-label="Main menu">
                                 <button name="menu-open" aria-haspopup="true" aria-expanded="false" aria-controls="menu-main-menu-1" class="mobile-button" id="menu-open" onClick="showMobileMenu();">
 
-                                    &#9776;
+                                <i class="fa fa-bars" aria-hidden="true"></i><span class="screen-reader-only">Open navigation menu</span>
+
                                 </button>
                                 <div id="hold-main-menu-list">
 
@@ -60,8 +61,7 @@ if (!defined('ABSPATH')) exit;
 
                                         ?></ul>
                                     <button name="menu-close" aria-haspopup="true" aria-expanded="false" aria-controls="menu-main-menu-1" class="mobile-button" id="menu-close" onClick="hideMobileMenu();">
-
-                                        &#215;
+                                    <i class="fa fa-times" aria-hidden="true"></i> <span class="screen-reader-only">Close navigation menu</span>
                                     </button>
                                 </div>
                                 <div class="topmenu menu">
