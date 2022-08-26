@@ -1,4 +1,4 @@
-const specifiedElement= document.getElementById("hold-main-menu-list");
+
 document.addEventListener("DOMContentLoaded", function() {
 	console.log("in ready");
   checkWidthandHideMobile();
@@ -8,17 +8,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 
-document.addEventListener("click", (event) => {
-	console.log("in add eventlistener");
-  if(specifiedElement.classList.contains("show-mobile-menu")){
-		const isClickInside = specifiedElement.contains(event.target);
-		console.log("Inside classlist so right");
-		if (!isClickInside) {
-			hideMobileMenu();
-			console.log("in add event, in NOT inside in classlist good");
-		}
-	}
-});
+
 
 
 window.addEventListener("resize", () => {
@@ -39,9 +29,8 @@ function checkWidthandHideMobile(){
 
 
 
-window.addEventListener(
-  'keyup', 
-  function(e) {
+
+function listenForEsc(e){
 
 	  var mobileMenu = document.getElementById('hold-main-menu-list');
   
@@ -52,7 +41,6 @@ window.addEventListener(
       return false;
     }
   }
-);
 
 function toggleMobileMenu() {
 	
@@ -98,6 +86,9 @@ function hideMobileMenu(){
 		
   
 	}
+
+	window.removeEventListener("click",clickOutsideMenu, true);
+	window.removeEventListener('keyup', listenForEsc,true);
 	
 }
 
@@ -125,7 +116,22 @@ function showMobileMenu(){
 			document.getElementById("menu-main-menu-1").focus();
 		}
 
+		window.addEventListener("click",clickOutsideMenu, true);
+		window.addEventListener('keyup', listenForEsc,true);
+		
 	
-	
+}
+
+function clickOutsideMenu(event){
+	var specifiedElement= document.getElementById("hold-main-menu-list");
+	if(specifiedElement.classList.contains("show-mobile-menu")){
+		const isClickInside = specifiedElement.contains(event.target);
+		console.log("Inside classlist so right");
+		if (!isClickInside) {
+			hideMobileMenu();
+			console.log("in add event, in NOT inside in classlist good");
+		}
+	}
+
 }
 						 
