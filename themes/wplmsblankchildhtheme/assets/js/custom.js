@@ -98,6 +98,9 @@ jQuery(document).ready(function($) {
 
     $('#new_searchicon,#mobile_searchicon').click(function(event) {
         $('body').addClass('search_active');
+        $('#searchform').attr('tabindex', 0);
+        $('#searchdiv span').attr('tabindex', 0);
+        $('#searchform').focus();
     });
     $('#close_full_popup').click(function(event) {
         $('#vibe_bp_login').fadeOut(300);
@@ -105,6 +108,9 @@ jQuery(document).ready(function($) {
     });
     $('#searchdiv span').on('click',function(){
         $('body').removeClass('search_active');
+        $('#searchform').attr('tabindex', -1);
+        $('#searchdiv span').attr('tabindex', -1);
+       
     });
     $(document).mouseup(function (e) {
         container = $('#searchdiv');

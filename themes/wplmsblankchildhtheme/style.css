@@ -37,7 +37,7 @@ div.show-mobile-menu button.show-close-button{
 }
 
 
-div.show-mobile-menu nav .menu li.current_page_item, div.show-mobile-menu nav .menu li.current-menu-item {
+div.show-mobile-menu ul.menu li.current_page_item, div.show-mobile-menu ul.menu li.current-menu-item {
 	border:2px solid transparent;
 	border-left: 2px solid white;
 } 
@@ -162,6 +162,7 @@ div#hold-main-menu-list ul#menu-main-menu-1.gone {
 		background-color: #444;
 		display:flex;
 		align-items:flex-start;
+		z-index: 100;
 
 	}
 
@@ -190,11 +191,6 @@ div#hold-main-menu-list ul#menu-main-menu-1.gone {
 		transition: margin-left 1s;
 	}
 
-	div#pusher.show-mobile-menu {
-		margin-left: -250px;
-		transition: margin-left 1s;
-		overflow: hidden;
-	}
 
 	/* ul.hide-on-mobile{
 		display:none;

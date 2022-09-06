@@ -57,14 +57,13 @@ function toggleMobileMenu() {
 
 function hideMobileMenu(){
 	console.log("in hide");
-	var pushElement = document.getElementById('pusher');
+
 	var mobileMenu = document.getElementById('hold-main-menu-list');
 	var mainNav = document.getElementById('main-nav');
 	var listToHide = document.getElementById('menu-main-menu-1');
 	var closeMenuButton = document.getElementById('menu-close');
 
 	
-	pushElement.classList.remove('show-mobile-menu');
 	mobileMenu.classList.remove('show-mobile-menu');
 	mainNav.classList.remove('open');
 	closeMenuButton.classList.remove("show-close-button")
@@ -74,8 +73,8 @@ function hideMobileMenu(){
 	
 	var windowWidth = document.getElementById('global');
 	if(windowWidth.offsetWidth > 991 ){
-		listToHide.tabIndex=1;
-		closeMenuButton.tabIndex=1;
+		listToHide.tabIndex=0;
+		closeMenuButton.tabIndex=0;
 		listToHide.setAttribute('aria-hidden', false);
 	}
 	else{
@@ -89,18 +88,20 @@ function hideMobileMenu(){
 
 	window.removeEventListener("click",clickOutsideMenu, true);
 	window.removeEventListener('keyup', listenForEsc,true);
+
+	console.log("resized");
 	
 }
 
 function showMobileMenu(){
 	console.log("in show");
-	var pushElement = document.getElementById('pusher');
+	
 	var mobileMenu = document.getElementById('hold-main-menu-list');
 	var mainNav = document.getElementById('main-nav');
 	var listToHide = document.getElementById('menu-main-menu-1');
 	var closeMenuButton = document.getElementById('menu-close');
 	
-	pushElement.classList.add('show-mobile-menu');
+	
 	mobileMenu.classList.add('show-mobile-menu');
 	mainNav.classList.add('open');
 	closeMenuButton.classList.add("show-close-button")
@@ -109,8 +110,8 @@ function showMobileMenu(){
 	
 	var windowWidth = document.getElementById('global');
 		if(windowWidth.offsetWidth < 991 ){
-			listToHide.tabIndex=1;
-			closeMenuButton.tabIndex=1;
+			listToHide.tabIndex=0;
+			closeMenuButton.tabIndex=0;
 			listToHide.setAttribute('aria-hidden',false);
 			
 			document.getElementById("menu-main-menu-1").focus();
