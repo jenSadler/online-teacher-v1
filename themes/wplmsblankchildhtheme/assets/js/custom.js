@@ -96,12 +96,12 @@ jQuery(document).ready(function($) {
       event.stopPropagation();
     });
 
-    $('#new_searchicon,#mobile_searchicon').click(function(event) {
+    /*$('#new_searchicon,#mobile_searchicon').click(function(event) {
         $('body').addClass('search_active');
         $('#searchform').attr('tabindex', 0);
         $('#searchdiv span').attr('tabindex', 0);
         $('#searchform').focus();
-    });
+    });*/
     $('#close_full_popup').click(function(event) {
         $('#vibe_bp_login').fadeOut(300);
         $('#vibe_bp_login').removeClass('active');
@@ -919,5 +919,47 @@ course5_sideblock();
 if(jQuery('.item-list-tabs li:first-child:last-child').is(":hidden")){
   jQuery(this).parent().hide();
 }
+
+
+//SEARCH BAR ---------------------
+
+var modalTrigger = $('#mobile_searchicon'), 
+modalContent = $('#modal'),
+modalWrapper = $('#searchdiv'),
+modalClose = $('#modalCloseButton'),
+modalTitle = $('#modalTitle');
+mainContent = $('#global');
+footer = $('footer');
+footerBottom = $('#footerbottom');
+
+function setModalButton() {
+  modalTrigger.on("click", function(e){
+    $('body').addClass('search_active');
+    mainContent.attr('aria-hidden', 'true');
+    footerBottom.attr('aria-hidden', 'true');
+    footer.attr('aria-hidden', 'true');
+    modalWrapper.attr('aria-hidden', 'false');
+  
+    modalTitle.focus();
+  });
+};
+
+function setModalClose() {
+  modalClose.on("click", function(e){
+    $('body').removeClass('search_active');
+    modalWrapper.attr('aria-hidden', 'true');
+    footerBottom.attr('aria-hidden', 'false');
+    footer.attr('aria-hidden', 'false');
+    mainContent.attr('aria-hidden', 'false');
+    modalTrigger.setAttribute('tabindex', '0');
+    modalTrigger.focus();
+    console.log("after modal trigger");
+   
+  });
+};
+
+
+setModalButton();
+setModalClose();
 
 })(jQuery);

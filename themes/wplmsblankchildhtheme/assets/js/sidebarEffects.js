@@ -1,15 +1,9 @@
-
+//SIDEBAR ---------------------
 document.addEventListener("DOMContentLoaded", function() {
 	console.log("in ready");
   checkWidthandHideMobile();
   
 });
-
-
-
-
-
-
 
 window.addEventListener("resize", () => {
 		checkWidthandHideMobile();
@@ -17,18 +11,15 @@ window.addEventListener("resize", () => {
 });
 
 function checkWidthandHideMobile(){
-	console.log("in cwahm");
+	
 	var windowWidth = document.getElementById('global');
 	console.log(windowWidth.offsetWidth);
 		if(windowWidth.offsetWidth > 991 ){
-			console.log("in global is big");
+	
 			hideMobileMenu();
 		}
 	
 }
-
-
-
 
 function listenForEsc(e){
 
@@ -52,8 +43,6 @@ function toggleMobileMenu() {
     	showMobileMenu();
 	}
 }
-
-
 
 function hideMobileMenu(){
 	console.log("in hide");
@@ -133,6 +122,6 @@ function clickOutsideMenu(event){
 			console.log("in add event, in NOT inside in classlist good");
 		}
 	}
-
 }
-						 
+	
+
