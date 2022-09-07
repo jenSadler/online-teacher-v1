@@ -52,7 +52,7 @@ if (!defined('ABSPATH')) exit;
                                             'theme_location'  => 'mobile-menu',
                                             'container'       => '',
                                             'menu_class'      => '',
-                                            'items_wrap' => '%3$s<li><a id="mobile_searchicon" title="Search"><i aria-hidden="true" class="fa fa-search" ></i><span class="screen-reader-only">Search</span></a></li>',
+                                            'items_wrap' => '%3$s<li><a id="mobile_searchicon" title="Search"><i  class="fa fa-search" ></i><span class="screen-reader-only">Search</span></a></li>',
                                             'fallback_cb'     => 'vibe_set_menu',
                                         ));
 
@@ -61,7 +61,7 @@ if (!defined('ABSPATH')) exit;
 
                                         ?></ul>
                                     <button name="menu-close" aria-haspopup="true" aria-expanded="false" aria-controls="menu-main-menu-1" class="mobile-button" id="menu-close" onClick="hideMobileMenu();">
-                                    <i class="fa fa-times" aria-hidden="true"></i> <span class="screen-reader-only">Close navigation menu</span>
+                                    <i class="fa fa-times" ></i> <span class="screen-reader-only">Close navigation menu</span>
                                     </button>
                                 </div>
                                 <div class="topmenu menu">

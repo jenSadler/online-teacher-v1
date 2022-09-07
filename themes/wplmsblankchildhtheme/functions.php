@@ -54,17 +54,17 @@ function my_login_stylesheet() {
 
 function removeActions(){
 	$actions = WPLMS_Actions::init();;
-	echo "inside remove actions";
+
 	
 	remove_action('wp_footer', array($actions,'search'));
 	add_action('wp_footer','mysearch');
-	echo "inside remove actions 2";
+
 }
 function mysearch(){
 	?>
 	<div id="searchdiv">
-	<div id='modal' aria-hidden='false' aria-labelledby='modalTitle' aria-describedby='modalDescription' role='dialog'>
-  	<div id='modalDescription' class='screen-reader-offscreen'>Beginning of search modal window. It begins with a heading 1 called &quot;Search&quot;, and contains a search input and a close button. Escape will cancel and close the window, as will clicking outside of the search area</div>
+	<div id='modal' aria-labelledby='modalTitle' aria-describedby='modalDescription' role='dialog'>
+  	<div id='modalDescription' class='screen-reader-only'>Beginning of search modal window. It begins with a heading 1 called &quot;Search&quot;, and contains a search input and a close button. Escape will cancel and close the window, as will clicking outside of the search area</div>
 
   	<h1 id='modalTitle' tabindex='0'>Search</h1>
             <form role="search" method="get" id="searchform" action="<?php echo home_url( '/' ); ?>">
@@ -72,12 +72,14 @@ function mysearch(){
                 <?php 
                     $course_search=vibe_get_option('course_search');
                     if(isset($course_search) && $course_search)
-                        echo '<input type="hidden" value="course" name="post_type" />';
+                        echo '<input type="hidden" value="course" name="post_type"  aria-hidden="true"/>';
                 ?>
             </form>
-            <span></span>
+            <button id='modalCloseButton' class="modalCloseButton" title='Close search'>
+			<i class="fa fa-times" ></i> Close search
+  			</button>
         </div>
-		
+	</div>
 	<?php
 }
 add_image_size( 'unitTitle', 200, 100, true );

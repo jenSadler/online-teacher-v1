@@ -946,15 +946,32 @@ function setModalButton() {
 
 function setModalClose() {
   modalClose.on("click", function(e){
-    $('body').removeClass('search_active');
-    modalWrapper.attr('aria-hidden', 'true');
-    footerBottom.attr('aria-hidden', 'false');
-    footer.attr('aria-hidden', 'false');
-    mainContent.attr('aria-hidden', 'false');
-    modalTrigger.setAttribute('tabindex', '0');
-    modalTrigger.focus();
-    console.log("after modal trigger");
+
+      $('body').removeClass('search_active');
+      modalWrapper.attr('aria-hidden', 'true');
+      footerBottom.attr('aria-hidden', 'false');
+      footer.attr('aria-hidden', 'false');
+      mainContent.attr('aria-hidden', 'false');
+      
    
+	  if(mainContent.offsetWidth > 991 ){
+     
+      modalTrigger.attr('tabindex', '0');
+      modalTrigger.focus();
+      
+    }
+    else if(mainContent.offsetWidth < 991 && $('main-nav').hasClass('open')){
+      showMobileMenu();
+      modalTrigger.attr('tabindex', '0');
+      modalTrigger.focus();
+      
+    }
+    else{
+      openMenu = $('#menu-open');
+      openMenu.attr('tabindex', '0');
+      openMenu.focus();
+     
+    }
   });
 };
 

@@ -1,7 +1,7 @@
 //SIDEBAR ---------------------
 document.addEventListener("DOMContentLoaded", function() {
 	console.log("in ready");
-  checkWidthandHideMobile();
+	hideMobileMenu();
   
 });
 
@@ -65,12 +65,15 @@ function hideMobileMenu(){
 		listToHide.tabIndex=0;
 		closeMenuButton.tabIndex=0;
 		listToHide.setAttribute('aria-hidden', false);
+		closeMenuButton.setAttribute('aria-hidden', true);
 	}
 	else{
-	
+	console.log("in small and going to hide");
       listToHide.tabIndex=-1;
 		closeMenuButton.tabIndex=-1;
+		closeMenuButton.setAttribute('aria-hidden', true);
 		listToHide.setAttribute('aria-hidden', true);
+		console.log("in small and going to hide- ENDED");
 		
   
 	}
@@ -102,9 +105,10 @@ function showMobileMenu(){
 			listToHide.tabIndex=0;
 			closeMenuButton.tabIndex=0;
 			listToHide.setAttribute('aria-hidden',false);
-			
+			closeMenuButton.setAttribute('aria-hidden', false);
 			document.getElementById("menu-main-menu-1").focus();
 		}
+	
 
 		window.addEventListener("click",clickOutsideMenu, true);
 		window.addEventListener('keyup', listenForEsc,true);
