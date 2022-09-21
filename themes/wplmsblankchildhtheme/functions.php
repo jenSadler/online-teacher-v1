@@ -66,7 +66,7 @@ function mysearch(){
 	<div id='modal' aria-labelledby='modalTitle' aria-describedby='modalDescription' role='dialog'>
   	<div id='modalDescription' class='screen-reader-only'>Beginning of search modal window. It begins with a heading 1 called &quot;Search&quot;, and contains a search input and a close button. Escape will cancel and close the window, as will clicking outside of the search area</div>
 
-  	<h1 id='modalTitle' tabindex='0'>Search</h1>
+  	<h1 id='modalTitle' class='screen-reader-only' tabindex='0'>Search</h1>
             <form role="search" method="get" id="searchform" action="<?php echo home_url( '/' ); ?>">
                 <input type="text" value="<?php the_search_query(); ?>" name="s" id="s" placeholder="<?php _e('Hit enter to search...','vibe'); ?>" />
                 <?php 

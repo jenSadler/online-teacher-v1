@@ -686,6 +686,10 @@ div.course_curriculum .course_section>td {
 	padding: 40px 0 20px;
 }
 
+.course_curriculum.accordion .course_section > td::after{
+	display:none !important;
+  }
+
 .course_curriculum h3.heading {
 	margin: 0;
 	padding: 5px 0;
