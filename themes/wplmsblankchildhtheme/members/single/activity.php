@@ -10,6 +10,14 @@ if ( !defined( 'ABSPATH' ) ) exit;
 ?>
 <?php do_action( 'bp_before_vibe_activity' ); ?>
 <div class="row">
+	<div class="col-md-3">
+		<div class="item-list-tabs no-ajax subnav-sidebar" id="subnav" role="navigation">
+			<ul>
+
+				<?php bp_get_options_nav(); ?>
+			</ul>
+		</div><!-- .item-list-tabs -->
+	</div>
 	
 	<div class="col-md-9">
 		<h2>
@@ -78,14 +86,7 @@ do_action( 'bp_before_member_activity_content' ); ?>
 </div><!-- .activity -->
 	</div>
 	
-	<div class="col-md-3">
-<div class="item-list-tabs no-ajax subnav-sidebar" id="subnav" role="navigation">
-	<ul>
-
-		<?php bp_get_options_nav(); ?>
-	</ul>
-		</div><!-- .item-list-tabs -->
-	</div>
+	
 </div>
 
 <?php do_action( 'bp_after_member_activity_content' ); ?>

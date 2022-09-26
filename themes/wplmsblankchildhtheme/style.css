@@ -25,11 +25,12 @@ Version: 1.0
 .menu {
 
 	display: flex;
-	
 
 }
 div.show-mobile-menu ul.menu{
 	flex-grow:1;	
+
+
 }
 
 div.show-mobile-menu button.show-close-button{
@@ -40,11 +41,15 @@ div.show-mobile-menu button.show-close-button{
 div.show-mobile-menu ul.menu li.current_page_item, div.show-mobile-menu ul.menu li.current-menu-item {
 	border:2px solid transparent;
 	border-left: 2px solid white;
+
+	transition-delay:0s;
 } 
 
 nav .menu li.current_page_item, nav .menu li.current-menu-item {
 	border:2px solid transparent;
 	border-bottom: 2px solid white;
+	transition-delay:1s;
+
 }
 
 #global {
@@ -70,6 +75,7 @@ header nav.menu-main-menu-container {
 	float: unset;
 	width: 100%;
 	justify-content: space-around;
+
 }
 
 /*
@@ -171,7 +177,7 @@ div#hold-main-menu-list ul#menu-main-menu-1.gone {
 
 		right: 0;
 		transition: right 1s;
-		padding-left:0px;
+	
 
 	}
 
@@ -179,11 +185,12 @@ div#hold-main-menu-list ul#menu-main-menu-1.gone {
 
 		padding: 10px;
 		margin: 10px;
-		width: calc(100% - 40px);
+		width: calc(100% - 20px);
 	}
 
 	div#hold-main-menu-list {
-		padding: 20px;
+		padding: 20px 20px 20px 0px;
+		
 	}
 
 	div#pusher {
@@ -336,13 +343,17 @@ input:hover[type="submit"] {
 
 }
 
+#item-body .radio > input[type="radio"]{
+	display:block;
+}
+
 #content #buddypress .extra-filters .item-list-tabs#subnav.subnav-sidebar,
 #content #buddypress .item-list-tabs#subnav.subnav-sidebar {
 
 	min-height: 400px;
 	background-color: #FAFAFA;
 	border: 1px solid #444;
-	margin: 20px;
+	margin: 0px 20px;
 	width: calc(100% - 40px);
 }
 

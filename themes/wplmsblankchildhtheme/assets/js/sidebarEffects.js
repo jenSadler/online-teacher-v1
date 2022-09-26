@@ -15,7 +15,8 @@ function checkWidthandHideMobile(){
 	var windowWidth = document.getElementById('global');
 	console.log(windowWidth.offsetWidth);
 		if(windowWidth.offsetWidth > 991 ){
-	
+			document.querySelector('nav .menu li.current_page_item').style.transitionDelay="0s";
+
 			hideMobileMenu();
 		}
 	
@@ -66,6 +67,12 @@ function hideMobileMenu(){
 		closeMenuButton.tabIndex=0;
 		listToHide.setAttribute('aria-hidden', false);
 		closeMenuButton.setAttribute('aria-hidden', true);
+		console.log("in big hide menu");
+		document.querySelector('nav .menu li.current_page_item').style.transitionDelay="0s";
+		document.querySelector('nav .menu li.current_page_item').style.borderLeft="0";
+		document.querySelector('nav .menu li.current_page_item').style.borderBottom="2px solid white";
+
+		
 	}
 	else{
 	console.log("in small and going to hide");
@@ -74,11 +81,15 @@ function hideMobileMenu(){
 		closeMenuButton.setAttribute('aria-hidden', true);
 		listToHide.setAttribute('aria-hidden', true);
 		console.log("in small and going to hide- ENDED");
+		document.querySelector('nav .menu li.current_page_item').style.transitionDelay="0s";
+			document.querySelector('nav .menu li.current_page_item').style.borderLeft="2px solid white";
+			document.querySelector('nav .menu li.current_page_item').style.borderBottom="0";
+		
 		
   
 	}
-
-	window.removeEventListener("click",clickOutsideMenu, true);
+	
+		window.removeEventListener("click",clickOutsideMenu, true);
 	window.removeEventListener('keyup', listenForEsc,true);
 
 	console.log("resized");
@@ -94,24 +105,32 @@ function showMobileMenu(){
 	var closeMenuButton = document.getElementById('menu-close');
 	
 	
-	mobileMenu.classList.add('show-mobile-menu');
-	mainNav.classList.add('open');
-	closeMenuButton.classList.add("show-close-button")
+
 	
 	
 	
 	var windowWidth = document.getElementById('global');
 		if(windowWidth.offsetWidth < 991 ){
+			mobileMenu.classList.add('show-mobile-menu');
+			mainNav.classList.add('open');
+			closeMenuButton.classList.add("show-close-button")
+
 			listToHide.tabIndex=0;
 			closeMenuButton.tabIndex=0;
 			listToHide.setAttribute('aria-hidden',false);
 			closeMenuButton.setAttribute('aria-hidden', false);
 			document.getElementById("menu-main-menu-1").focus();
+
+			document.querySelector('nav .menu li.current_page_item').style.transitionDelay="0s";
+			document.querySelector('nav .menu li.current_page_item').style.borderLeft="2px solid white";
+			document.querySelector('nav .menu li.current_page_item').style.borderBottom="0";
+			
 		}
 	
-
+		
 		window.addEventListener("click",clickOutsideMenu, true);
 		window.addEventListener('keyup', listenForEsc,true);
+		
 		
 	
 }

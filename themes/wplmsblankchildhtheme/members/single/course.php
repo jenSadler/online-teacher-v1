@@ -11,7 +11,13 @@ if ( !defined( 'ABSPATH' ) ) exit;
 <div class="row">
 	
 		
-		</div>
+<div class="item-list-tabs no-ajax subnav-sidebar <?php if ( !bp_is_my_profile() ) echo 'notmyprofile'; ?>" id="subnav" role="navigation">
+	<ul>
+		<?php if ( bp_is_my_profile() ) bp_get_options_nav(); 
+		do_action('bp_course_get_options_sub_nav');
+		?>
+	</ul>
+</div><!-- .item-list-tabs -->
 	<div class="col-md-9">
 
 		
@@ -50,13 +56,7 @@ if ( !defined( 'ABSPATH' ) ) exit;
 		
 	
 
-<div class="item-list-tabs no-ajax subnav-sidebar <?php if ( !bp_is_my_profile() ) echo 'notmyprofile'; ?>" id="subnav" role="navigation">
-	<ul>
-		<?php if ( bp_is_my_profile() ) bp_get_options_nav(); 
-		do_action('bp_course_get_options_sub_nav');
-		?>
-	</ul>
-</div><!-- .item-list-tabs -->
+
 	
 </div>
 

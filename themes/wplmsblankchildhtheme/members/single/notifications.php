@@ -9,6 +9,13 @@
 if ( !defined( 'ABSPATH' ) ) exit;
 ?>
 <div class="row">
+<div class="col-md-3">
+<div class="item-list-tabs no-ajax subnav-sidebar" id="subnav" role="navigation">
+	<ul>
+		<?php bp_get_options_nav(); ?>
+	</ul>
+	</div>
+</div>
 	
 	<div class="col-md-9">
 	<h2>
@@ -42,11 +49,5 @@ switch ( bp_current_action() ) :
 endswitch; ?>
 		
 		</div>
-	<div class="col-md-3">
-<div class="item-list-tabs no-ajax subnav-sidebar" id="subnav" role="navigation">
-	<ul>
-		<?php bp_get_options_nav(); ?>
-	</ul>
-	</div>
-</div>
+	
 			</div>

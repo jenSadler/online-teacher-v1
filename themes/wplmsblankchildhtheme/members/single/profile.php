@@ -10,7 +10,7 @@ if ( !defined( 'ABSPATH' ) ) exit;
 ?>
 
 <div class="row">
-		<div class="col-md-3 col-md-push-9">
+		<div class="col-md-3">
 <div class="item-list-tabs no-ajax subnav-sidebar" id="subnav" role="navigation">
 	<ul>
 		<?php bp_get_options_nav(); ?>
@@ -18,7 +18,7 @@ if ( !defined( 'ABSPATH' ) ) exit;
 </div><!-- .item-list-tabs -->
 	</div>
 	
-	<div class="col-md-9 col-md-pull-3">
+	<div class="col-md-9">
 <?php
 do_action('wplms_after_single_item_list_tabs');
 /**
