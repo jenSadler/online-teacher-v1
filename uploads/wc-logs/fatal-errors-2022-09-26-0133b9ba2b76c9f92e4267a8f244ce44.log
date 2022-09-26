@@ -1,0 +1,4 @@
+2022-09-26T19:43:32+00:00 CRITICAL syntax error, unexpected '}', expecting end of file in /var/www/html/wp-content/themes/wplmsblankchildhtheme/course/single/curriculum.php on line 85
+
+2022-09-26T19:46:02+00:00 CRITICAL syntax error, unexpected 'else' (T_ELSE), expecting end of file in /var/www/html/wp-content/themes/wplmsblankchildhtheme/course/single/curriculum.php on line 86
+

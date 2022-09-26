@@ -10,6 +10,8 @@ Version: 1.0
 
 @import url("../wplms/style.css");
 
+
+
 .menu.topmenu>a {
 	font-weight: 600;
 	margin: 0 10px;
@@ -707,3 +709,14 @@ div.course_curriculum .course_section>td {
 }
 
 div#scrolltop {display:none !important;}
+
+
+.course_curriculum .course_lesson > td {
+
+display: table-cell;
+}
+
+.course_curriculum.accordion tr.course_lesson {
+
+display: table-row;
+}
