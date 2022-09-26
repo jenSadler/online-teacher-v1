@@ -720,3 +720,24 @@ display: table-cell;
 
 display: table-row;
 }
+
+.icon-printer-1::after{
+	font-size: 11px;
+color: #bbb;
+font-weight: 600;
+text-transform: uppercase;
+margin-top: 0;
+font-family:"Source Sans Pro";
+content:" Print";
+font-style:normal;
+vertical-align: top;
+}
+
+div.course_curriculum.accordion thead tr {
+	color: white;
+	font-size: 1px;
+	}
+
+	.single-course.c2 #item-nav div.item-list-tabs#object-nav li#home{
+		display: none;
+		}
