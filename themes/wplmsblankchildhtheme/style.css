@@ -741,3 +741,38 @@ div.course_curriculum.accordion thead tr {
 	.single-course.c2 #item-nav div.item-list-tabs#object-nav li#home{
 		display: none;
 		}
+
+.item {
+display: flex;
+align-items: center;
+width: 100%;
+height: 100%;
+}
+.item-desc {
+display: none;
+}
+#buddypress ul.item-list li .item-credits {
+	float:unset;
+}
+.item-action {
+display: none;
+}
+
+
+#buddypress ul.item-list li div.item-title, #buddypress ul.item-list li h4 {
+flex-grow: 1;
+}
+
+.item-list.grid .item{
+	display:block;
+	width:unset;
+	height:unset;
+}
+
+li.course_single_item div.row{
+	display:flex;
+}
+
+ul.grid li.course_single_item div.row{
+	display:block;
+}
